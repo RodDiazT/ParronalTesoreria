@@ -13,6 +13,7 @@ docs/
 ├── acceso/
 │   └── acceso-roles.md
 ├── inscripciones/
+│   ├── inscripcion-binomios.md
 │   └── participantes.md
 ├── movimientos/
 │   └── movimientos.md
@@ -31,7 +32,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.0) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.0) | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.0) | v1.0 | Marco general |
-| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | Pendiente | v1.0 | Marco general |
+| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | En revisión (v0.1) | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga de binomios | Pendiente | v1.0 | Inscripción de binomios |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de la sección 6.7 del marco en v1.0; KPIs ampliados en v1.1 | Pendiente | v1.0 | Marco general |
 | Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, solicitudes por revisar y autorización del apoderado | Pendiente | v1.1 | Inscripción de binomios |
@@ -60,13 +61,14 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | Id | Tarea | Origen | Estado |
 |---|---|---|---|
 | t-001 | Confirmar si el club emite boletas o facturas (en especial a auspiciadores) | Marco general | Pendiente |
-| t-002 | Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, descuentos, alojamiento y pensión | Inscripción de binomios | Pendiente |
+| t-002 | Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, cuota por binomio, descuentos, alojamiento y pensión | Inscripción de binomios | Pendiente |
 | t-005 | Averiguar el banco de la cuenta que recibe las transferencias y el formato de su cartola | Conciliación con cartola | Pendiente |
 | t-006 | Confirmar si habrá wifi en el club el día del evento | Registro sin señal | Pendiente |
 | t-008 | Validar con el club el plazo de rendición de 30 días (hasta el 2026-12-21) | Cierre y rendición | Pendiente |
 | t-009 | Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión | Organización y evento | Pendiente |
 | t-010 | Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB) | Organización y evento | Pendiente |
 | t-012 | Acordar con el club cómo la comisión pide y guarda la autorización del apoderado para menores de 14 años (mensaje o papel firmado) | Participantes | Pendiente |
+| t-013 | Acordar con el club la política de devolución por retiro: hasta cuándo se devuelve y cuánto se retiene | Inscripción de binomios | Pendiente |
 
 ## Datos estructurados
 
@@ -187,15 +189,15 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "ruta": "docs/inscripciones/inscripcion-binomios.md",
       "padre": "marco-general",
       "dominio": "inscripciones",
-      "descripcion": "Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones",
-      "estado": "pendiente",
+      "descripcion": "Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [
         "participantes",
         "movimientos"
       ],
-      "version": "0.0",
+      "version": "0.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -332,7 +334,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
     },
     {
       "id": "t-002",
-      "descripcion": "Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, descuentos, alojamiento y pensión",
+      "descripcion": "Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, cuota por binomio, descuentos, alojamiento y pensión",
       "categoria": "club",
       "responsable": "Rod",
       "origen": "inscripcion-binomios",
@@ -439,6 +441,16 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "estado": "pendiente",
       "creada": "2026-09-27",
       "cerrada": null
+    },
+    {
+      "id": "t-013",
+      "descripcion": "Acordar con el club la política de devolución por retiro: hasta cuándo se devuelve y cuánto se retiene",
+      "categoria": "club",
+      "responsable": "Rod",
+      "origen": "inscripcion-binomios",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
     }
   ]
 }
@@ -462,3 +474,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.10 | Movimientos aprobado (v1.0); Organización y evento a v1.2 (marca `exigeContraparte` en `Categoria`). Quedan desbloqueados Participantes (ya lo estaba), Registro sin señal y Conciliación con cartola; Inscripción de binomios espera Participantes | Aprobación de Movimientos |
 | 2026-09-27 | 1.11 | Participantes pasa a revisión (v0.1); se crea la carpeta `inscripciones/`; tarea t-012. Al aprobarse, el marco general sube a v1.2 (club obligatorio para jinete y caballo, menor sin apoderado como alerta, autorización de menores de 14 con fecha) | Borrador de Participantes |
 | 2026-09-27 | 1.12 | Participantes aprobado (v1.0): fecha de nacimiento y contacto del jinete opcionales. Marco general a v1.2. Queda desbloqueada Inscripción de binomios (Participantes y Movimientos aprobados) | Aprobación de Participantes |
+| 2026-09-27 | 1.13 | Inscripción de binomios pasa a revisión (v0.1); t-002 incluye la cuota por binomio; tarea t-013. Al aprobarse, el marco general sube a v1.3 (entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; por cobrar con cargos) y Movimientos a v1.1 (cascada a devoluciones, aviso en categorías de referencia, `registrarMovimientoSistema`) | Borrador de Inscripción de binomios |
