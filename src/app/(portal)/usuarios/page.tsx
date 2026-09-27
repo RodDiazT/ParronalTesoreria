@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { obtenerContexto, db } from "@/lib/contexto";
 import { exigir } from "@/lib/permisos";
-import { NavegacionSimple } from "@/components/app/navegacion-simple";
+import { ConfigurarEstructura } from "@/components/app/estructura";
 import { GestorUsuarios, MembresiaDTO } from "./gestor-usuarios";
 
 export const metadata = {
@@ -57,24 +57,19 @@ export default async function UsuariosPage() {
     },
   }));
 
-  const solicitudesPendientes = membresias.filter((m) => m.estado === "solicitada").length;
-
   return (
-    <div className="min-h-screen bg-fondo text-texto">
-      <NavegacionSimple
-        titulo="Usuarios"
-        subtitulo={ctx.evento?.nombre || "Comisión Organizadora"}
+    <>
+      <ConfigurarEstructura
+        modo="detalle"
+        titulo="Usuarios y accesos"
         volverHref="/"
-        rol={ctx.rol}
-        solicitudesPendientes={solicitudesPendientes}
       />
-
-      <main className="mx-auto max-w-3xl p-4 sm:p-6 pb-24">
+      <div className="space-y-6">
         <GestorUsuarios
           membresias={membresias}
           usuarioActualId={ctx.usuario.id}
         />
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

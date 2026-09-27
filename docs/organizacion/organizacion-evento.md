@@ -187,7 +187,7 @@ No se piden domicilio, cuenta bancaria ni otros datos (marco §9.3), aunque faci
 
 - **Acceso y rectificación:** la ficha muestra todos los datos y la lista de movimientos de la contraparte; se corrigen editando.
 - **Supresión:** "Eliminar datos de contacto" borra contacto y RUT y conserva nombre y movimientos. Queda en auditoría con la acción `suprimir_datos`, sin guardar en la auditoría los valores eliminados.
-- **Portabilidad:** "Descargar datos" entrega un CSV con los datos de la contraparte y sus movimientos (fecha, tipo, categoría, monto, estado). Recortable a v1.1 si aprieta el plazo (ver 7).
+- **Portabilidad:** Descartada por decisión de diseño en favor de la máxima simplicidad y minimalismo; si surgiera la necesidad en el futuro se evaluará puntualmente.
 
 **Qué ve cada rol** (complementa marco §2.2):
 
@@ -414,14 +414,14 @@ Logo: validar tipo por contenido (bytes iniciales), no por extensión; guardar e
 | 2 | `normalizarNombre`, `validarRut`, `fechaReferenciaEdadEfectiva` con pruebas | 1 | Completado (2026-09-27) |
 | 3 | `obtenerContexto`, `exigirRol`, `db(ctx)`, `ocultarDatosPersonales`, regla de ESLint y prueba de aislamiento | 1 | Completado (2026-09-27) |
 | 4 | Script de carga inicial y archivo de ejemplo; ejecutarlo en Railway con los datos de Rod | 1, 2, Acceso y roles (vinculación del primer login) | Completado (2026-09-27) |
-| 5 | Encabezado con organización y evento vigente | 3 | Pendiente (Fase 3) |
-| 6 | `/configuracion/categorias` y `<SelectorCategoria>` | 3 | Pendiente (Fase 3) |
-| 7 | `/contrapartes`, ficha, `<SelectorContraparte>` con creación en línea y aviso de duplicado | 2, 3 | Pendiente (Fase 3) |
-| 8 | Edición, desactivación y fusión de contrapartes | 7 | Pendiente (Fase 3) |
-| 9 | `/configuracion/evento` (vista previa de edades se conecta al implementar Participantes) | 3 | Pendiente (Fase 3) |
-| 10 | Supresión de datos de contrapartes | 7 | Pendiente (Fase 3) |
-| 11 | `/configuracion/organizacion` con logo | 3 | Pendiente (Fase 3) |
-| 12 | Descarga CSV de la ficha de contraparte | 7 | Pendiente (Fase 3) |
+| 5 | Encabezado con organización y evento vigente | 3 | Completado (Fase 3) |
+| 6 | `/configuracion/categorias` y `<SelectorCategoria>` | 3 | Completado (Fase 3) |
+| 7 | `/contrapartes`, ficha, `<SelectorContraparte>` con creación en línea y aviso de duplicado | 2, 3 | Completado (Fase 3) |
+| 8 | Edición, desactivación y fusión de contrapartes | 7 | Completado (Fase 3) |
+| 9 | `/configuracion/evento` (vista previa de edades se conecta al implementar Participantes) | 3 | Completado (Fase 3) |
+| 10 | Supresión de datos de contrapartes | 7 | Completado (Fase 3) |
+| 11 | `/configuracion/organizacion` con logo | 3 | Completado (Fase 3) |
+| 12 | Descarga CSV de la ficha de contraparte | 7 | Descartado (decisión de minimalismo) |
 
 Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasan a v1.1 sin afectar a otros componentes. Los pasos 1 a 8 son imprescindibles para Movimientos.
 
@@ -456,3 +456,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | 2026-09-27 | 1.1 | Aprobado por Rod | Aprobación |
 | 2026-09-27 | 1.2 | Marca "Exige contraparte" en `Categoria` (3.4, 5.1, 5.5), activa en "Auspicios" al cargar; se remiten a Movimientos §3.2 la contraparte obligatoria y la validación de fechas | Aprobación de Movimientos v1.0 |
 | 2026-09-27 | 1.3 | §3.6 y §5.4: el encabezado muestra logo y nombre del evento; organización y fechas pasan a la cabecera del menú y al inicio | Aprobación de UX/UI v1.0 |
+| 2026-09-27 | 1.4 | Implementación de Fase 3 completada: configuración de evento y organización (logo seguro), categorías (reordenar, proteger sistema, reactivar) y contrapartes (búsqueda, parecidos Levenshtein, fusión, supresión de datos). Se descarta descarga CSV por minimalismo | Implementación de Fase 3 |

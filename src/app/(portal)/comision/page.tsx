@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { obtenerContexto, db } from "@/lib/contexto";
 import { exigir } from "@/lib/permisos";
-import { NavegacionSimple } from "@/components/app/navegacion-simple";
+import { ConfigurarEstructura } from "@/components/app/estructura";
 import { ChipEstado } from "@/components/app/estado";
 
 export const metadata = {
@@ -48,16 +48,15 @@ export default async function ComisionPage() {
   });
 
   return (
-    <div className="min-h-screen bg-fondo text-texto">
-      <NavegacionSimple
-        titulo="Comisión"
-        subtitulo={ctx.evento?.nombre || "Equipo del evento"}
+    <>
+      <ConfigurarEstructura
+        modo="detalle"
+        titulo="Equipo Comisión"
         volverHref="/"
-        rol={ctx.rol}
       />
 
-      <main className="mx-auto max-w-md p-4 sm:p-6 pb-24">
-        <div className="mb-6">
+      <div className="space-y-6">
+        <div>
           <h2 className="text-base font-bold text-texto">Equipo organizador</h2>
           <p className="text-xs text-texto-suave mt-0.5">
             Personas activas en la tesorería del concurso a quienes acudir durante el evento.
@@ -71,7 +70,7 @@ export default async function ComisionPage() {
             return (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie p-3.5 shadow-xs"
+                className="flex items-center justify-between p-4 rounded-2xl border border-borde bg-superficie shadow-xs"
               >
                 <div className="flex items-center gap-3">
                   {m.usuario.imagen ? (
@@ -82,21 +81,25 @@ export default async function ComisionPage() {
                       className="h-10 w-10 rounded-full border border-borde object-cover"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fondo border border-borde text-texto font-bold text-sm">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-acento text-sobre-acento font-bold text-sm">
                       {m.usuario.nombre?.[0] || "U"}
                     </div>
                   )}
+
                   <div>
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-sm font-semibold text-texto">
-                        {m.usuario.nombre || "Miembro de la comisión"}
-                      </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-texto">
+                        {m.usuario.nombre || "Usuario"}
+                      </span>
                       {esUsuarioActual && (
-                        <span className="rounded bg-fondo border border-borde px-1 py-0.2 text-[9px] font-bold text-texto-suave">
+                        <span className="text-[10px] font-bold text-texto-suave bg-borde px-1.5 py-0.2 rounded-full">
                           Tú
                         </span>
                       )}
                     </div>
+                    <span className="text-xs text-texto-suave capitalize">
+                      {m.rol}
+                    </span>
                   </div>
                 </div>
 
@@ -120,7 +123,7 @@ export default async function ComisionPage() {
             );
           })}
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

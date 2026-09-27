@@ -1,0 +1,446 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { TipoCategoria } from "@prisma/client";
+import { obtenerContexto, db, registrarAuditoria } from "@/lib/contexto";
+import { Contexto, exigir } from "@/lib/permisos";
+import { normalizarNombre } from "@/lib/utilidades";
+
+const crearCategoriaSchema = z.object({
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100, "Máximo 100 caracteres."),
+  tipo: z.enum(["ingreso", "gasto"]),
+  exigeContraparte: z.boolean().optional(),
+});
+
+export type CrearCategoriaInput = z.infer<typeof crearCategoriaSchema>;
+
+export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategoriaInput) {
+  exigir(ctx, "configurar");
+
+  const validado = crearCategoriaSchema.safeParse(datos);
+  if (!validado.success) {
+    return { exito: false, error: validado.error.errors[0]?.message || "Datos inválidos." };
+  }
+
+  const { nombre, tipo, exigeContraparte = false } = validado.data;
+  const nombreNorm = normalizarNombre(nombre);
+
+  const existente = await db(ctx).categoria.findFirst({
+    where: {
+      tipo,
+      nombreNormalizado: nombreNorm,
+    },
+  });
+
+  if (existente) {
+    if (!existente.activa) {
+      return {
+        exito: false,
+        existeDesactivada: true,
+        categoriaId: existente.id,
+        nombre: existente.nombre,
+        error: `Existe una categoría «${existente.nombre}» desactivada. Puedes reactivarla en lugar de crear una nueva.`,
+      };
+    }
+    return {
+      exito: false,
+      error: `Ya existe una categoría activa llamada «${existente.nombre}» en ${tipo}s.`,
+    };
+  }
+
+  const maxOrden = await db(ctx).categoria.aggregate({
+    where: { tipo },
+    _max: { orden: true },
+  });
+  const nuevoOrden = (maxOrden._max.orden ?? 0) + 1;
+
+  const nueva = await db(ctx).categoria.create({
+    data: {
+      nombre,
+      nombreNormalizado: nombreNorm,
+      tipo,
+      exigeContraparte,
+      activa: true,
+      orden: nuevoOrden,
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: nueva.id,
+    accion: "crear",
+    despues: {
+      nombre: nueva.nombre,
+      tipo: nueva.tipo,
+      exigeContraparte: nueva.exigeContraparte,
+      orden: nueva.orden,
+    },
+  });
+
+  return { exito: true, categoria: nueva };
+}
+
+export async function crearCategoria(datos: CrearCategoriaInput) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarCrearCategoria(ctx, datos);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarRenombrarCategoria(ctx: Contexto, id: string, nuevoNombre: string, version: number) {
+  exigir(ctx, "configurar");
+
+  const nombreLimpio = nuevoNombre.trim();
+  if (nombreLimpio.length < 2 || nombreLimpio.length > 100) {
+    return { exito: false, error: "El nombre debe tener entre 2 y 100 caracteres." };
+  }
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "Alguien cambió esta categoría. Por favor recarga." };
+  }
+
+  const nombreNorm = normalizarNombre(nombreLimpio);
+
+  const choque = await db(ctx).categoria.findFirst({
+    where: {
+      tipo: catActual.tipo,
+      nombreNormalizado: nombreNorm,
+      id: { not: id },
+    },
+  });
+
+  if (choque) {
+    return {
+      exito: false,
+      error: `Ya existe otra categoría llamada «${choque.nombre}» en ${catActual.tipo}s.`,
+    };
+  }
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      nombre: nombreLimpio,
+      nombreNormalizado: nombreNorm,
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "editar",
+    antes: { nombre: catActual.nombre },
+    despues: { nombre: catActualizada.nombre },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function renombrarCategoria(id: string, nuevoNombre: string, version: number) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarRenombrarCategoria(ctx, id, nuevoNombre, version);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarCambiarTipoCategoria(ctx: Contexto, id: string, nuevoTipo: TipoCategoria, version: number) {
+  exigir(ctx, "configurar");
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.claveSistema) {
+    return { exito: false, error: "Las categorías de sistema no pueden cambiar de tipo." };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "La categoría fue modificada por otro usuario. Por favor recarga." };
+  }
+
+  const countMovimientos = await db(ctx).movimiento.count({
+    where: { categoriaId: id },
+  });
+
+  if (countMovimientos > 0) {
+    return {
+      exito: false,
+      error: "No se puede cambiar el tipo de una categoría que ya tiene movimientos registrados.",
+    };
+  }
+
+  const choque = await db(ctx).categoria.findFirst({
+    where: {
+      tipo: nuevoTipo,
+      nombreNormalizado: catActual.nombreNormalizado,
+      id: { not: id },
+    },
+  });
+
+  if (choque) {
+    return {
+      exito: false,
+      error: `Ya existe una categoría llamada «${choque.nombre}» en ${nuevoTipo}s.`,
+    };
+  }
+
+  const maxOrden = await db(ctx).categoria.aggregate({
+    where: { tipo: nuevoTipo },
+    _max: { orden: true },
+  });
+  const nuevoOrden = (maxOrden._max.orden ?? 0) + 1;
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      tipo: nuevoTipo,
+      orden: nuevoOrden,
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "editar",
+    antes: { tipo: catActual.tipo },
+    despues: { tipo: catActualizada.tipo },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function cambiarTipoCategoria(id: string, nuevoTipo: TipoCategoria, version: number) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarCambiarTipoCategoria(ctx, id, nuevoTipo, version);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarConmutarExigeContraparte(ctx: Contexto, id: string, exigeContraparte: boolean, version: number) {
+  exigir(ctx, "configurar");
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "La categoría fue modificada previamente. Por favor recarga." };
+  }
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      exigeContraparte,
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "editar",
+    antes: { exigeContraparte: catActual.exigeContraparte },
+    despues: { exigeContraparte: catActualizada.exigeContraparte },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function conmutarExigeContraparte(id: string, exigeContraparte: boolean, version: number) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarConmutarExigeContraparte(ctx, id, exigeContraparte, version);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarDesactivarCategoria(ctx: Contexto, id: string, version: number) {
+  exigir(ctx, "configurar");
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.claveSistema) {
+    return {
+      exito: false,
+      error: "Las categorías de sistema no se pueden desactivar.",
+    };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "La categoría cambió. Por favor recarga." };
+  }
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      activa: false,
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "desactivar",
+    antes: { activa: true },
+    despues: { activa: false },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function desactivarCategoria(id: string, version: number) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarDesactivarCategoria(ctx, id, version);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarReactivarCategoria(ctx: Contexto, id: string, version: number) {
+  exigir(ctx, "configurar");
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "La categoría cambió. Por favor recarga." };
+  }
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      activa: true,
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "reactivar",
+    antes: { activa: false },
+    despues: { activa: true },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function reactivarCategoria(id: string, version: number) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarReactivarCategoria(ctx, id, version);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarReordenarCategoria(ctx: Contexto, id: string, direccion: "subir" | "bajar") {
+  exigir(ctx, "configurar");
+
+  const actual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!actual) return { exito: false, error: "Categoría no encontrada." };
+
+  const todas = await db(ctx).categoria.findMany({
+    where: { tipo: actual.tipo },
+    orderBy: { orden: "asc" },
+  });
+
+  const idxActual = todas.findIndex((c) => c.id === id);
+  if (idxActual === -1) return { exito: false, error: "Categoría no encontrada." };
+
+  const idxObjetivo = direccion === "subir" ? idxActual - 1 : idxActual + 1;
+  if (idxObjetivo < 0 || idxObjetivo >= todas.length) {
+    return { exito: true };
+  }
+
+  const objetivo = todas[idxObjetivo];
+
+  await db(ctx).$transaction([
+    db(ctx).categoria.update({
+      where: { id: actual.id },
+      data: { orden: objetivo.orden },
+    }),
+    db(ctx).categoria.update({
+      where: { id: objetivo.id },
+      data: { orden: actual.orden },
+    }),
+  ]);
+
+  return { exito: true };
+}
+
+export async function reordenarCategoria(id: string, direccion: "subir" | "bajar") {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarReordenarCategoria(ctx, id, direccion);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
+export async function ejecutarObtenerCategoriasSelector(ctx: Contexto, tipo: TipoCategoria) {
+  const categorias = await db(ctx).categoria.findMany({
+    where: {
+      tipo,
+      activa: true,
+      claveSistema: { notIn: ["inscripciones", "devoluciones"] },
+    },
+    select: {
+      id: true,
+      nombre: true,
+      tipo: true,
+      exigeContraparte: true,
+      claveSistema: true,
+      orden: true,
+    },
+    orderBy: { orden: "asc" },
+  });
+
+  return categorias;
+}
+
+export async function obtenerCategoriasSelector(tipo: TipoCategoria) {
+  const ctx = await obtenerContexto();
+  return ejecutarObtenerCategoriasSelector(ctx, tipo);
+}

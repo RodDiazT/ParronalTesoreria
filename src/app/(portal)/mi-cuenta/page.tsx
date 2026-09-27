@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { obtenerDatosMiCuenta } from "@/dominio/acceso/acciones";
-import { NavegacionSimple } from "@/components/app/navegacion-simple";
+import { ConfigurarEstructura } from "@/components/app/estructura";
 import { ChipEstado } from "@/components/app/estado";
 import { formatearFecha } from "@/lib/presentacion/formato";
 import { AccionesCuenta } from "./acciones-cuenta";
@@ -28,15 +27,14 @@ export default async function MiCuentaPage() {
   const membresiaActiva = usuario.membresias[0];
 
   return (
-    <div className="min-h-screen bg-fondo text-texto">
-      <NavegacionSimple
+    <>
+      <ConfigurarEstructura
+        modo="detalle"
         titulo="Mi cuenta"
-        subtitulo={membresiaActiva?.organizacion?.nombre || "Portal de tesorería"}
         volverHref="/"
-        rol={membresiaActiva?.rol ?? undefined}
       />
 
-      <main className="mx-auto max-w-md p-4 sm:p-6 pb-24 space-y-6">
+      <div className="space-y-6">
         {/* Tarjeta de Perfil Google */}
         <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-4 shadow-xs">
           <div className="flex items-center gap-4">
@@ -69,62 +67,48 @@ export default async function MiCuentaPage() {
                         ? "falta"
                         : "fuera"
                     }
-                    texto={
-                      membresiaActiva.rol === "administrador"
-                        ? "Administrador"
-                        : membresiaActiva.rol === "ayudante"
-                        ? "Ayudante"
-                        : "Observador"
-                    }
+                    texto={`Rol: ${membresiaActiva.rol}`}
                   />
                 ) : (
-                  <ChipEstado tono="fuera" texto="Sin acceso" />
+                  <ChipEstado tono="falta" texto="Sin membresía activa" />
                 )}
               </div>
             </div>
           </div>
-
-          <div className="text-[11px] text-texto-suave pt-2 border-t border-borde">
-            El nombre y la foto provienen de tu cuenta de Google y se actualizan al iniciar sesión.
-          </div>
         </div>
 
-        {/* Estado del Aviso de Privacidad */}
+        {/* Información de Cumplimiento y Privacidad */}
         <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-3 shadow-xs">
           <h3 className="text-xs font-bold text-texto uppercase tracking-wider">
-            Aviso de Privacidad y Consentimiento
+            Privacidad y Consentimiento
           </h3>
-
-          <div className="space-y-1 text-xs">
-            <p className="text-texto-suave">
-              <span className="font-semibold text-texto">Estado: </span>
-              {usuario.avisoAceptadoEn
-                ? `Aceptado el ${formatearFecha(usuario.avisoAceptadoEn, "larga")} (Versión ${usuario.avisoVersion})`
-                : "No registrado"}
+          <div className="text-xs text-texto-suave space-y-2">
+            <p>
+              Consentimiento informado registrado bajo la Ley 19.628 y Ley 21.719.
             </p>
-            <p className="text-texto-suave">
-              Tus datos son tratados conforme a la Ley 19.628 y la Ley 21.719.
-            </p>
-          </div>
-
-          <div className="pt-1">
-            <Link
-              href="/privacidad"
-              className="text-xs font-medium text-acento underline underline-offset-4 hover:opacity-80 transition-opacity"
-            >
-              Leer aviso de privacidad completo →
-            </Link>
+            {usuario.avisoAceptadoEn ? (
+              <div className="flex items-center gap-2 pt-1 text-texto">
+                <span className="inline-block h-2 w-2 rounded-full bg-listo-texto" />
+                <span>
+                  Aceptado el {formatearFecha(usuario.avisoAceptadoEn, "larga-hora")}
+                </span>
+              </div>
+            ) : (
+              <div className="text-falta-texto font-medium">
+                Aviso pendiente de aceptación
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Acciones de Cuenta */}
-        <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-3 shadow-xs">
+        {/* Acciones de Sesión y Datos */}
+        <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-4 shadow-xs">
           <h3 className="text-xs font-bold text-texto uppercase tracking-wider">
-            Sesión y Privacidad
+            Gestión de Sesión
           </h3>
           <AccionesCuenta />
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

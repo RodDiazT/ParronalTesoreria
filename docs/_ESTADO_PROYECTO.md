@@ -16,6 +16,14 @@ Están aprobados el marco general y todos los componentes del núcleo v1.0 (Orga
   - Regla crítica del administrador mínimo activo protegida por transacción con bloqueo `SELECT FOR UPDATE` en PostgreSQL.
   - Lista de miembros `/comision` (oculta correos privados a ayudantes y observadores) y pantalla `/mi-cuenta` con cierre de sesiones en todos los dispositivos y descarga de datos personales JSON (`/api/mi-cuenta/descargar`).
   - Suite de 41 tests unitarios y de integración pasando al 100% y build de Next.js limpio.
+- **Fase 3 (UX/UI Base, Configuración y Contrapartes):** COMPLETADA.
+  - Reorganización de rutas internas bajo `src/app/(portal)/` con layout envolvente `<Estructura>`, manteniendo rutas públicas en la raíz.
+  - Sistema de diseño accesible mobile-first con Tailwind CSS v4, PWA manifest e íconos generados (192 y 512 px).
+  - Componentes estructurales y comunes: `<Encabezado>` (fixed 56px con logo dinámico o inicial neutra, título seguro de evento y drawer de navegación), `<MenuPrincipal>` (responsivo por rol), `<BotonRegistrar>` y `<HojaRegistrar>` (bottom sheet rápido con 4 accesos directos), `<Monto>`, `<Fecha>` y `<FranjaSinConexion>`.
+  - Configuración del Evento (`/configuracion/evento` con control concurrente por `version`) y de la Organización (`/configuracion/organizacion` con subida/eliminación de logo y validación de magic bytes para PNG, JPEG y WebP hasta 1 MB, no SVG).
+  - Configuración de Categorías (`/configuracion/categorias`) con pestañas Ingresos/Gastos, reordenamiento mediante botones ↑ / ↓, protección estricta de categorías de sistema (`inscripciones`, `devoluciones`, `aporte_inicial`) y selector `<SelectorCategoria>`.
+  - Gestión de Contrapartes (`/contrapartes` y `/contrapartes/[id]`): listado táctil con búsqueda y filtros, detección de nombres similares mediante algoritmo Levenshtein (`sonNombresParecidos`), ficha detallada, fusión transaccional de duplicados con reasignación de movimientos y auditoría, y supresión de datos personales por ley de privacidad. Se descarta la portabilidad CSV por directriz de simplicidad y minimalismo. Selector `<SelectorContraparte>` con autocompletado y creación en un toque.
+  - Suite completa de 64 tests unitarios y de integración pasando al 100% y linter limpio (0 errores, 0 warnings).
 
 El plan paso a paso y la estrategia completa de avance se detallan en [`docs/PLAN_IMPLEMENTACION.md`](PLAN_IMPLEMENTACION.md).
 
@@ -86,3 +94,5 @@ El plan paso a paso y la estrategia completa de avance se detallan en [`docs/PLA
 | 2026-09-27 | 1.10 | Se registra Formulario de inscripción aprobado (v1.1) y su implementación en código; marco general v1.6, Inscripción de binomios, Movimientos y Acceso y roles v1.3, Importación desde Excel y Dashboard v1.1 | Aprobación de Formulario de inscripción |
 | 2026-09-27 | 1.11 | Se registra UX/UI aprobado y su implementación en código; marco general v1.7, Dashboard v1.2, Movimientos, Acceso y roles e Inscripción de binomios v1.4, Organización y evento v1.3 | Aprobación de UX/UI |
 | 2026-09-27 | 1.12 | Ejecución de Fase 1 completada: esqueleto Next.js 15, base de datos en Railway con 24 tablas y restricciones migrada, carga inicial ejecutada con éxito (Club Parronal), Auth.js con Google, capa de permisos, contexto multi-tenant y tests unitarios | Implementación de Fase 1 y plan de ejecución |
+| 2026-09-27 | 1.13 | Ejecución de Fase 2 completada: pantallas públicas (`/ingresar`, `/privacidad`, `/bienvenida`, `/solicitud`), panel de administración `/usuarios` con bloqueo de último administrador activo, `/comision` y `/mi-cuenta` con descarga JSON y revocación inmediata de sesiones | Implementación de Fase 2 |
+| 2026-09-27 | 1.14 | Ejecución de Fase 3 completada: estructura visual responsive (`<Estructura>`, `<Encabezado>`, `<MenuPrincipal>`, `<HojaRegistrar>`), PWA manifest e íconos, pantallas `/configuracion/*` (evento, organización con logo, categorías con reordenamiento), módulo `/contrapartes` con parecidos Levenshtein, fusión y supresión de datos. Suite de 64 tests pasando al 100% | Implementación de Fase 3 |

@@ -104,36 +104,43 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 ### Fase 3: Sistema Visual, Estructura de Pantalla y Configuración
 **Documentos base:** `docs/interfaz/ux-ui.md` y `docs/organizacion/organizacion-evento.md`
 
-#### Paso 3.1: Componentes Base de Interfaz (UX/UI §5.4)
-- **Archivos:**
+- [x] **3.1 Componentes Base de Interfaz (UX/UI §5.4):**
+  - Reorganización de rutas internas en `src/app/(portal)/` con `<Estructura>` envolvente y rutas públicas directas (`/ingresar`, `/privacidad`, `/bienvenida`, `/solicitud`, `/sin-permiso`).
   - `src/components/app/estructura.tsx`: Shell con encabezado, menú (hamburguesa en móvil, lateral en escritorio), botón flotante `+` con espacio inferior de resguardo (safe area).
-  - `src/components/app/encabezado.tsx`: Título de sección o botón volver `←`, logo y nombre del evento vigente.
-  - `src/components/app/estado.tsx`: Chip con los 4 tonos normados (Verde listo, Ámbar falta, Rojo problema, Gris fuera) y palabra obligatoria.
+  - `src/components/app/encabezado.tsx`: Barra superior fixed de 56px con logo/avatar de organización, título de evento con truncado seguro, botón menú y botón volver `←`.
+  - `src/components/app/menu-principal.tsx`: Drawer móvil con animación suave y barra lateral de 256px para escritorio, filtrado por rol y permisos según `src/lib/presentacion/menu.ts`.
+  - `src/components/app/hoja-registrar.tsx`: Bottom sheet para móvil con 4 accesos directos táctiles (Ingreso, Gasto, Inscripción, Traspaso).
+  - `src/components/app/boton-registrar.tsx`: Botón flotante accesible de 56px con badge `+` que activa la hoja de registro rápido.
   - `src/components/app/monto.tsx`: Formateo CLP (`$1.250.000`), números monoespaciados (`tabular-nums`), verde ingreso, rojo gasto.
   - `src/components/app/fecha.tsx`: Formateo America/Santiago ("Hoy", "Ayer", "12 oct").
-  - `src/lib/presentacion/formato.ts` y `src/lib/presentacion/estado.ts`: Funciones puras con pruebas unitarias.
-
-#### Paso 3.2: Configuración del Evento y Organización
-- **Archivos:** `src/app/configuracion/page.tsx`, `src/app/configuracion/evento/page.tsx`, `src/app/configuracion/organizacion/page.tsx`, `src/app/api/organizacion/logo/route.ts`.
-- **Qué hace:**
-  - Editar nombre del evento, fechas (inicio, término, referencia edad), lugar. Control por `version` concurrente.
-  - Subida de logo del club (PNG, JPEG, WebP hasta 1 MB, no SVG) guardado en volumen `RUTA_RESPALDOS/organizacion/...` y servido solo con sesión activa.
-
-#### Paso 3.3: Configuración de Categorías
-- **Archivos:** `src/app/configuracion/categorias/page.tsx`, `src/dominio/organizacion/categorias.ts`.
-- **Qué hace:**
-  - Listas de ingresos y gastos. Crear, renombrar, desactivar, reactivar y reordenar.
+  - `src/components/app/franja-sin-conexion.tsx`: Alerta sutil al perder conectividad a internet en terreno.
+  - `src/components/ui/`: Componentes atómicos accesibles (`button`, `input`, `label`, `textarea`, `checkbox`, `sheet`) con Tailwind v4 tokens nativos.
+  - PWA: `src/app/manifest.ts` e íconos en `public/iconos/icono-192.png` y `icono-512.png`.
+  - `src/lib/utilidades.ts`: Implementación de distancia Levenshtein (`sonNombresParecidos`) y utilidades con tests.
+- [x] **3.2 Configuración del Evento y Organización:**
+  - `src/app/(portal)/configuracion/page.tsx`: Índice con accesos a Evento, Organización, Categorías y Pruebas/Conceptos (deshabilitado hasta Fase 6).
+  - `src/app/(portal)/configuracion/evento/page.tsx` y `formulario-evento.tsx`: Edición de nombre del evento, fechas (inicio, término, referencia edad), lugar. Control por `version` concurrente.
+  - `src/app/(portal)/configuracion/organizacion/page.tsx` y `formulario-organizacion.tsx`: Edición de nombre del club y subida/eliminación de logo.
+  - `src/app/api/organizacion/logo/route.ts`: Endpoint seguro que valida membresía y sirve el logo con caché privada.
+  - `src/dominio/organizacion/acciones.ts`: Acciones de servidor con validación de magic bytes para imágenes (PNG, JPEG, WebP hasta 1 MB, no SVG).
+- [x] **3.3 Configuración de Categorías:**
+  - `src/app/(portal)/configuracion/categorias/page.tsx` y `gestor-categorias.tsx`: Gestión interactiva de listas de ingresos y gastos.
+  - `src/dominio/organizacion/categorias.ts`: Crear, renombrar, cambiar tipo, desactivar, reactivar y reordenar (con botones ↑ / ↓ por fila).
   - Protección de categorías de sistema (`inscripciones`, `devoluciones`, `aporte_inicial` no se desactivan ni cambian de tipo).
-  - Marca `exigeContraparte`.
+  - Marca `exigeContraparte` editable para administradores.
+  - `src/components/app/selector-categoria.tsx`: Selector táctil que oculta categorías de sistema no elegibles manualmente.
+- [x] **3.4 Gestión de Contrapartes (Auspiciadores y Proveedores):**
+  - `src/app/(portal)/contrapartes/page.tsx` y `lista-contrapartes.tsx`: Listado con búsqueda por texto y filtro por tipo (auspiciador, proveedor, otro) y tarjetas de dos líneas.
+  - `src/app/(portal)/contrapartes/[id]/page.tsx` y `ficha-contraparte.tsx`: Ficha detallada con edición (solo admin), desactivación/reactivación, modal de fusión y supresión de datos. La portabilidad CSV fue descartada por decisión de diseño para mantener la máxima simplicidad.
+  - `src/dominio/organizacion/contrapartes.ts`: Creación y edición con aviso de nombres parecidos (`sonNombresParecidos`), bloqueo por RUT duplicado, fusión transaccional de duplicados con reasignación de movimientos y auditoría única, y supresión de contacto y RUT.
+  - `src/components/app/selector-contraparte.tsx`: Selector con autocompletado en cliente, aviso de parecidos y creación en un toque con preselección según tipo de movimiento.
 
-#### Paso 3.4: Gestión de Contrapartes (Auspiciadores y Proveedores)
-- **Archivos:** `src/app/contrapartes/page.tsx`, `src/app/contrapartes/[id]/page.tsx`, `src/dominio/organizacion/contrapartes.ts`.
-- **Qué hace:**
-  - Listado con búsqueda por texto y filtro por tipo. Ficha con movimientos asociados.
-  - Creación y edición con aviso de nombres parecidos (`normalizarNombre`) y bloqueo por RUT duplicado.
-  - Fusión de duplicados con reasignación de movimientos y auditoría única.
-  - Supresión de contacto y RUT para observancia de derechos de privacidad.
-  - Componente `<SelectorContraparte>` para integración con formularios.
+**Criterios de verificación de Fase 3:**
+- [x] Estructura visual responsive con Tailwind v4 y React 19 funcionando sin conflictos de hidratación.
+- [x] Rutas autenticadas agrupadas limpiamente en `src/app/(portal)/` sin alterar las URLs existentes.
+- [x] Pruebas unitarias de algoritmos: 13 pruebas para Levenshtein y normalización de nombres, 3 pruebas para menú dinámico por rol.
+- [x] Pruebas de integración para acciones de Evento, Organización, Categorías y Contrapartes pasando con PostgreSQL en Railway.
+- [x] 64 tests pasando al 100% (8 suites) y 0 errores/warnings de linter.
 
 ---
 
