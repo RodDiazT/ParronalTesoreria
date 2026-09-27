@@ -38,26 +38,35 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
 
 ## Tareas pendientes del responsable
 
+Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proyecto avance: cuentas, credenciales, datos de carga) y **Club** (lo que Rod debe conversar con el club para cerrar definiciones y configuraciones).
+
+### Desarrollo
+
+| Id | Tarea | Origen | Estado |
+|---|---|---|---|
+| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Pendiente |
+| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Pendiente |
+| t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
+| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Pendiente |
+
+### Club
+
 | Id | Tarea | Origen | Estado |
 |---|---|---|---|
 | t-001 | Confirmar si el club emite boletas o facturas (en especial a auspiciadores) | Marco general | Pendiente |
 | t-002 | Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, descuentos, alojamiento y pensión | Inscripción de binomios | Pendiente |
-| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Pendiente |
-| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Pendiente |
 | t-005 | Averiguar el banco de la cuenta que recibe las transferencias y el formato de su cartola | Conciliación con cartola | Pendiente |
 | t-006 | Confirmar si habrá wifi en el club el día del evento | Registro sin señal | Pendiente |
-| t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
 | t-008 | Validar con el club el plazo de rendición de 30 días (hasta el 2026-12-21) | Cierre y rendición | Pendiente |
 | t-009 | Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión | Organización y evento | Pendiente |
 | t-010 | Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB) | Organización y evento | Pendiente |
-| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Pendiente |
 
 ## Datos estructurados
 
 <!-- CHECKLIST:INICIO -->
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "proyecto": {
     "nombre": "Tesorería Parronal",
     "repositorio": "github",
@@ -307,6 +316,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-001",
       "descripcion": "Confirmar si el club emite boletas o facturas (en especial a auspiciadores)",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "marco-general",
       "estado": "pendiente",
@@ -316,6 +326,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-002",
       "descripcion": "Definir pruebas, categorías (incluidas las por edad y la fecha de corte), tarifas, descuentos, alojamiento y pensión",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "inscripcion-binomios",
       "estado": "pendiente",
@@ -325,6 +336,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-003",
       "descripcion": "Crear el proyecto en la cuenta Railway existente (Postgres + volumen)",
+      "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "marco-general",
       "estado": "pendiente",
@@ -334,6 +346,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-004",
       "descripcion": "Crear proyecto en Google Cloud y credenciales OAuth para el login con Google",
+      "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "acceso-roles",
       "estado": "pendiente",
@@ -343,6 +356,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-005",
       "descripcion": "Averiguar el banco de la cuenta que recibe las transferencias y el formato de su cartola",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "conciliacion-cartola",
       "estado": "pendiente",
@@ -352,6 +366,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-006",
       "descripcion": "Confirmar si habrá wifi en el club el día del evento",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "registro-sin-senal",
       "estado": "pendiente",
@@ -361,6 +376,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-007",
       "descripcion": "Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen",
+      "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "marco-general",
       "estado": "pendiente",
@@ -370,6 +386,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-008",
       "descripcion": "Validar con el club el plazo de rendición de 30 días (hasta el 2026-12-21)",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "exportacion-rendicion",
       "estado": "pendiente",
@@ -379,6 +396,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-009",
       "descripcion": "Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "organizacion-evento",
       "estado": "pendiente",
@@ -388,6 +406,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-010",
       "descripcion": "Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB)",
+      "categoria": "club",
       "responsable": "Rod",
       "origen": "organizacion-evento",
       "estado": "pendiente",
@@ -397,6 +416,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
     {
       "id": "t-011",
       "descripcion": "Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores",
+      "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "organizacion-evento",
       "estado": "pendiente",
@@ -416,3 +436,4 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
 | 2026-09-27 | 1.1 | Marco general aprobado (v1.0). Se agregan Participantes, Importación desde Excel, Formulario de inscripción, Registro sin señal y Conciliación con cartola; "Exportación para rendición" pasa a "Cierre y rendición"; se agrega la columna Fase; tareas t-005 a t-008 y se precisan t-002 y t-003 | Aprobación del marco general |
 | 2026-09-27 | 1.2 | Organización y evento pasa a revisión (v0.1); se crea la carpeta `organizacion/`; tareas t-009 a t-011 | Borrador de Organización y evento |
 | 2026-09-27 | 1.3 | Organización y evento aprobado (v1.0); marco general a v1.1 (§10.2 remite la lista de categorías a Organización y evento) | Aprobación de Organización y evento |
+| 2026-09-27 | 1.4 | Esquema 1.1: las tareas agregan el campo `categoria` (`desarrollo` o `club`); la tabla de tareas se separa por categoría | Pedido de Rod para distinguir lo que configura él de lo que debe definir con el club |
