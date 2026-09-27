@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: En revisión · Versión 0.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: En revisión · Versión 0.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -97,7 +97,7 @@ Reglas de rol:
 | Control de cobranza | Inscripciones con estado de pago conocido el día del evento | 100 % |
 | Visibilidad en tiempo real | Tiempo para registrar un gasto con foto desde el celular | < 1 minuto |
 | Cuadratura | Diferencia entre el saldo del portal y el saldo real (banco + efectivo) al cierre | $0 |
-| Rendición al club | Informe de rendición entregado tras el evento | ≤ 15 días después del 2026-11-21 (propuesta, a confirmar con el club) |
+| Rendición al club | Informe de rendición entregado tras el evento | ≤ 30 días después del 2026-11-21 (a más tardar el 2026-12-21) |
 | Costo mínimo | Costo incremental de infraestructura | $0 adicional (cuenta Railway existente de Rod, costo hundido); IA de conciliación < USD 5 en todo el evento |
 | Cuadratura | Líneas de la cartola conciliadas o explicadas al cierre (v1.1) | 100 % |
 
@@ -515,3 +515,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Inicio del proyecto |
 | 2026-09-27 | 0.2 | Jinete, caballo, apoderado y club como entidades separadas; binomio como par jinete + caballo; fecha de nacimiento y apoderado obligatorio para menores; importación desde Excel (v1.0); formulario de inscripción y conciliación con cartola asistida por IA (v1.1); pagos en línea fuera de alcance; se explicita que el administrador también registra | Revisión de Rod |
+| 2026-09-27 | 0.3 | Plazo de rendición al club: 30 días después del evento | Decisión de Rod |
