@@ -408,20 +408,20 @@ Logo: validar tipo por contenido (bytes iniciales), no por extensión; guardar e
 
 ## 7. Plan de acción
 
-| # | Paso | Depende de |
-|---|---|---|
-| 1 | Modelos `Organizacion`, `Evento`, `Categoria`, `Contraparte` en `schema.prisma`, migración con el índice único parcial | Esqueleto técnico (marco §12, paso 3) |
-| 2 | `normalizarNombre`, `validarRut`, `fechaReferenciaEdadEfectiva` con pruebas | 1 |
-| 3 | `obtenerContexto`, `exigirRol`, `db(ctx)`, `ocultarDatosPersonales`, regla de ESLint y prueba de aislamiento | 1 |
-| 4 | Script de carga inicial y archivo de ejemplo; ejecutarlo en Railway con los datos de Rod | 1, 2, Acceso y roles (vinculación del primer login) |
-| 5 | Encabezado con organización y evento vigente | 3 |
-| 6 | `/configuracion/categorias` y `<SelectorCategoria>` | 3 |
-| 7 | `/contrapartes`, ficha, `<SelectorContraparte>` con creación en línea y aviso de duplicado | 2, 3 |
-| 8 | Edición, desactivación y fusión de contrapartes | 7 |
-| 9 | `/configuracion/evento` (vista previa de edades se conecta al implementar Participantes) | 3 |
-| 10 | Supresión de datos de contrapartes | 7 |
-| 11 | `/configuracion/organizacion` con logo | 3 |
-| 12 | Descarga CSV de la ficha de contraparte | 7 |
+| # | Paso | Depende de | Estado |
+|---|---|---|---|
+| 1 | Modelos `Organizacion`, `Evento`, `Categoria`, `Contraparte` en `schema.prisma`, migración con el índice único parcial | Esqueleto técnico (marco §12, paso 3) | Completado (2026-09-27) |
+| 2 | `normalizarNombre`, `validarRut`, `fechaReferenciaEdadEfectiva` con pruebas | 1 | Completado (2026-09-27) |
+| 3 | `obtenerContexto`, `exigirRol`, `db(ctx)`, `ocultarDatosPersonales`, regla de ESLint y prueba de aislamiento | 1 | Completado (2026-09-27) |
+| 4 | Script de carga inicial y archivo de ejemplo; ejecutarlo en Railway con los datos de Rod | 1, 2, Acceso y roles (vinculación del primer login) | Completado (2026-09-27) |
+| 5 | Encabezado con organización y evento vigente | 3 | Pendiente (Fase 3) |
+| 6 | `/configuracion/categorias` y `<SelectorCategoria>` | 3 | Pendiente (Fase 3) |
+| 7 | `/contrapartes`, ficha, `<SelectorContraparte>` con creación en línea y aviso de duplicado | 2, 3 | Pendiente (Fase 3) |
+| 8 | Edición, desactivación y fusión de contrapartes | 7 | Pendiente (Fase 3) |
+| 9 | `/configuracion/evento` (vista previa de edades se conecta al implementar Participantes) | 3 | Pendiente (Fase 3) |
+| 10 | Supresión de datos de contrapartes | 7 | Pendiente (Fase 3) |
+| 11 | `/configuracion/organizacion` con logo | 3 | Pendiente (Fase 3) |
+| 12 | Descarga CSV de la ficha de contraparte | 7 | Pendiente (Fase 3) |
 
 Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasan a v1.1 sin afectar a otros componentes. Los pasos 1 a 8 son imprescindibles para Movimientos.
 

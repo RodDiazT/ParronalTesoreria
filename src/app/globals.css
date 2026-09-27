@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-borde: var(--borde);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-acento: var(--acento);
+  --color-sobre-acento: var(--sobre-acento);
+  --color-ingreso: var(--ingreso);
+  --color-gasto: var(--gasto);
+  --color-listo-fondo: var(--listo-fondo);
+  --color-listo-texto: var(--listo-texto);
+  --color-falta-fondo: var(--falta-fondo);
+  --color-falta-texto: var(--falta-texto);
+  --color-problema-fondo: var(--problema-fondo);
+  --color-problema-texto: var(--problema-texto);
+  --color-fuera-fondo: var(--fuera-fondo);
+  --color-fuera-texto: var(--fuera-texto);
+}
+
+:root {
+  --fondo: #FFFFFF;
+  --superficie: #F5F5F4;
+  --borde: #E7E5E4;
+  --texto: #1C1917;
+  --texto-suave: #57534E;
+  --acento: #1F4D3A;
+  --sobre-acento: #FFFFFF;
+  --ingreso: #15803D;
+  --gasto: #B91C1C;
+  --listo-fondo: #DCFCE7;
+  --listo-texto: #14532D;
+  --falta-fondo: #FEF3C7;
+  --falta-texto: #78350F;
+  --problema-fondo: #FEE2E2;
+  --problema-texto: #7F1D1D;
+  --fuera-fondo: #E7E5E4;
+  --fuera-texto: #44403C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #0C0A09;
+    --superficie: #1C1917;
+    --borde: #292524;
+    --texto: #F5F5F4;
+    --texto-suave: #A8A29E;
+    --acento: #2F6B52;
+    --sobre-acento: #FFFFFF;
+    --ingreso: #4ADE80;
+    --gasto: #F87171;
+    --listo-fondo: #14532D;
+    --listo-texto: #DCFCE7;
+    --falta-fondo: #78350F;
+    --falta-texto: #FEF3C7;
+    --problema-fondo: #7F1D1D;
+    --problema-texto: #FEE2E2;
+    --fuera-fondo: #44403C;
+    --fuera-texto: #E7E5E4;
+  }
+}
+
+body {
+  background-color: var(--fondo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}

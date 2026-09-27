@@ -8,6 +8,7 @@
 docs/
 ├── _INDICE_MAESTRO.md
 ├── _ESTADO_PROYECTO.md
+├── PLAN_IMPLEMENTACION.md
 ├── marco-general/
 │   └── marco-general-proyecto.md
 ├── acceso/
@@ -59,10 +60,10 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 
 | Id | Tarea | Origen | Estado |
 |---|---|---|---|
-| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Pendiente |
-| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Pendiente |
+| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Completada (2026-09-27) |
+| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Completada (2026-09-27) |
 | t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
-| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Pendiente |
+| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Completada (2026-09-27) |
 | t-015 | Activar la facturación de la API de Gemini en el proyecto de Google Cloud, crear la clave, configurar una alerta de presupuesto de USD 5 y entregar la clave a Claude Code fuera del repositorio | Importación desde Excel | Pendiente |
 
 ### Club
@@ -386,9 +387,9 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "marco-general",
-      "estado": "pendiente",
+      "estado": "completada",
       "creada": "2026-09-27",
-      "cerrada": null
+      "cerrada": "2026-09-27"
     },
     {
       "id": "t-004",
@@ -396,9 +397,9 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "acceso-roles",
-      "estado": "pendiente",
+      "estado": "completada",
       "creada": "2026-09-27",
-      "cerrada": null
+      "cerrada": "2026-09-27"
     },
     {
       "id": "t-005",
@@ -466,9 +467,9 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "organizacion-evento",
-      "estado": "pendiente",
+      "estado": "completada",
       "creada": "2026-09-27",
-      "cerrada": null
+      "cerrada": "2026-09-27"
     },
     {
       "id": "t-012",

@@ -1,0 +1,15 @@
+{
+  "organizacion": {
+    "nombre": "Club Ejemplo"
+  },
+  "evento": {
+    "nombre": "Concurso de Ejemplo",
+    "fechaInicio": "2026-11-21",
+    "fechaTermino": "2026-11-21",
+    "lugar": "Ciudad"
+  },
+  "administradores": [
+    "admin1@example.com",
+    "admin2@example.com"
+  ]
+}

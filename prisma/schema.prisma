@@ -1,0 +1,844 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// Enums
+// -------------------------------------------------------------
+
+enum EstadoEvento {
+  abierto
+  cerrado
+  rendido
+}
+
+enum TipoCategoria {
+  ingreso
+  gasto
+}
+
+enum EstadoMembresia {
+  solicitada
+  activa
+  revocada
+}
+
+enum Rol {
+  administrador
+  ayudante
+  observador
+}
+
+enum TipoMovimiento {
+  ingreso
+  gasto
+}
+
+enum NaturalezaMovimiento {
+  dinero
+  especie
+}
+
+enum MedioPago {
+  transferencia
+  efectivo
+  otro
+}
+
+enum EstadoPago {
+  pagado
+  pendiente
+}
+
+enum EstadoValidacion {
+  por_validar
+  validado
+  observado
+}
+
+enum RelacionApoderado {
+  madre
+  padre
+  tutor_legal
+  otro_familiar
+  otro
+}
+
+enum AplicaConcepto {
+  binomio
+  participante
+}
+
+// -------------------------------------------------------------
+// Modelos: Organización, Evento, Configuración
+// -------------------------------------------------------------
+
+model Organizacion {
+  id                String   @id @default(cuid())
+  nombre            String
+  nombreNormalizado String   @unique @map("nombre_normalizado")
+  logoRuta          String?  @map("logo_ruta")
+  logoTipoMime      String?  @map("logo_tipo_mime")
+  version           Int      @default(1)
+  creadoEn          DateTime @default(now()) @map("creado_en")
+  actualizadoEn     DateTime @updatedAt @map("actualizado_en")
+
+  eventos           Evento[]
+  membresias        Membresia[]
+  categorias        Categoria[]
+  contrapartes      Contraparte[]
+  movimientos       Movimiento[]
+  respaldos         Respaldo[]
+  clubes            Club[]
+  jinetes           Jinete[]
+  apoderados        Apoderado[]
+  jineteApoderados  JineteApoderado[]
+  caballos          Caballo[]
+  pruebas           Prueba[]
+  conceptos         Concepto[]
+  binomios          Binomio[]
+  inscripciones     Inscripcion[]
+  cargos            Cargo[]
+  pagos             Pago[]
+  devoluciones      Devolucion[]
+  traspasos         Traspaso[]
+  auditorias        RegistroAuditoria[]
+
+  @@map("organizacion")
+}
+
+model Evento {
+  id                  String       @id @default(cuid())
+  organizacionId      String       @map("organizacion_id")
+  nombre              String
+  fechaInicio         DateTime     @db.Date @map("fecha_inicio")
+  fechaTermino        DateTime     @db.Date @map("fecha_termino")
+  fechaReferenciaEdad DateTime?    @db.Date @map("fecha_referencia_edad")
+  lugar               String?
+  estado              EstadoEvento @default(abierto)
+  cerradoEn           DateTime?    @map("cerrado_en")
+  rendidoEn           DateTime?    @map("rendido_en")
+  version             Int          @default(1)
+  creadoEn            DateTime     @default(now()) @map("creado_en")
+  actualizadoEn       DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion        Organizacion @relation(fields: [organizacionId], references: [id])
+  movimientos         Movimiento[]
+  pruebas             Prueba[]
+  conceptos           Concepto[]
+  binomios            Binomio[]
+  inscripciones       Inscripcion[]
+  cargos              Cargo[]
+  traspasos           Traspaso[]
+
+  @@index([organizacionId])
+  @@map("evento")
+}
+
+model Categoria {
+  id                   String        @id @default(cuid())
+  organizacionId       String        @map("organizacion_id")
+  nombre               String
+  nombreNormalizado    String        @map("nombre_normalizado")
+  tipo                 TipoCategoria
+  claveSistema         String?       @map("clave_sistema")
+  exigeContraparte     Boolean       @default(false) @map("exige_contraparte")
+  activa               Boolean       @default(true)
+  orden                Int
+  version              Int           @default(1)
+  creadoEn             DateTime      @default(now()) @map("creado_en")
+  actualizadoEn        DateTime      @updatedAt @map("actualizado_en")
+
+  organizacion         Organizacion  @relation(fields: [organizacionId], references: [id])
+  movimientos          Movimiento[]
+  conceptosReferencia  Concepto[]    @relation("CategoriaReferencia")
+
+  @@unique([organizacionId, tipo, nombreNormalizado])
+  @@unique([organizacionId, claveSistema])
+  @@map("categoria")
+}
+
+model Contraparte {
+  id                     String        @id @default(cuid())
+  organizacionId         String        @map("organizacion_id")
+  nombre                 String
+  nombreNormalizado      String        @map("nombre_normalizado")
+  esAuspiciador          Boolean       @default(false) @map("es_auspiciador")
+  esProveedor            Boolean       @default(false) @map("es_proveedor")
+  contacto               String?
+  rut                    String?
+  activa                 Boolean       @default(true)
+  fusionadaEnId          String?       @map("fusionada_en_id")
+  creadoPorId            String        @map("creado_por_id")
+  version                Int           @default(1)
+  creadoEn               DateTime      @default(now()) @map("creado_en")
+  actualizadoEn          DateTime      @updatedAt @map("actualizado_en")
+
+  organizacion           Organizacion  @relation(fields: [organizacionId], references: [id])
+  fusionadaEn            Contraparte?  @relation("ContraparteFusion", fields: [fusionadaEnId], references: [id])
+  contrapartesFusionadas Contraparte[] @relation("ContraparteFusion")
+  creadoPor              Usuario       @relation("ContraparteCreadoPor", fields: [creadoPorId], references: [id])
+  movimientos            Movimiento[]
+
+  @@index([organizacionId, nombreNormalizado])
+  @@index([organizacionId, rut])
+  @@map("contraparte")
+}
+
+// -------------------------------------------------------------
+// Modelos: Autenticación, Usuarios y Membresías
+// -------------------------------------------------------------
+
+model Usuario {
+  id                          String             @id @default(cuid())
+  correo                      String             @unique
+  nombre                      String?
+  imagen                      String?
+  correoVerificadoEn          DateTime?          @map("correo_verificado_en")
+  avisoVersion                Int?               @map("aviso_version")
+  avisoAceptadoEn             DateTime?          @map("aviso_aceptado_en")
+  ultimoIngresoEn             DateTime?          @map("ultimo_ingreso_en")
+  suprimidoEn                 DateTime?          @map("suprimido_en")
+  creadoEn                    DateTime           @default(now()) @map("creado_en")
+  actualizadoEn               DateTime           @updatedAt @map("actualizado_en")
+
+  membresias                  Membresia[]
+  cuentas                     Account[]
+  sesiones                    Session[]
+
+  membresiasInvitadas         Membresia[]        @relation("MembresiaInvitadaPor")
+  membresiasAprobadas         Membresia[]        @relation("MembresiaAprobadaPor")
+  membresiasRevocadas         Membresia[]        @relation("MembresiaRevocadaPor")
+
+  contrapartesCreadas         Contraparte[]      @relation("ContraparteCreadoPor")
+  clubesCreados               Club[]             @relation("ClubCreadoPor")
+  jinetesCreados              Jinete[]           @relation("JineteCreadoPor")
+  apoderadosCreados           Apoderado[]        @relation("ApoderadoCreadoPor")
+  jineteApoderadosCreados     JineteApoderado[]  @relation("JineteApoderadoCreadoPor")
+  caballosCreados             Caballo[]          @relation("CaballoCreadoPor")
+  pruebasCreadas              Prueba[]           @relation("PruebaCreadoPor")
+  conceptosCreados            Concepto[]         @relation("ConceptoCreadoPor")
+  binomiosCreados             Binomio[]          @relation("BinomioCreadoPor")
+  pagosCreados                Pago[]             @relation("PagoCreadoPor")
+  devolucionesCreadas         Devolucion[]       @relation("DevolucionCreadoPor")
+
+  gastosPagados               Movimiento[]       @relation("MovimientoPagadoPor")
+  movimientosRegistrados      Movimiento[]       @relation("MovimientoRegistradoPor")
+  movimientosEnviadosAValidar Movimiento[]       @relation("MovimientoEnviadoAValidarPor")
+  movimientosValidados        Movimiento[]       @relation("MovimientoValidadoPor")
+  movimientosAnulados         Movimiento[]       @relation("MovimientoAnuladoPor")
+
+  respaldosSubidos            Respaldo[]         @relation("RespaldoSubidoPor")
+  respaldosVistos             Respaldo[]         @relation("RespaldoVistoPor")
+  respaldosAnulados           Respaldo[]         @relation("RespaldoAnuladoPor")
+
+  traspasosRegistrados        Traspaso[]         @relation("TraspasoRegistradoPor")
+  traspasosAnulados           Traspaso[]         @relation("TraspasoAnuladoPor")
+
+  jinetesAutorizados          Jinete[]           @relation("JineteAutorizacionRegistradaPor")
+  binomiosAnulados            Binomio[]          @relation("BinomioAnuladoPor")
+  inscripcionesRegistradas    Inscripcion[]      @relation("InscripcionRegistradoPor")
+  inscripcionesAnuladas       Inscripcion[]      @relation("InscripcionAnuladoPor")
+  inscripcionesAvisosVistos   Inscripcion[]      @relation("InscripcionAvisoVistoPor")
+  cargosRegistrados           Cargo[]            @relation("CargoRegistradoPor")
+  cargosAnulados              Cargo[]            @relation("CargoAnuladoPor")
+  cargosAvisosVistos          Cargo[]            @relation("CargoAvisoVistoPor")
+  pagosAnulados               Pago[]             @relation("PagoAnuladoPor")
+  devolucionesAnuladas        Devolucion[]       @relation("DevolucionAnuladoPor")
+
+  auditorias                  RegistroAuditoria[]
+
+  @@map("usuario")
+}
+
+model Membresia {
+  id               String          @id @default(cuid())
+  organizacionId   String          @map("organizacion_id")
+  usuarioId        String          @map("usuario_id")
+  rol              Rol?
+  estado           EstadoMembresia
+  mensajeSolicitud String?         @map("mensaje_solicitud")
+  solicitadaEn     DateTime?       @map("solicitada_en")
+  invitadaPorId    String?         @map("invitada_por_id")
+  aprobadaEn       DateTime?       @map("aprobada_en")
+  aprobadaPorId    String?         @map("aprobada_por_id")
+  revocadaEn       DateTime?       @map("revocada_en")
+  revocadaPorId    String?         @map("revocada_por_id")
+  motivoRevocacion String?         @map("motivo_revocacion")
+  version          Int             @default(1)
+  creadoEn         DateTime        @default(now()) @map("creado_en")
+  actualizadoEn    DateTime        @updatedAt @map("actualizado_en")
+
+  organizacion     Organizacion    @relation(fields: [organizacionId], references: [id])
+  usuario          Usuario         @relation(fields: [usuarioId], references: [id])
+  invitadaPor      Usuario?        @relation("MembresiaInvitadaPor", fields: [invitadaPorId], references: [id])
+  aprobadaPor      Usuario?        @relation("MembresiaAprobadaPor", fields: [aprobadaPorId], references: [id])
+  revocadaPor      Usuario?        @relation("MembresiaRevocadaPor", fields: [revocadaPorId], references: [id])
+
+  @@unique([organizacionId, usuarioId])
+  @@index([organizacionId, estado])
+  @@map("membresia")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  usuarioId         String  @map("usuario_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+
+  usuario           Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  usuarioId    String   @map("usuario_id")
+  expires      DateTime
+
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+// -------------------------------------------------------------
+// Modelos: Movimientos y Respaldos
+// -------------------------------------------------------------
+
+model Movimiento {
+  id                    String               @id @default(cuid())
+  organizacionId        String               @map("organizacion_id")
+  eventoId              String               @map("evento_id")
+  tipo                  TipoMovimiento
+  naturaleza            NaturalezaMovimiento @default(dinero)
+  montoClp              Int                  @map("monto_clp")
+  montoOriginalClp      Int                  @map("monto_original_clp")
+  fecha                 DateTime             @db.Date
+  fechaPago             DateTime?            @db.Date @map("fecha_pago")
+  medioPago             MedioPago?           @map("medio_pago")
+  estadoPago            EstadoPago           @map("estado_pago")
+  categoriaId           String?              @map("categoria_id")
+  sinIdentificar        Boolean              @default(false) @map("sin_identificar")
+  contraparteId         String?              @map("contraparte_id")
+  pagadoPorId           String?              @map("pagado_por_id")
+  nombreOrigen          String?              @map("nombre_origen")
+  descripcion           String?
+  observacion           String?
+  sinRespaldo           Boolean              @default(false) @map("sin_respaldo")
+  estadoValidacion      EstadoValidacion     @map("estado_validacion")
+  enviadoAValidarPorId  String?              @map("enviado_a_validar_por_id")
+  validadoPorId         String?              @map("validado_por_id")
+  validadoEn            DateTime?            @map("validado_en")
+  comentarioObservacion String?              @map("comentario_observacion")
+  abonoDeId             String?              @map("abono_de_id")
+  anulado               Boolean              @default(false)
+  motivoAnulacion       String?              @map("motivo_anulacion")
+  anuladoPorId          String?              @map("anulado_por_id")
+  anuladoEn             DateTime?            @map("anulado_en")
+  posteriorAlCierre     Boolean              @default(false) @map("posterior_al_cierre")
+  conciliado            Boolean              @default(false)
+  claveCliente          String               @map("clave_cliente")
+  registradoPorId       String               @map("registrado_por_id")
+  version               Int                  @default(1)
+  creadoEn              DateTime             @default(now()) @map("creado_en")
+  actualizadoEn         DateTime             @updatedAt @map("actualizado_en")
+
+  organizacion          Organizacion         @relation(fields: [organizacionId], references: [id])
+  evento                Evento               @relation(fields: [eventoId], references: [id])
+  categoria             Categoria?           @relation(fields: [categoriaId], references: [id])
+  contraparte           Contraparte?         @relation(fields: [contraparteId], references: [id])
+  pagadoPor             Usuario?             @relation("MovimientoPagadoPor", fields: [pagadoPorId], references: [id])
+  enviadoAValidarPor    Usuario?             @relation("MovimientoEnviadoAValidarPor", fields: [enviadoAValidarPorId], references: [id])
+  validadoPor           Usuario?             @relation("MovimientoValidadoPor", fields: [validadoPorId], references: [id])
+  anuladoPor            Usuario?             @relation("MovimientoAnuladoPor", fields: [anuladoPorId], references: [id])
+  registradoPor         Usuario              @relation("MovimientoRegistradoPor", fields: [registradoPorId], references: [id])
+
+  abonoDe               Movimiento?          @relation("AbonosMovimiento", fields: [abonoDeId], references: [id])
+  abonos                Movimiento[]         @relation("AbonosMovimiento")
+
+  respaldos             Respaldo[]
+  pagos                 Pago[]
+  devolucionesRealizadas Devolucion[]        @relation("MovimientoGastoDevolucion")
+  devolucionesSobrante  Devolucion[]         @relation("MovimientoIngresoSobrante")
+
+  @@unique([organizacionId, claveCliente])
+  @@index([organizacionId, eventoId, estadoValidacion])
+  @@index([organizacionId, eventoId, tipo, estadoPago])
+  @@index([organizacionId, eventoId, fecha])
+  @@index([abonoDeId])
+  @@map("movimiento")
+}
+
+model Respaldo {
+  id                String       @id @default(cuid())
+  organizacionId    String       @map("organizacion_id")
+  movimientoId      String       @map("movimiento_id")
+  ruta              String
+  tipoMime          String       @map("tipo_mime")
+  bytes             Int
+  esComprobantePago Boolean      @default(false) @map("es_comprobante_pago")
+  subidoPorId       String       @map("subido_por_id")
+  esNuevo           Boolean      @default(false) @map("es_nuevo")
+  vistoPorId        String?      @map("visto_por_id")
+  vistoEn           DateTime?    @map("visto_en")
+  anulado           Boolean      @default(false)
+  motivoAnulacion   String?      @map("motivo_anulacion")
+  anuladoPorId      String?      @map("anulado_por_id")
+  anuladoEn         DateTime?    @map("anulado_en")
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+
+  organizacion      Organizacion @relation(fields: [organizacionId], references: [id])
+  movimiento        Movimiento   @relation(fields: [movimientoId], references: [id])
+  subidoPor         Usuario      @relation("RespaldoSubidoPor", fields: [subidoPorId], references: [id])
+  vistoPor          Usuario?     @relation("RespaldoVistoPor", fields: [vistoPorId], references: [id])
+  anuladoPor        Usuario?     @relation("RespaldoAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  @@index([organizacionId, movimientoId])
+  @@map("respaldo")
+}
+
+// -------------------------------------------------------------
+// Modelos: Participantes (Club, Jinete, Apoderado, Caballo)
+// -------------------------------------------------------------
+
+model Club {
+  id                String       @id @default(cuid())
+  organizacionId    String       @map("organizacion_id")
+  nombre            String
+  nombreNormalizado String       @map("nombre_normalizado")
+  contacto          String?
+  rut               String?
+  activo            Boolean      @default(true)
+  fusionadoEnId     String?      @map("fusionado_en_id")
+  creadoPorId       String       @map("creado_por_id")
+  version           Int          @default(1)
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+  actualizadoEn     DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion      Organizacion @relation(fields: [organizacionId], references: [id])
+  creadoPor         Usuario      @relation("ClubCreadoPor", fields: [creadoPorId], references: [id])
+  fusionadoEn       Club?        @relation("ClubFusion", fields: [fusionadoEnId], references: [id])
+  clubesFusionados  Club[]       @relation("ClubFusion")
+
+  jinetes           Jinete[]
+  caballos          Caballo[]
+  binomios          Binomio[]
+  cargos            Cargo[]
+
+  @@index([organizacionId, nombreNormalizado])
+  @@index([organizacionId, rut])
+  @@map("club")
+}
+
+model Jinete {
+  id                          String            @id @default(cuid())
+  organizacionId              String            @map("organizacion_id")
+  nombre                      String
+  nombreNormalizado           String            @map("nombre_normalizado")
+  fechaNacimiento             DateTime?         @db.Date @map("fecha_nacimiento")
+  contacto                    String?
+  rut                         String?
+  clubId                      String            @map("club_id")
+  autorizacionApoderadoFecha  DateTime?         @db.Date @map("autorizacion_apoderado_fecha")
+  autorizacionRegistradaPorId String?           @map("autorizacion_registrada_por_id")
+  autorizacionRegistradaEn    DateTime?         @map("autorizacion_registrada_en")
+  activo                      Boolean           @default(true)
+  fusionadoEnId               String?           @map("fusionado_en_id")
+  creadoPorId                 String            @map("creado_por_id")
+  version                     Int               @default(1)
+  creadoEn                    DateTime          @default(now()) @map("creado_en")
+  actualizadoEn               DateTime          @updatedAt @map("actualizado_en")
+
+  organizacion                Organizacion      @relation(fields: [organizacionId], references: [id])
+  club                        Club              @relation(fields: [clubId], references: [id])
+  creadoPor                   Usuario           @relation("JineteCreadoPor", fields: [creadoPorId], references: [id])
+  autorizacionRegistradaPor   Usuario?          @relation("JineteAutorizacionRegistradaPor", fields: [autorizacionRegistradaPorId], references: [id])
+  fusionadoEn                 Jinete?           @relation("JineteFusion", fields: [fusionadoEnId], references: [id])
+  jinetesFusionados           Jinete[]          @relation("JineteFusion")
+
+  apoderados                  JineteApoderado[]
+  binomios                    Binomio[]
+  cargos                      Cargo[]
+
+  @@index([organizacionId, nombreNormalizado])
+  @@index([organizacionId, rut])
+  @@index([organizacionId, clubId])
+  @@map("jinete")
+}
+
+model Apoderado {
+  id                  String            @id @default(cuid())
+  organizacionId      String            @map("organizacion_id")
+  nombre              String
+  nombreNormalizado   String            @map("nombre_normalizado")
+  telefono            String?
+  telefonoNormalizado String?           @map("telefono_normalizado")
+  activo              Boolean           @default(true)
+  fusionadoEnId       String?           @map("fusionado_en_id")
+  creadoPorId         String            @map("creado_por_id")
+  version             Int               @default(1)
+  creadoEn            DateTime          @default(now()) @map("creado_en")
+  actualizadoEn       DateTime          @updatedAt @map("actualizado_en")
+
+  organizacion        Organizacion      @relation(fields: [organizacionId], references: [id])
+  creadoPor           Usuario           @relation("ApoderadoCreadoPor", fields: [creadoPorId], references: [id])
+  fusionadoEn         Apoderado?        @relation("ApoderadoFusion", fields: [fusionadoEnId], references: [id])
+  apoderadosFusionados Apoderado[]      @relation("ApoderadoFusion")
+
+  jinetes             JineteApoderado[]
+
+  @@index([organizacionId, nombreNormalizado])
+  @@index([organizacionId, telefonoNormalizado])
+  @@map("apoderado")
+}
+
+model JineteApoderado {
+  id             String            @id @default(cuid())
+  organizacionId String            @map("organizacion_id")
+  jineteId       String            @map("jinete_id")
+  apoderadoId    String            @map("apoderado_id")
+  relacion       RelacionApoderado
+  activo         Boolean           @default(true)
+  creadoPorId    String            @map("creado_por_id")
+  creadoEn       DateTime          @default(now()) @map("creado_en")
+
+  organizacion   Organizacion      @relation(fields: [organizacionId], references: [id])
+  jinete         Jinete            @relation(fields: [jineteId], references: [id])
+  apoderado      Apoderado         @relation(fields: [apoderadoId], references: [id])
+  creadoPor      Usuario           @relation("JineteApoderadoCreadoPor", fields: [creadoPorId], references: [id])
+
+  @@unique([jineteId, apoderadoId])
+  @@index([organizacionId, apoderadoId])
+  @@map("jinete_apoderado")
+}
+
+model Caballo {
+  id                String       @id @default(cuid())
+  organizacionId    String       @map("organizacion_id")
+  nombre            String
+  nombreNormalizado String       @map("nombre_normalizado")
+  clubId            String       @map("club_id")
+  activo            Boolean      @default(true)
+  fusionadoEnId     String?      @map("fusionado_en_id")
+  creadoPorId       String       @map("creado_por_id")
+  version           Int          @default(1)
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+  actualizadoEn     DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion      Organizacion @relation(fields: [organizacionId], references: [id])
+  club              Club         @relation(fields: [clubId], references: [id])
+  creadoPor         Usuario      @relation("CaballoCreadoPor", fields: [creadoPorId], references: [id])
+  fusionadoEn       Caballo?     @relation("CaballoFusion", fields: [fusionadoEnId], references: [id])
+  caballosFusionados Caballo[]   @relation("CaballoFusion")
+
+  binomios          Binomio[]
+
+  @@index([organizacionId, nombreNormalizado])
+  @@index([organizacionId, clubId])
+  @@map("caballo")
+}
+
+// -------------------------------------------------------------
+// Modelos: Pruebas, Conceptos, Binomios, Inscripciones, Pagos
+// -------------------------------------------------------------
+
+model Prueba {
+  id                String        @id @default(cuid())
+  organizacionId    String        @map("organizacion_id")
+  eventoId          String        @map("evento_id")
+  nombre            String
+  nombreNormalizado String        @map("nombre_normalizado")
+  tarifaClp         Int           @map("tarifa_clp")
+  edadMinima        Int?          @map("edad_minima")
+  edadMaxima        Int?          @map("edad_maxima")
+  orden             Int
+  activa            Boolean       @default(true)
+  creadoPorId       String        @map("creado_por_id")
+  version           Int           @default(1)
+  creadoEn          DateTime      @default(now()) @map("creado_en")
+  actualizadoEn     DateTime      @updatedAt @map("actualizado_en")
+
+  organizacion      Organizacion  @relation(fields: [organizacionId], references: [id])
+  evento            Evento        @relation(fields: [eventoId], references: [id])
+  creadoPor         Usuario       @relation("PruebaCreadoPor", fields: [creadoPorId], references: [id])
+
+  inscripciones     Inscripcion[]
+
+  @@unique([eventoId, nombreNormalizado])
+  @@index([organizacionId, eventoId])
+  @@map("prueba")
+}
+
+model Concepto {
+  id                    String         @id @default(cuid())
+  organizacionId        String         @map("organizacion_id")
+  eventoId              String         @map("evento_id")
+  nombre                String
+  nombreNormalizado     String         @map("nombre_normalizado")
+  aplicaA               AplicaConcepto @map("aplica_a")
+  tarifaClp             Int            @map("tarifa_clp")
+  unidad                String?
+  categoriaReferenciaId String?        @map("categoria_referencia_id")
+  orden                 Int
+  activo                Boolean        @default(true)
+  creadoPorId           String         @map("creado_por_id")
+  version               Int            @default(1)
+  creadoEn              DateTime       @default(now()) @map("creado_en")
+  actualizadoEn         DateTime       @updatedAt @map("actualizado_en")
+
+  organizacion          Organizacion   @relation(fields: [organizacionId], references: [id])
+  evento                Evento         @relation(fields: [eventoId], references: [id])
+  creadoPor             Usuario        @relation("ConceptoCreadoPor", fields: [creadoPorId], references: [id])
+  categoriaReferencia   Categoria?     @relation("CategoriaReferencia", fields: [categoriaReferenciaId], references: [id])
+
+  cargos                Cargo[]
+
+  @@unique([eventoId, nombreNormalizado])
+  @@index([organizacionId, eventoId])
+  @@map("concepto")
+}
+
+model Binomio {
+  id              String        @id @default(cuid())
+  organizacionId  String        @map("organizacion_id")
+  eventoId        String        @map("evento_id")
+  jineteId        String        @map("jinete_id")
+  caballoId       String        @map("caballo_id")
+  clubId          String        @map("club_id")
+  importacionId   String?       @map("importacion_id")
+  anulado         Boolean       @default(false)
+  motivoAnulacion String?       @map("motivo_anulacion")
+  anuladoPorId    String?       @map("anulado_por_id")
+  anuladoEn       DateTime?     @map("anulado_en")
+  creadoPorId     String        @map("creado_por_id")
+  version         Int           @default(1)
+  creadoEn        DateTime      @default(now()) @map("creado_en")
+  actualizadoEn   DateTime      @updatedAt @map("actualizado_en")
+
+  organizacion    Organizacion  @relation(fields: [organizacionId], references: [id])
+  evento          Evento        @relation(fields: [eventoId], references: [id])
+  jinete          Jinete        @relation(fields: [jineteId], references: [id])
+  caballo         Caballo       @relation(fields: [caballoId], references: [id])
+  club            Club          @relation(fields: [clubId], references: [id])
+  creadoPor       Usuario       @relation("BinomioCreadoPor", fields: [creadoPorId], references: [id])
+  anuladoPor      Usuario?      @relation("BinomioAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  inscripciones   Inscripcion[]
+  cargos          Cargo[]
+
+  @@index([organizacionId, eventoId])
+  @@index([organizacionId, jineteId])
+  @@index([organizacionId, caballoId])
+  @@index([organizacionId, clubId])
+  @@map("binomio")
+}
+
+model Inscripcion {
+  id              String       @id @default(cuid())
+  organizacionId  String       @map("organizacion_id")
+  eventoId        String       @map("evento_id")
+  binomioId       String       @map("binomio_id")
+  pruebaId        String       @map("prueba_id")
+  tarifaClp       Int          @map("tarifa_clp")
+  montoClp        Int          @map("monto_clp")
+  motivoAjuste    String?      @map("motivo_ajuste")
+  avisoPendiente  Boolean      @default(false) @map("aviso_pendiente")
+  avisoVistoPorId String?      @map("aviso_visto_por_id")
+  avisoVistoEn    DateTime?    @map("aviso_visto_en")
+  anulado         Boolean      @default(false)
+  retirado        Boolean      @default(false)
+  motivoAnulacion String?      @map("motivo_anulacion")
+  anuladoPorId    String?      @map("anulado_por_id")
+  anuladoEn       DateTime?    @map("anulado_en")
+  claveCliente    String       @map("clave_cliente")
+  importacionId   String?      @map("importacion_id")
+  registradoPorId String       @map("registrado_por_id")
+  version         Int          @default(1)
+  creadoEn        DateTime     @default(now()) @map("creado_en")
+  actualizadoEn   DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion    Organizacion @relation(fields: [organizacionId], references: [id])
+  evento          Evento       @relation(fields: [eventoId], references: [id])
+  binomio         Binomio      @relation(fields: [binomioId], references: [id])
+  prueba          Prueba       @relation(fields: [pruebaId], references: [id])
+  registradoPor   Usuario      @relation("InscripcionRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor      Usuario?     @relation("InscripcionAnuladoPor", fields: [anuladoPorId], references: [id])
+  avisoVistoPor   Usuario?     @relation("InscripcionAvisoVistoPor", fields: [avisoVistoPorId], references: [id])
+
+  pagos           Pago[]
+  devoluciones    Devolucion[]
+
+  @@unique([organizacionId, claveCliente, pruebaId])
+  @@index([organizacionId, eventoId])
+  @@index([binomioId])
+  @@map("inscripcion")
+}
+
+model Cargo {
+  id                String       @id @default(cuid())
+  organizacionId    String       @map("organizacion_id")
+  eventoId          String       @map("evento_id")
+  conceptoId        String       @map("concepto_id")
+  binomioId         String?      @map("binomio_id")
+  jineteId          String?      @map("jinete_id")
+  clubId            String?      @map("club_id")
+  automatico        Boolean      @default(false)
+  cantidad          Int
+  tarifaClp         Int          @map("tarifa_clp")
+  precioUnitarioClp Int          @map("precio_unitario_clp")
+  montoClp          Int          @map("monto_clp")
+  descripcion       String?
+  motivoAjuste      String?      @map("motivo_ajuste")
+  avisoPendiente    Boolean      @default(false) @map("aviso_pendiente")
+  avisoVistoPorId   String?      @map("aviso_visto_por_id")
+  avisoVistoEn      DateTime?    @map("aviso_visto_en")
+  anulado           Boolean      @default(false)
+  retirado          Boolean      @default(false)
+  motivoAnulacion   String?      @map("motivo_anulacion")
+  anuladoPorId      String?      @map("anulado_por_id")
+  anuladoEn         DateTime?    @map("anulado_en")
+  claveCliente      String       @map("clave_cliente")
+  registradoPorId   String       @map("registrado_por_id")
+  version           Int          @default(1)
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+  actualizadoEn     DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion      Organizacion @relation(fields: [organizacionId], references: [id])
+  evento            Evento       @relation(fields: [eventoId], references: [id])
+  concepto          Concepto     @relation(fields: [conceptoId], references: [id])
+  binomio           Binomio?     @relation(fields: [binomioId], references: [id])
+  jinete            Jinete?      @relation(fields: [jineteId], references: [id])
+  club              Club?        @relation(fields: [clubId], references: [id])
+  registradoPor     Usuario      @relation("CargoRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor        Usuario?     @relation("CargoAnuladoPor", fields: [anuladoPorId], references: [id])
+  avisoVistoPor     Usuario?     @relation("CargoAvisoVistoPor", fields: [avisoVistoPorId], references: [id])
+
+  pagos             Pago[]
+  devoluciones      Devolucion[]
+
+  @@unique([organizacionId, claveCliente, conceptoId])
+  @@index([organizacionId, eventoId])
+  @@index([binomioId])
+  @@index([jineteId])
+  @@index([clubId])
+  @@map("cargo")
+}
+
+model Pago {
+  id              String       @id @default(cuid())
+  organizacionId  String       @map("organizacion_id")
+  movimientoId    String       @map("movimiento_id")
+  inscripcionId   String?      @map("inscripcion_id")
+  cargoId         String?      @map("cargo_id")
+  montoClp        Int          @map("monto_clp")
+  anulado         Boolean      @default(false)
+  motivoAnulacion String?      @map("motivo_anulacion")
+  anuladoPorId    String?      @map("anulado_por_id")
+  anuladoEn       DateTime?    @map("anulado_en")
+  creadoPorId     String       @map("creado_por_id")
+  creadoEn        DateTime     @default(now()) @map("creado_en")
+
+  organizacion    Organizacion @relation(fields: [organizacionId], references: [id])
+  movimiento      Movimiento   @relation(fields: [movimientoId], references: [id])
+  inscripcion     Inscripcion? @relation(fields: [inscripcionId], references: [id])
+  cargo           Cargo?       @relation(fields: [cargoId], references: [id])
+  creadoPor       Usuario      @relation("PagoCreadoPor", fields: [creadoPorId], references: [id])
+  anuladoPor      Usuario?     @relation("PagoAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  @@index([organizacionId, movimientoId])
+  @@index([inscripcionId])
+  @@index([cargoId])
+  @@map("pago")
+}
+
+model Devolucion {
+  id              String       @id @default(cuid())
+  organizacionId  String       @map("organizacion_id")
+  movimientoId    String       @map("movimiento_id")
+  inscripcionId   String?      @map("inscripcion_id")
+  cargoId         String?      @map("cargo_id")
+  ingresoId       String?      @map("ingreso_id")
+  montoClp        Int          @map("monto_clp")
+  anulado         Boolean      @default(false)
+  motivoAnulacion String?      @map("motivo_anulacion")
+  anuladoPorId    String?      @map("anulado_por_id")
+  anuladoEn       DateTime?    @map("anulado_en")
+  creadoPorId     String       @map("creado_por_id")
+  creadoEn        DateTime     @default(now()) @map("creado_en")
+
+  organizacion    Organizacion @relation(fields: [organizacionId], references: [id])
+  movimiento      Movimiento   @relation("MovimientoGastoDevolucion", fields: [movimientoId], references: [id])
+  ingreso         Movimiento?  @relation("MovimientoIngresoSobrante", fields: [ingresoId], references: [id])
+  inscripcion     Inscripcion? @relation(fields: [inscripcionId], references: [id])
+  cargo           Cargo?       @relation(fields: [cargoId], references: [id])
+  creadoPor       Usuario      @relation("DevolucionCreadoPor", fields: [creadoPorId], references: [id])
+  anuladoPor      Usuario?     @relation("DevolucionAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  @@index([organizacionId, movimientoId])
+  @@index([inscripcionId])
+  @@index([cargoId])
+  @@index([ingresoId])
+  @@map("devolucion")
+}
+
+// -------------------------------------------------------------
+// Modelos: Traspasos y Auditoría
+// -------------------------------------------------------------
+
+model Traspaso {
+  id                String       @id @default(cuid())
+  organizacionId    String       @map("organizacion_id")
+  eventoId          String       @map("evento_id")
+  fecha             DateTime     @db.Date
+  desde             MedioPago
+  hacia             MedioPago
+  montoClp          Int          @map("monto_clp")
+  observacion       String?
+  archivoRuta       String?      @map("archivo_ruta")
+  archivoTipoMime   String?      @map("archivo_tipo_mime")
+  claveCliente      String       @map("clave_cliente")
+  posteriorAlCierre Boolean      @default(false) @map("posterior_al_cierre")
+  anulado           Boolean      @default(false)
+  anuladoMotivo     String?      @map("anulado_motivo")
+  anuladoPorId      String?      @map("anulado_por_id")
+  anuladoEn         DateTime?    @map("anulado_en")
+  registradoPorId   String       @map("registrado_por_id")
+  version           Int          @default(1)
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+
+  organizacion      Organizacion @relation(fields: [organizacionId], references: [id])
+  evento            Evento       @relation(fields: [eventoId], references: [id])
+  registradoPor     Usuario      @relation("TraspasoRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor        Usuario?     @relation("TraspasoAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  @@unique([organizacionId, claveCliente])
+  @@index([organizacionId, eventoId])
+  @@map("traspaso")
+}
+
+model RegistroAuditoria {
+  id             String        @id @default(cuid())
+  organizacionId String        @map("organizacion_id")
+  usuarioId      String?       @map("usuario_id")
+  entidad        String
+  entidadId      String        @map("entidad_id")
+  accion         String
+  antes          Json?
+  despues        Json?
+  creadoEn       DateTime      @default(now()) @map("creado_en")
+
+  organizacion   Organizacion  @relation(fields: [organizacionId], references: [id])
+  usuario        Usuario?      @relation(fields: [usuarioId], references: [id])
+
+  @@index([organizacionId, entidad, entidadId])
+  @@index([organizacionId, creadoEn])
+  @@map("registro_auditoria")
+}

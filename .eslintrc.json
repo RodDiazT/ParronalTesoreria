@@ -1,0 +1,30 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/lib/db",
+            "message": "Usa la función db(ctx) de @/lib/contexto para garantizar el aislamiento por organización. Solo se permite prisma directo en auth, contexto y scripts."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/lib/auth/**",
+        "src/lib/auth.ts",
+        "src/lib/contexto.ts",
+        "scripts/**",
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

@@ -428,21 +428,21 @@ Instrucciones para Rod, que Claude Code repite en el README al implementar:
 
 ## 7. Plan de acción
 
-| # | Paso | Depende de |
-|---|---|---|
-| 1 | Credenciales OAuth de Google (5.7) | Tarea t-004 |
-| 2 | Modelos `Usuario`, `Membresia`, `Account` y `Session`, con las migraciones y el `CHECK` | Esqueleto técnico (marco §12, paso 3) |
-| 3 | Adaptador propio y configuración de Auth.js (5.2) con pruebas de ingreso | 1, 2 |
-| 4 | `src/lib/permisos.ts` con la matriz y la prueba tabulada (5.4) | 2 |
-| 5 | Middleware, `/ingresar`, `/privacidad`, `/bienvenida` y aceptación del aviso | 3 |
-| 6 | `/solicitud` y `solicitarAcceso` con `obtenerOrganizacionUnica` | 5, Organización y evento §7 paso 3 |
-| 7 | Script de carga inicial de Organización y evento: verificar que los administradores precargados se vinculan al primer ingreso | 3, Organización y evento §7 paso 4 |
-| 8 | `/usuarios`: solicitudes, aprobar, rechazar, contador en el menú | 4, 6 |
-| 9 | Invitar, cambiar rol, revocar (cierre de sesiones), reactivar, con mínimo de administradores y prueba de concurrencia | 8 |
-| 10 | `/mi-cuenta` con cierre de sesión en todos los dispositivos, y `/comision` | 5 |
-| 11 | Menú y botones según `permisos` en el resto de la app | 4 |
-| 12 | Advertencia de pendientes al revocar o bajar de rol | Movimientos implementado |
-| 13 | Suprimir datos de usuario y descargar mis datos | 9, 10 |
+| # | Paso | Depende de | Estado |
+|---|---|---|---|
+| 1 | Credenciales OAuth de Google (5.7) | Tarea t-004 | Completado (2026-09-27) |
+| 2 | Modelos `Usuario`, `Membresia`, `Account` y `Session`, con las migraciones y el `CHECK` | Esqueleto técnico (marco §12, paso 3) | Completado (2026-09-27) |
+| 3 | Adaptador propio y configuración de Auth.js (5.2) con pruebas de ingreso | 1, 2 | Completado (2026-09-27) |
+| 4 | `src/lib/permisos.ts` con la matriz y la prueba tabulada (5.4) | 2 | Completado (2026-09-27) |
+| 5 | Middleware, `/ingresar`, `/privacidad`, `/bienvenida` y aceptación del aviso | 3 | En curso (Middleware listo, pantallas en Fase 2) |
+| 6 | `/solicitud` y `solicitarAcceso` con `obtenerOrganizacionUnica` | 5, Organización y evento §7 paso 3 | Pendiente (Fase 2) |
+| 7 | Script de carga inicial de Organización y evento: verificar que los administradores precargados se vinculan al primer ingreso | 3, Organización y evento §7 paso 4 | Completado (2026-09-27) |
+| 8 | `/usuarios`: solicitudes, aprobar, rechazar, contador en el menú | 4, 6 | Pendiente (Fase 2) |
+| 9 | Invitar, cambiar rol, revocar (cierre de sesiones), reactivar, con mínimo de administradores y prueba de concurrencia | 8 | Pendiente (Fase 2) |
+| 10 | `/mi-cuenta` con cierre de sesión en todos los dispositivos, y `/comision` | 5 | Pendiente (Fase 2) |
+| 11 | Menú y botones según `permisos` en el resto de la app | 4 | Pendiente (Fase 3) |
+| 12 | Advertencia de pendientes al revocar o bajar de rol | Movimientos implementado | Pendiente (Fase 4) |
+| 13 | Suprimir datos de usuario y descargar mis datos | 9, 10 | Pendiente (Fase 2) |
 
 Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el paso 13 pasa a v1.1 sin afectar a otros componentes (no habrá titulares que lo pidan antes del evento). El paso 12 se conecta cuando Movimientos esté implementado.
 
