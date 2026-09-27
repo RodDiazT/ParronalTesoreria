@@ -1,6 +1,6 @@
 # Participantes
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -47,11 +47,11 @@ Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejec
 
 ### Justificación de valor
 
-a. **Problema que reduce o carga que elimina.** Al **administrador** le da una sola lista de jinetes, caballos y clubes, sin el mismo jinete escrito de tres formas, y le muestra de inmediato qué menores no tienen apoderado o autorización, sin revisar planillas. Al **ayudante** le permite encontrar o crear un jinete, caballo o club en segundos al inscribir, sin esperar al tesorero. Sin este registro, Inscripción de binomios no tiene a quién inscribir.
+a. **Problema que reduce o carga que elimina.** Al **administrador** le da una sola lista de jinetes, caballos y clubes, sin el mismo jinete escrito de tres formas, y le muestra de inmediato qué menores no tienen apoderado o autorización y a qué jinetes les falta la fecha de nacimiento, sin revisar planillas. Al **ayudante** le permite encontrar o crear un jinete, caballo o club en segundos al inscribir, sin esperar al tesorero. Sin este registro, Inscripción de binomios no tiene a quién inscribir.
 
 b. **Métricas del marco (§3) que mueve.** Operativo a tiempo (requisito de Inscripción e Importación); control de cobranza (cada inscripción se asocia a un jinete y un club identificables, lo que permite saber quién pagó); cuadratura y rendición al club (totales por club sin duplicados).
 
-c. **Datos o recursos nuevos.** Los del marco §9.2 con estos ajustes: el contacto del jinete pasa a ser obligatorio y el club, obligatorio para jinetes y caballos (decisiones de Rod). Además se registra la **fecha en que la comisión recibió la autorización del apoderado** para menores de 14 años, que da constancia de lo que exige el marco §9.3. No se agrega ningún otro dato.
+c. **Datos o recursos nuevos.** Los del marco §9.2 con estos ajustes (decisiones de Rod): el club pasa a ser obligatorio para jinetes y caballos, y la fecha de nacimiento y el contacto del jinete son opcionales, para que no frenen el registro. Además se registra la **fecha en que la comisión recibió la autorización del apoderado** para menores de 14 años, que da constancia de lo que exige el marco §9.3. No se agrega ningún otro dato.
 
 d. **Costo de mantención.** Cero. Corre en la misma app y base (marco §8). No usa archivos.
 
@@ -78,8 +78,8 @@ Escala esperada: **50 binomios o menos** (estimación de Rod), es decir, unas de
 | Campo | Regla |
 |---|---|
 | Nombre completo | Obligatorio, 2 a 120 caracteres. Un solo campo (nombres y apellidos). |
-| Fecha de nacimiento | Obligatoria. No puede ser futura. Si la edad resultante es menor de 4 o mayor de 90 años, se pide confirmar ("¿Está bien la fecha?"), porque suele ser un error de tipeo. |
-| Contacto | Obligatorio. Teléfono o correo. Si es menor de edad, puede ser el del apoderado (texto de ayuda). |
+| Fecha de nacimiento | **Opcional** (decisión de Rod: no debe bloquear el registro). Sin ella no se conoce la edad y el jinete queda con la alerta "Sin fecha de nacimiento" (3.4). Si se ingresa, no puede ser futura, y si la edad resultante es menor de 4 o mayor de 90 años se pide confirmar ("¿Está bien la fecha?"), porque suele ser un error de tipeo. |
+| Contacto | **Opcional** (decisión de Rod). Teléfono o correo. Si es menor de edad, puede ser el del apoderado (texto de ayuda). |
 | Club | Obligatorio (decisión de Rod: todo jinete representa a un club). Quien no pertenece a ninguno se asigna al club que la comisión cree para eso, por ejemplo "Particular" (3.8). |
 | RUT | Opcional. Se valida y normaliza. |
 | Autorización del apoderado | Solo para menores de 14 años a la fecha de referencia. Fecha en que la comisión la recibió, con quién la registró (3.4). |
@@ -110,17 +110,18 @@ Hay dos puntos de entrada, con las mismas reglas:
 
 Formulario del jinete, pensado para el celular:
 
-1. Nombre, fecha de nacimiento, contacto y club (con `<SelectorClub>` y creación en línea). RUT plegado como opcional.
-2. Al escribir la fecha de nacimiento se muestra la edad a la fecha de referencia del evento vigente ("12 años al 21-11-2026").
+1. Nombre y club (con `<SelectorClub>` y creación en línea), obligatorios. Fecha de nacimiento y contacto a la vista pero opcionales; RUT plegado como opcional.
+2. Al escribir la fecha de nacimiento se muestra la edad a la fecha de referencia del evento vigente ("12 años al 21-11-2026"). Si se deja vacía, se muestra "Sin fecha: no se sabrá si es menor ni su categoría por edad".
 3. Si es menor de 18, aparece la sección **Apoderado**: buscar uno existente (por nombre o teléfono) o crear uno nuevo con nombre, teléfono y relación. Se puede agregar más de uno.
 4. Si es menor de 14, aparece además la casilla **Autorización del apoderado recibida**, con la fecha (por defecto, hoy).
-5. Guardar. Si faltan el apoderado o la autorización, el jinete **se guarda igual** y queda con su alerta (3.4).
+5. Guardar. Si faltan la fecha de nacimiento, el apoderado o la autorización, el jinete **se guarda igual** y queda con su alerta (3.4).
 
 Antes de guardar, el aviso de posible duplicado (3.5).
 
 ### 3.3 Edad
 
 - La edad se calcula siempre con `edadEnEvento(fechaNacimiento, evento)`: años cumplidos a `fechaReferenciaEdadEfectiva(evento)` (Organización y evento §5.1). Nunca se guarda como número (marco §6.11).
+- Sin fecha de nacimiento, la edad es **desconocida** (`null`): se muestra "Edad sin dato", no se evalúan las alertas de menor y el jinete no califica automáticamente en categorías por edad. Qué pasa al inscribirlo en una prueba por edad lo define Inscripción de binomios.
 - El evento es el vigente del contexto (Organización y evento §3.6). Si no hay evento configurado, se usa la fecha de hoy y se indica "(a hoy)".
 - Si cambian las fechas del evento, las edades y las alertas se recalculan solas. La vista previa de ese cambio usa la consulta de 5.3.
 
@@ -132,8 +133,9 @@ Antes de guardar, el aviso de posible duplicado (3.5).
 |---|---|---|
 | **Menor sin apoderado** | Edad < 18 y ningún vínculo activo con un apoderado. | Ficha y lista del jinete, filtro "Con alertas", y en la inscripción del binomio (Inscripción de binomios). |
 | **Falta autorización del apoderado** | Edad < 14 y sin fecha de autorización registrada. | Mismos lugares. |
+| **Sin fecha de nacimiento** | Fecha de nacimiento vacía: no se sabe si es menor de edad ni su categoría. | Mismos lugares. |
 
-**No bloquean** (decisión de Rod): el jinete se guarda y se puede inscribir. Las inscripciones se conversan antes del concurso, y el día del evento es muy raro que llegue alguien sin aviso. La alerta es el recordatorio para completar el dato antes del evento. **Desviación declarada:** el marco §6.11 dice que todo menor "debe tener" al menos un apoderado, y el §6.12 trata "menor sin apoderado" como error de importación. Al aprobarse este documento, el marco pasa a v1.2 con la regla "se exige y se alerta, sin bloquear" (ver 6).
+**No bloquean** (decisión de Rod): el jinete se guarda y se puede inscribir. Las inscripciones se conversan antes del concurso, y el día del evento es muy raro que llegue alguien sin aviso. Las alertas son el recordatorio para completar los datos antes del evento. **Desviación declarada:** el marco §6.11 dice que todo menor "debe tener" al menos un apoderado, y el §6.12 trata "menor sin apoderado" como error de importación. Al aprobarse este documento, el marco pasa a v1.2 con la regla "se exige y se alerta, sin bloquear" (ver 6).
 
 **Registrar la autorización:** en la ficha del jinete menor de 14, "Registrar autorización" con la fecha en que se recibió. Queda con quién la registró y cuándo, en el registro y en auditoría. El portal no guarda el documento ni el mensaje de la autorización: la comisión la pide por el medio que acuerde con el club (tarea t-012). Si el jinete cumple 14 antes de la fecha de referencia, la casilla deja de aparecer y la fecha registrada se conserva.
 
@@ -146,7 +148,7 @@ No bloquea, salvo el RUT repetido (marco §6.11). Se muestra "¿Es alguno de est
 | Entidad | Se considera posible duplicado si… | Qué muestra la coincidencia |
 |---|---|---|
 | Club | Nombre parecido (regla de Organización y evento §3.5). | Nombre, cantidad de jinetes y caballos. |
-| Jinete | Nombre parecido, o igual fecha de nacimiento con nombre parecido (esta última va primero). | Nombre, club y año de nacimiento. |
+| Jinete | Nombre parecido, o igual fecha de nacimiento con nombre parecido cuando ambos la tienen (esta última va primero). | Nombre, club y año de nacimiento (si lo tiene). |
 | Apoderado | Nombre parecido o mismo teléfono (comparando los últimos 9 dígitos). | Nombre y jinetes vinculados. |
 | Caballo | Nombre parecido, en cualquier club. | Nombre y club. Dos caballos con el mismo nombre en clubes distintos son normales, por eso solo avisa. |
 
@@ -158,7 +160,7 @@ Importación desde Excel usa la misma función de búsqueda (5.3).
 
 ### 3.6 Editar, desactivar y reactivar (solo administrador)
 
-- **Editar:** todos los campos de 3.1. Cambiar el club de un jinete no cambia los binomios ya creados (3.1 y la regla de Inscripción de binomios del cuadro de 2). Cambiar la fecha de nacimiento recalcula edad y alertas.
+- **Editar:** todos los campos de 3.1. Completar después la fecha de nacimiento o el contacto de un jinete también es edición; si el ayudante los conoce, se los pasa al administrador. Cambiar el club de un jinete no cambia los binomios ya creados (3.1 y la regla de Inscripción de binomios del cuadro de 2). Cambiar la fecha de nacimiento recalcula edad y alertas.
 - **Quitar un apoderado de un jinete:** desactiva el vínculo, no lo borra. Si deja al menor sin apoderado, se avisa antes de confirmar.
 - **Desactivar:** el registro no aparece en los selectores y conserva sus binomios, inscripciones y vínculos. Un club desactivado conserva sus jinetes y caballos; para crear nuevos se elige otro club.
 - **Reactivar:** vuelve a los selectores.
@@ -223,6 +225,8 @@ Lo oculto al observador se quita en el servidor, nunca solo en la interfaz.
 | Dos caballos con el mismo nombre en clubes distintos | Permitido; el aviso muestra el club para distinguirlos (3.5). |
 | Fecha de nacimiento mal escrita (año 2104, o 1 año de edad) | Rechazo si es futura; confirmación si la edad es menor de 4 o mayor de 90 (3.1). |
 | Menor sin contacto propio | El contacto puede ser el del apoderado (3.1). |
+| No se conoce la fecha de nacimiento del jinete | Se guarda sin ella, con la alerta "Sin fecha de nacimiento"; no se evalúan las alertas de menor hasta completarla (3.3, 3.4). |
+| Jinete sin contacto | Se guarda; el contacto es opcional. Si es menor, el teléfono del apoderado cumple esa función. |
 | Un adulto que es jinete y además apoderado de su hijo | Se registra como `Jinete` y como `Apoderado` por separado; no se vinculan. Es un dato duplicado aceptado, porque son roles distintos. |
 | Club que además auspicia | Se crea también como `Contraparte`; no se vinculan en v1.0 (Organización y evento §2). |
 | Club que paga inscripciones de sus jinetes | Movimiento de ingreso con varios `Pago` (marco §6.4, Inscripción de binomios). |
@@ -241,7 +245,8 @@ Aplica: el componente guarda datos personales de jinetes, **incluidos menores de
 - **Base de licitud:** ejecución de la relación de inscripción al concurso (marco §9.2). En menores de 14 años, autorización del apoderado obtenida por la comisión, con constancia de la fecha en el portal (3.4). El apoderado se registra como contacto de emergencia y responsable del menor.
 - **Medidas específicas:**
   - solo los campos de 3.1: sin sexo, domicilio, salud, seguros ni número de registro;
-  - el contacto del jinete es obligatorio (decisión de Rod), porque la comisión lo necesita para confirmar la inscripción y el pago; en menores puede ser el del apoderado;
+  - fecha de nacimiento y contacto del jinete opcionales: se piden, pero no se exigen (decisión de Rod), lo que reduce aún más lo que se guarda;
+  - un jinete sin fecha de nacimiento no se presume adulto: queda con alerta hasta completarla, para no dejar a un menor sin apoderado inadvertido;
   - el observador no ve fecha de nacimiento, edad, contacto, RUT, alertas, apoderados ni autorización, tampoco en respuestas de la API (3.9);
   - las alertas de menores se muestran solo a administrador y ayudante;
   - las fichas de apoderados no son visibles para el observador;
@@ -286,8 +291,8 @@ model Jinete {
   organizacionId              String
   nombre                      String
   nombreNormalizado           String
-  fechaNacimiento             DateTime  @db.Date
-  contacto                    String?   // obligatorio al crear; null solo tras supresión
+  fechaNacimiento             DateTime? @db.Date // opcional (decisión de Rod)
+  contacto                    String?   // opcional
   rut                         String?
   clubId                      String
   autorizacionApoderadoFecha  DateTime? @db.Date
@@ -354,14 +359,14 @@ model Caballo {
 Reglas de datos:
 
 - `fechaNacimiento` y `autorizacionApoderadoFecha` son `DATE`, manejadas como `AAAA-MM-DD` (Organización y evento §5.1).
-- `contacto` del jinete y `telefono` del apoderado son obligatorios en el esquema Zod de creación y edición; la columna admite `null` solo para la supresión (4).
+- `telefono` del apoderado es obligatorio en el esquema Zod de creación y edición; la columna admite `null` solo para la supresión (4). `fechaNacimiento` y `contacto` del jinete son opcionales.
 - Restricción `CHECK` en `Jinete`: `autorizacion_registrada_por_id` y `autorizacion_registrada_en` son nulos si y solo si `autorizacion_apoderado_fecha` es nula.
 - Un vínculo `JineteApoderado` desactivado se reactiva (no se crea otro) si se vuelve a agregar el mismo apoderado.
 
 ### 5.2 Funciones de dominio (con pruebas)
 
-- `edadEnEvento(fechaNacimiento, evento | null)`: años cumplidos a `fechaReferenciaEdadEfectiva(evento)` o a hoy (America/Santiago) si no hay evento. Es **la única** función de edad del proyecto; Inscripción de binomios la usa para las categorías por edad.
-- `alertasJinete(jinete, vinculosActivos, apoderados, evento)`: devuelve `menor_sin_apoderado`, `falta_autorizacion` y `apoderado_sin_telefono` según 3.4 y 4.
+- `edadEnEvento(fechaNacimiento | null, evento | null)`: años cumplidos a `fechaReferenciaEdadEfectiva(evento)` o a hoy (America/Santiago) si no hay evento; `null` si no hay fecha de nacimiento. Es **la única** función de edad del proyecto; Inscripción de binomios la usa para las categorías por edad.
+- `alertasJinete(jinete, vinculosActivos, apoderados, evento)`: devuelve `sin_fecha_nacimiento`, `menor_sin_apoderado`, `falta_autorizacion` y `apoderado_sin_telefono` según 3.4 y 4. Con edad `null` solo devuelve `sin_fecha_nacimiento` (y `apoderado_sin_telefono` si corresponde).
 - `normalizarTelefono(texto)`: solo dígitos, últimos 9.
 - `buscarParecidos(ctx, entidad, { nombre, rut?, fechaNacimiento?, telefono? })`: aplica 3.5 con la regla de nombres de Organización y evento §3.5 (reutiliza su implementación, no la copia). La usan los selectores, los formularios e Importación desde Excel.
 
@@ -376,7 +381,7 @@ Reglas de datos:
 | `fusionar<Entidad>(conservadoId, duplicadoId)` | Administrador | Transacción de 3.7. Para jinetes, caballos y clubes llama al gancho de reasignación de binomios que provee Inscripción de binomios (hasta que exista, no hay binomios que reasignar). |
 | `suprimirDatos<Entidad>` | Administrador | Según 4. |
 | `descargarDatos<Entidad>` | Administrador | CSV. Recortable. |
-| `jinetesAfectadosPorCambioDeFecha(ctx, eventoId, nuevaFechaReferencia)` | Administrador | Para la vista previa de Organización y evento §3.2: jinetes con binomio en el evento cuya condición de menor (18) o de menor de 14 cambia, y los que quedarían con alerta. |
+| `jinetesAfectadosPorCambioDeFecha(ctx, eventoId, nuevaFechaReferencia)` | Administrador | Para la vista previa de Organización y evento §3.2: jinetes con binomio en el evento y fecha de nacimiento cuya condición de menor (18) o de menor de 14 cambia, y los que quedarían con alerta. |
 | `listar<Entidad>`, `ficha<Entidad>` | Todos con membresía activa (apoderados: sin observador) | Pasan por `ocultarDatosPersonales`. |
 
 `ocultarDatosPersonales(ctx, …)` (Organización y evento §5.2) se extiende: para el observador quita de `Jinete` la fecha de nacimiento, edad, contacto, RUT, autorización, vínculos y alertas; de `Club`, contacto y RUT. El observador recibe 403 en todo lo de `Apoderado`.
@@ -411,9 +416,9 @@ Con `registrarAuditoria` (Organización y evento §5.2). Acciones nuevas: `vincu
 ### 5.7 Pruebas (Vitest)
 
 - Aislamiento: las cuatro entidades y `JineteApoderado` no se leen, cuentan, crean ni modifican desde otra organización; `clubId` y `apoderadoId` ajenos se rechazan.
-- Edad: `edadEnEvento` en el día del cumpleaños, un día antes, años bisiestos (29 de febrero), sin evento, y con `fechaReferenciaEdad` distinta de la de inicio.
-- Alertas: menor sin apoderado; menor de 14 sin autorización; se apagan al cumplir 18 o 14 a la fecha de referencia; vínculo desactivado no cuenta; apoderado sin teléfono.
-- Validación: fecha futura rechazada; confirmación bajo 4 o sobre 90 años; contacto y club obligatorios; RUT inválido rechazado; RUT repetido bloquea en club y jinete.
+- Edad: `edadEnEvento` en el día del cumpleaños, un día antes, años bisiestos (29 de febrero), sin evento, sin fecha de nacimiento (`null`), y con `fechaReferenciaEdad` distinta de la de inicio.
+- Alertas: sin fecha de nacimiento (sin alertas de menor); menor sin apoderado; menor de 14 sin autorización; se apagan al cumplir 18 o 14 a la fecha de referencia; vínculo desactivado no cuenta; apoderado sin teléfono.
+- Validación: fecha futura rechazada; confirmación bajo 4 o sobre 90 años; fecha de nacimiento y contacto opcionales; club obligatorio; RUT inválido rechazado; RUT repetido bloquea en club y jinete.
 - Parecidos: por nombre, por fecha de nacimiento y nombre, por teléfono del apoderado; incluye desactivados marcados.
 - Permisos: el ayudante crea, vincula apoderado y registra autorización, pero no edita, desvincula, desactiva, fusiona ni suprime; el observador no recibe datos personales ni alertas y recibe 403 en apoderados.
 - Fusión: reasigna vínculos sin duplicarlos, completa campos vacíos, desactiva el duplicado, sube `version` y deja un solo registro de auditoría; rechazo por conflicto de binomios (se prueba al implementar Inscripción de binomios).
@@ -426,9 +431,9 @@ Con `registrarAuditoria` (Organización y evento §5.2). Acciones nuevas: `vincu
 
 - **Marco general, desviaciones declaradas.** Al aprobarse este documento, el marco sube a v1.2 con estos ajustes, y este documento pasa a ser el dueño del detalle de datos de participantes:
   - §5, `Jinete`: el club pasa de opcional a **obligatorio**. `Caballo`: "club o propietario opcional" pasa a **club obligatorio**, sin propietario.
-  - §6.11: "debe tener al menos un apoderado" pasa a "se exige apoderado y el portal alerta mientras falte, sin bloquear el registro ni la inscripción". Se agrega la alerta por falta de autorización en menores de 14. El aviso de duplicados deja de mencionar el número de registro del caballo.
+  - §6.11: la fecha de nacimiento del jinete se registra si se conoce (opcional, con alerta si falta). "Debe tener al menos un apoderado" pasa a "se exige apoderado y el portal alerta mientras falte, sin bloquear el registro ni la inscripción". Se agrega la alerta por falta de autorización en menores de 14. El aviso de duplicados deja de mencionar el número de registro del caballo.
   - §6.12: "menor sin apoderado" pasa de error a **advertencia** en la vista previa de la importación.
-  - §9.2: jinete con contacto obligatorio; caballo con nombre y club, sin número de registro ni propietario.
+  - §9.2: jinete con fecha de nacimiento y contacto opcionales; caballo con nombre y club, sin número de registro ni propietario.
   - §9.3: la autorización del apoderado para menores de 14 queda con constancia de fecha en el portal (Participantes §3.4).
 - **Organización y evento §3.2:** el texto "menores sin apoderado (destacados, porque rompen marco §6.11)" sigue siendo válido como alerta; no requiere cambio.
 - **Planillas sueltas de jinetes, caballos y clubes:** quedan redundantes cuando se carguen (a mano o con Importación desde Excel).
@@ -468,7 +473,8 @@ Los pasos 1 a 7 son imprescindibles para Inscripción de binomios e Importación
 | Fusión equivocada | Operativo | Vista lado a lado con la fecha de nacimiento destacada si difiere; la auditoría lista lo reasignado para revertir a mano. |
 | Fecha de nacimiento mal escrita cambia la categoría por edad | Operativo | Confirmación en edades extremas y edad visible junto a la fecha al escribirla (3.2). |
 | Edad calculada con la fecha equivocada | Técnico | Una sola función (`edadEnEvento`) con la fecha de referencia del evento; columnas `DATE`. |
-| El contacto obligatorio frena la carga en la cancha | Experiencia | Se acepta el contacto del apoderado; las inscripciones se hacen antes del concurso (decisión de Rod). |
+| Jinetes sin fecha de nacimiento: un menor pasa inadvertido o una categoría por edad no se puede verificar | Normativo / operativo | Alerta "Sin fecha de nacimiento" en el contador "Con alertas"; completarla antes del concurso. Inscripción de binomios define el trato en pruebas por edad. |
+| Jinete sin contacto al que hay que avisar un cambio o cobrar | Operativo | Contacto a través del club o del apoderado; el campo sigue disponible para completarlo. |
 | Caballos homónimos confundidos | Operativo | El selector y el aviso muestran el club. |
 | Consulta sin filtro de organización | Normativo / técnico | `db(ctx)`, `exigirDeLaOrganizacion` y prueba de aislamiento. |
 | Participantes atrasa Inscripción de binomios | Plazo | Pasos 12 y 13 y la fusión de apoderados recortables (7). |
@@ -481,3 +487,5 @@ Los pasos 1 a 7 son imprescindibles para Inscripción de binomios e Importación
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión de trabajo con Rod: administrador y ayudante crean, el administrador edita y fusiona; jinete con fecha de nacimiento, contacto y club obligatorios; club heredado por el binomio y editable por evento; caballo solo con nombre y club; club "Particular" como dato; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha y quién la registró; escala de 50 binomios o menos |
+| 2026-09-27 | 0.2 | Fecha de nacimiento y contacto del jinete pasan a opcionales; nueva alerta "Sin fecha de nacimiento"; edad desconocida (`null`) sin alertas de menor | Revisión de Rod |
+| 2026-09-27 | 1.0 | Aprobado por Rod. El marco general pasa a v1.2 con las desviaciones de la sección 6 | Aprobación |

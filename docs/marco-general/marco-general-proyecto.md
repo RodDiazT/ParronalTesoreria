@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -157,9 +157,9 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Categoria` | Clasificación de movimientos. | Pertenece a la organización (reutilizable entre eventos). Tipo: `ingreso` o `gasto`. Puede ser de sistema (no se elimina). |
 | `Contraparte` | Auspiciador, proveedor u otro tercero de un movimiento. | Pertenece a la organización. Datos mínimos (ver 9.3). |
 | `Club` | Club, sociedad o criadero externo al que pertenece un jinete o un caballo (en la interfaz: "Club / sociedad"). No confundir con `Organizacion`. | Pertenece a la organización. Tiene jinetes y caballos. Puede ser quien paga inscripciones. |
-| `Jinete` | Persona que monta (en la interfaz: "Jinete / amazona"). | Pertenece a la organización (reutilizable entre eventos). Club opcional. Tiene fecha de nacimiento y apoderados. |
+| `Jinete` | Persona que monta (en la interfaz: "Jinete / amazona"). | Pertenece a la organización (reutilizable entre eventos). Club obligatorio. Fecha de nacimiento opcional y apoderados. Detalle de datos en `docs/inscripciones/participantes.md`. |
 | `Apoderado` | Adulto responsable y contacto de emergencia de un jinete. | Vinculado a uno o varios jinetes (un apoderado puede tener varios hijos inscritos). |
-| `Caballo` | El caballo. | Pertenece a la organización (reutilizable entre eventos). Club o propietario opcional. |
+| `Caballo` | El caballo. | Pertenece a la organización (reutilizable entre eventos). Nombre y club obligatorio (Participantes). |
 | `Binomio` | Par jinete + caballo en un evento. | Une `Jinete` y `Caballo` en un `Evento`. Un caballo puede formar binomio con varios jinetes y un jinete con varios caballos; el par se repite una sola vez por evento. |
 | `Inscripcion` | Inscripción de un binomio en una prueba o categoría, con su monto a pagar. | Pertenece a un binomio. El detalle (pruebas, tarifas, descuentos, reglas por edad) lo define su documento. |
 | `SolicitudInscripcion` (v1.1) | Datos enviados por formulario, aún no aceptados. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones. |
@@ -291,14 +291,14 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 
 ### 6.11 Jinetes, caballos y edad
 
-- Del jinete se registra la **fecha de nacimiento**, porque puede haber pruebas o categorías por edad. La edad se calcula a la fecha que defina el reglamento del concurso (por defecto, la fecha del evento); no se guarda como número.
-- Todo jinete menor de 18 años a la fecha del evento debe tener al menos un apoderado. Para los adultos, el apoderado (contacto de emergencia) es opcional.
-- Un mismo jinete, caballo, club o apoderado se registra una sola vez por organización. Al crear uno nuevo, el sistema avisa si existe otro con nombre parecido (y, si hay, mismo RUT o número de registro del caballo).
+- Del jinete se registra la **fecha de nacimiento** si se conoce, porque puede haber pruebas o categorías por edad. Es opcional para no bloquear el registro; si falta, el jinete queda con una alerta. La edad se calcula a la fecha que defina el reglamento del concurso (por defecto, la fecha del evento); no se guarda como número.
+- Todo jinete menor de 18 años a la fecha del evento debe tener al menos un apoderado, y el menor de 14, la autorización del apoderado (9.3). El portal lo exige mediante **alertas visibles que no bloquean** el registro ni la inscripción. Para los adultos, el apoderado (contacto de emergencia) es opcional.
+- Un mismo jinete, caballo, club o apoderado se registra una sola vez por organización. Al crear uno nuevo, el sistema avisa si existe otro con nombre parecido (y bloquea si el RUT se repite). Detalle en `docs/inscripciones/participantes.md` §3.5.
 
 ### 6.12 Importación desde Excel
 
 - El portal entrega una plantilla descargable. El administrador la completa (o adapta su planilla) y la sube.
-- Antes de guardar se muestra una **vista previa**: filas nuevas, filas que coinciden con registros existentes y filas con errores (campo obligatorio vacío, fecha inválida, menor sin apoderado). Nada se guarda sin confirmación.
+- Antes de guardar se muestra una **vista previa**: filas nuevas, filas que coinciden con registros existentes y filas con errores (campo obligatorio vacío, fecha inválida) y filas con advertencias (menor sin apoderado, sin fecha de nacimiento), que se pueden importar. Nada se guarda sin confirmación.
 - La importación crea o vincula jinetes, apoderados, caballos, clubes, binomios e inscripciones. No crea pagos: los pagos se registran como movimientos con respaldo.
 - Cada importación queda en auditoría como una sola acción, con el archivo original guardado como respaldo.
 
@@ -370,10 +370,10 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 | Titular | Datos | Base de licitud |
 |---|---|---|
 | Usuario del portal | Correo, nombre e imagen de Google; acciones en auditoría | Consentimiento al solicitar acceso, con aviso de privacidad en la pantalla de solicitud. |
-| Jinete / amazona | Nombre, fecha de nacimiento, un medio de contacto, club, RUT opcional, inscripciones y pagos | Ejecución de la relación de inscripción al concurso. En menores de edad, con autorización del apoderado (ver 9.3). |
+| Jinete / amazona | Nombre, club, inscripciones y pagos; fecha de nacimiento, un medio de contacto y RUT, opcionales | Ejecución de la relación de inscripción al concurso. En menores de edad, con autorización del apoderado (ver 9.3). |
 | Apoderado | Nombre, teléfono, relación con el jinete | Contacto de emergencia y responsable del menor inscrito. |
 | Club / sociedad | Nombre, contacto, RUT opcional | Ejecución de la relación de inscripción o pago. |
-| Caballo | Nombre, club o propietario, número de registro opcional | No es dato personal, salvo el nombre del propietario si es persona natural. |
+| Caballo | Nombre y club | No es dato personal (no se registra propietario). |
 | Auspiciador / Proveedor | Nombre, contacto, RUT opcional | Ejecución del acuerdo de auspicio o compra. |
 | Terceros en comprobantes | Nombre, banco y número de cuenta que aparezcan en un comprobante de transferencia | Necesarios para respaldar el movimiento; acceso restringido. |
 
@@ -381,7 +381,7 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 
 - De cada contraparte, club, jinete y apoderado se pide solo nombre y un medio de contacto. El **RUT es opcional**.
 - La fecha de nacimiento del jinete se pide porque hay pruebas por edad (6.11). No se piden domicilio ni datos de salud (tampoco alergias o seguros: el apoderado es el contacto para eso).
-- **Menores de edad:** tienen al menos un apoderado vinculado. Sus datos se tratan atendiendo a su interés superior; en los menores de 14 años, la autorización para tratar sus datos la da el apoderado (en el formulario de v1.1, con una casilla explícita; en la carga manual o por Excel, la comisión la obtiene al recibir la inscripción). Los datos de menores nunca aparecen en exportaciones a terceros distintos del club.
+- **Menores de edad:** tienen al menos un apoderado vinculado. Sus datos se tratan atendiendo a su interés superior; en los menores de 14 años, la autorización para tratar sus datos la da el apoderado (en el formulario de v1.1, con una casilla explícita; en la carga manual o por Excel, la comisión la obtiene al recibir la inscripción y registra en el portal la fecha en que la recibió, según Participantes §3.4). Los datos de menores nunca aparecen en exportaciones a terceros distintos del club.
 - Nunca se almacenan datos de tarjetas ni credenciales bancarias.
 
 ### 9.4 Medidas de protección
@@ -518,3 +518,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 0.3 | Plazo de rendición al club: 30 días después del evento | Decisión de Rod |
 | 2026-09-27 | 1.0 | Aprobado por Rod; se confirma que el observador no ve respaldos ni datos personales | Aprobación |
 | 2026-09-27 | 1.1 | §10.2: la lista de categorías iniciales pasa a Organización y evento §3.4, que agrega la categoría de sistema "Aporte inicial" | Aprobación de Organización y evento v1.0 (dueño único de la lista) |
+| 2026-09-27 | 1.2 | §5, §6.11, §6.12, §9.2 y §9.3: club obligatorio para jinete y caballo; caballo sin número de registro ni propietario; fecha de nacimiento y contacto del jinete opcionales; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha registrada | Aprobación de Participantes v1.0 (decisiones de Rod) |

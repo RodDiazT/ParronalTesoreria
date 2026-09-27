@@ -26,11 +26,11 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
-| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.1) | v1.0 | — |
+| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.2) | v1.0 | — |
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.2) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.0) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.0) | v1.0 | Marco general |
-| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | En revisión (v0.1) | v1.0 | Marco general |
+| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.0) | v1.0 | Marco general |
 | Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | Pendiente | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga de binomios | Pendiente | v1.0 | Inscripción de binomios |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de la sección 6.7 del marco en v1.0; KPIs ampliados en v1.1 | Pendiente | v1.0 | Marco general |
@@ -110,7 +110,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.1",
+      "version": "1.2",
       "actualizado": "2026-09-27"
     },
     {
@@ -171,13 +171,13 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "padre": "marco-general",
       "dominio": "inscripciones",
       "descripcion": "Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados",
-      "estado": "revision",
+      "estado": "aprobado",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [
         "organizacion-evento"
       ],
-      "version": "0.1",
+      "version": "1.0",
       "actualizado": "2026-09-27"
     },
     {
@@ -461,3 +461,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.9 | Movimientos pasa a revisión (v0.1); se crea la carpeta `movimientos/`. Al aprobarse, Organización y evento sube a v1.2 (marca `exigeContraparte` en `Categoria`) | Borrador de Movimientos |
 | 2026-09-27 | 1.10 | Movimientos aprobado (v1.0); Organización y evento a v1.2 (marca `exigeContraparte` en `Categoria`). Quedan desbloqueados Participantes (ya lo estaba), Registro sin señal y Conciliación con cartola; Inscripción de binomios espera Participantes | Aprobación de Movimientos |
 | 2026-09-27 | 1.11 | Participantes pasa a revisión (v0.1); se crea la carpeta `inscripciones/`; tarea t-012. Al aprobarse, el marco general sube a v1.2 (club obligatorio para jinete y caballo, menor sin apoderado como alerta, autorización de menores de 14 con fecha) | Borrador de Participantes |
+| 2026-09-27 | 1.12 | Participantes aprobado (v1.0): fecha de nacimiento y contacto del jinete opcionales. Marco general a v1.2. Queda desbloqueada Inscripción de binomios (Participantes y Movimientos aprobados) | Aprobación de Participantes |

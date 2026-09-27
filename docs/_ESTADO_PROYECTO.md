@@ -4,7 +4,7 @@
 
 ## Resumen
 
-Están aprobados el marco general y los componentes Organización y evento, Acceso y roles y Movimientos; todavía no hay código. Si se ejecutara lo aprobado, el proyecto tendría definidos:
+Están aprobados el marco general y los componentes Organización y evento, Acceso y roles, Movimientos y Participantes; todavía no hay código. Si se ejecutara lo aprobado, el proyecto tendría definidos:
 
 - quién puede hacer qué: dos administradores, ayudantes, observadores y solicitantes;
 - el modelo de datos: organización, evento, movimientos, jinetes, caballos, apoderados, clubes, binomios, inscripciones y pagos;
@@ -16,6 +16,8 @@ Con Organización y evento, además: el club y el concurso se cargan por script;
 Con Acceso y roles, además: cada persona entra con su cuenta de Google (correo verificado) y acepta el aviso de privacidad en su primer ingreso; quien no está aprobado queda como solicitante y no ve ningún dato; el administrador aprueba o rechaza solicitudes (con un contador dentro del portal), invita por correo, cambia roles y revoca accesos, y la organización nunca queda sin administrador. La sesión dura 30 días en el celular, y revocar surte efecto en la siguiente acción. Ayudantes y observadores ven la lista de la comisión sin correos. La matriz de permisos se aplica en el servidor desde una sola tabla.
 
 Con Movimientos, además: administradores y ayudantes registran ingresos y gastos desde el celular con foto o PDF (comprimida en el teléfono) o con observación, en un solo envío con reintento que no duplica; lo que registra un ayudante queda por validar y el administrador valida u observa de a uno mirando el respaldo; los compromisos se registran como pendientes (proveedores, auspicios, reembolsos a la comisión) y se marcan pagados completos o por abonos, con fecha del hecho y fecha de pago; los auspicios en especie se registran aparte de la caja; las transferencias sin identificar esperan clasificación; nada se borra y la auditoría se ve en cada movimiento y, para administradores, en una pantalla general. El observador no ve respaldos, nombres de titulares ni observaciones.
+
+Con Participantes, además: administradores y ayudantes registran clubes, jinetes, apoderados y caballos desde el celular, con aviso de posibles duplicados y bloqueo por RUT repetido, y el administrador los edita, desactiva y fusiona. Todo jinete y todo caballo pertenece a un club (quien no tiene uno va al club que la comisión cree para eso, por ejemplo "Particular"). La fecha de nacimiento y el contacto del jinete son opcionales. La edad se calcula a la fecha de referencia del evento, y los menores sin apoderado, los menores de 14 sin autorización registrada y los jinetes sin fecha de nacimiento muestran alertas que no bloquean. El observador no ve fechas de nacimiento, contactos, apoderados ni alertas.
 
 Cada pantalla se construye a partir del documento de su componente. El núcleo (acceso, movimientos, inscripciones con importación desde Excel y dashboard) debe estar en uso a más tardar el 2026-10-04.
 
@@ -36,6 +38,7 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | Autenticación en código | Adaptador propio de Auth.js sobre `Usuario`, `Account` y `Session`; solo correos verificados por Google; sesión de 30 días renovable | Acceso y roles, §5.2 |
 | Permisos en código | Tabla única `src/lib/permisos.ts` con `puede(ctx, accion)` y `exigir(ctx, accion)`, transcripción del marco §2.2 | Acceso y roles, §5.4 |
 | Movimientos en código | Modelos `Movimiento` y `Respaldo` con restricciones `CHECK`; idempotencia por `claveCliente`; abonos con bloqueo de fila; `filtroSumable` único para totales; archivos en `RUTA_RESPALDOS/movimientos/…` servidos por `/api/respaldos/[id]`; compresión en el navegador con `canvas` | Movimientos, §5 |
+| Participantes en código | Modelos `Club`, `Jinete`, `Apoderado`, `JineteApoderado` y `Caballo`; `edadEnEvento` como única función de edad; `alertasJinete`; `buscarParecidos` compartida con Importación desde Excel; permisos `participantes.*` | Participantes, §5 |
 | Idioma del código | Dominio en español sin tildes; términos técnicos en inglés | Marco general, §8 |
 | IA de conciliación (v1.1) | API de Claude, opcional | Marco general, §8 |
 
@@ -55,6 +58,7 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | Marco general | Raíz técnica: actores y permisos, modelo de dominio, reglas de negocio, stack, cumplimiento, alcance por versión y plan | `docs/marco-general/marco-general-proyecto.md` |
 | Organización y evento | Aislamiento por organización, carga inicial por script, configuración del evento y de la organización (nombre y logo), categorías y contrapartes con fusión de duplicados | `docs/organizacion/organizacion-evento.md` |
 | Movimientos | Registro de ingresos y gastos con respaldo u observación, validación de a uno, pendientes y abonos, reembolsos, especie, sin identificar, anulación en cascada y pantalla de auditoría | `docs/movimientos/movimientos.md` |
+| Participantes | Clubes, jinetes, apoderados y caballos con club obligatorio, edad calculada a la fecha del evento, alertas de menores que no bloquean, avisos de duplicado y fusión | `docs/inscripciones/participantes.md` |
 | Acceso y roles | Ingreso con Google, aviso de privacidad, solicitudes, invitaciones, roles, revocación con mínimo de un administrador, lista de la comisión y matriz de permisos en el servidor | `docs/acceso/acceso-roles.md` |
 
 ## Control de cambios
@@ -67,3 +71,4 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | 2026-09-27 | 1.3 | Organización y evento v1.1 aprobado: validación de referencias entre organizaciones y fechas del evento informativas | Aprobación de Organización y evento v1.1 |
 | 2026-09-27 | 1.4 | Se registra Acceso y roles aprobado, el adaptador de autenticación y la tabla única de permisos | Aprobación de Acceso y roles |
 | 2026-09-27 | 1.5 | Se registra Movimientos aprobado y su implementación en código; Organización y evento v1.2 | Aprobación de Movimientos |
+| 2026-09-27 | 1.6 | Se registra Participantes aprobado y su implementación en código; marco general v1.2 | Aprobación de Participantes |
