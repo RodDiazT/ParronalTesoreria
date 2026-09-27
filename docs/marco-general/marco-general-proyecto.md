@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.5 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -73,6 +73,7 @@ Escala de diseño: **5 usuarios como máximo** por organización. Nada se dimens
 | Marcar un pendiente como pagado o cobrado | Sí | Sí (queda por validar) | No | No |
 | Aprobar accesos y asignar roles | Sí | No | No | No |
 | Configurar evento y categorías | Sí | No | No | No |
+| Registrar y anular traspasos entre medios de pago | Sí | No | No | No |
 | Cerrar el evento y generar la rendición | Sí | No | No | No |
 | Ver historial de auditoría | Sí | Solo de sus registros | No | No |
 
@@ -115,7 +116,7 @@ Reglas de rol:
 - Estado de pago del movimiento: pagado o pendiente. Esto cubre las **cuentas por cobrar y por pagar mínimas**: reembolsos a ayudantes, proveedores a crédito y auspicios comprometidos.
 - Auspicios en especie o canje, valorizados y separados de la caja.
 - Jinetes, caballos, apoderados, clubes o sociedades, binomios, inscripciones y pagos de inscripción (un pago de inscripción **es** un movimiento de ingreso; ver 6.4).
-- Dashboard básico: saldo de caja, ingresos, gastos, por cobrar, por pagar y por validar.
+- Dashboard básico: saldo de caja, ingresos, gastos, por cobrar, por pagar, por validar, por asignar y en especie, con el **saldo por medio de pago** (banco / efectivo) y los **traspasos** entre medios. Detalle en `docs/dashboard/dashboard.md`.
 - Aviso de posible duplicado al registrar.
 - Historial de auditoría.
 - Interfaz liviana para celular: fotos comprimidas antes de subir y reintento si falla la subida.
@@ -123,7 +124,7 @@ Reglas de rol:
 ### v1.1 — antes del 2026-11-21 (objetivo interno: 2026-11-14, para probarlo antes del evento)
 
 - **Registro sin señal:** el movimiento y su foto se guardan en el teléfono y se envían al volver la conexión. Se prioriza porque la señal en el club ya es baja y empeorará con público.
-- KPIs ampliados: recaudación por categoría, % de inscripciones pagadas, evolución en el tiempo, saldo por medio de pago (banco / efectivo).
+- KPIs ampliados: ingresos y gastos por categoría, % de inscripciones pagadas (por monto y por cantidad), evolución de ingresos y gastos con horizonte configurable y estado de la conciliación. El saldo por medio de pago pasó a v1.0 (Dashboard).
 - Pendientes ampliados: vista consolidada de por cobrar y por pagar, y tareas de la comisión.
 - Cierre del evento y rendición: el evento pasa a solo lectura y se exporta el informe de rendición (resumen, libro de movimientos, respaldos y saldo a traspasar) en planilla y PDF.
 - **Formulario de inscripción:** enlace que el administrador comparte; el jinete o su apoderado completa sus datos, los del caballo y las pruebas. Lo enviado queda como **inscripción por revisar**, y el formulario no muestra ningún dato del portal. Un ayudante o administrador la acepta (se crea la inscripción) o la rechaza.
@@ -171,6 +172,7 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Respaldo` | Archivo (foto o PDF) que respalda un movimiento o su pago. | Pertenece a un movimiento. Un movimiento puede tener varios. |
 | `Pago` | Asignación de un movimiento de ingreso a una inscripción o a un cargo. | Une `Movimiento` con `Inscripcion` o `Cargo` y un monto. Un movimiento puede cubrir varios ítems, incluso de distintos jinetes (por ejemplo, un club que paga por todos los suyos). |
 | `Devolucion` | Asignación de un movimiento de gasto de devolución a una inscripción o cargo retirado, o al sobrante de un ingreso. | Une `Movimiento` (gasto, "Devoluciones") con `Inscripcion`, `Cargo` o el movimiento de ingreso, y un monto. |
+| `Traspaso` | Paso de dinero entre medios de pago de la comisión (del banco al efectivo o al revés). No es ingreso ni gasto. | Pertenece a un evento. Solo mueve el saldo por medio de pago. Detalle en `docs/dashboard/dashboard.md`. |
 | `Cartola` y `LineaCartola` (v1.1) | Cartola bancaria subida y cada una de sus líneas. | Cada línea se concilia con cero o un movimiento, previa confirmación del administrador. |
 | `Pendiente` | Tarea de la comisión (v1.1). | No representa dinero: lo por cobrar y por pagar se deriva de movimientos e inscripciones. |
 | `RegistroAuditoria` | Evento de auditoría inmutable. | Referencia a la entidad afectada, al usuario y a la organización. |
@@ -208,6 +210,7 @@ Organizacion ─┬─ Membresia ── Usuario
                          │              ├─ Devolucion ── Inscripcion, Cargo o ingreso
                          │              └─ LineaCartola (v1.1)
                          ├─ Prueba, Concepto
+                         ├─ Traspaso
                          ├─ Binomio (Jinete + Caballo) ─┬─ Inscripcion (Prueba)
                          │                              └─ Cargo (cuota)
                          ├─ Cargo (Jinete o Club)
@@ -281,6 +284,10 @@ Solo se consideran movimientos no anulados de `naturaleza` = `dinero`.
 | Por validar | Monto y cantidad de movimientos `por_validar` u `observado`, mostrados **aparte** |
 | Por asignar | Monto de los ingresos de "Inscripciones" no asignado a inscripciones o cargos ni devuelto como sobrante |
 | En especie | Suma de valores estimados, mostrada aparte |
+| Saldo por medio de pago | Para cada medio (`transferencia` = banco, `efectivo`, `otro`): ingresos percibidos − gastos pagados con ese medio + traspasos no anulados hacia ese medio − traspasos desde ese medio. La suma de los medios es igual al saldo de caja |
+| % de inscripciones pagadas (v1.1) | Por monto: pagado / monto de inscripciones y cargos no anulados ni retirados. Por cantidad: inscripciones pagadas o becadas / inscripciones no anuladas ni retiradas |
+| Por categoría (v1.1) | Percibido o pagado, y pendiente validado, por categoría; la categoría "Inscripciones" suma el por cobrar de inscripciones y cargos. Los totales coinciden con los indicadores de esta tabla |
+| Evolución (v1.1) | Ingresos percibidos y gastos pagados según su fecha de pago, agrupados por día o por semana |
 
 Cualquier documento que muestre estos indicadores los referencia desde aquí; no los redefine.
 
@@ -470,7 +477,7 @@ Datos iniciales: la organización, el evento y los administradores se crean con 
 | Importación desde Excel (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, cualquier formato con mapeo asistido por IA, vista previa, duplicados y carga | v1.1 | Inscripción de binomios |
 | Formulario de inscripción (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace público de solo envío, solicitudes por revisar, autorización del apoderado | v1.1 | Inscripción de binomios |
 | Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce, sugerencias con IA y confirmación | v1.1 | Movimientos |
-| Dashboard | `docs/dashboard/dashboard.md` | Indicadores de 6.7 en v1.0; KPIs ampliados en v1.1 | v1.0 / v1.1 | Movimientos, Inscripciones |
+| Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores de 6.7, saldo por medio de pago y traspasos en v1.0; KPIs ampliados en v1.1 | v1.0 / v1.1 | Movimientos, Inscripciones |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | v1.1 | Movimientos |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | v1.1 | Movimientos, Inscripciones |
 
@@ -510,7 +517,7 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | Pérdida de datos o archivos en Railway | Técnico | Verificar respaldos del plan; copia manual semanal hasta la exportación de v1.1. |
 | Fuga de datos entre organizaciones | Normativo | Función única de contexto y prueba automática de aislamiento. |
 | Doble conteo de dinero (pago de inscripción registrado también como ingreso suelto) | Operativo | Un pago de inscripción es un movimiento con asignación (6.4); aviso de duplicado (6.9). |
-| Saldo del portal no cuadra con banco + efectivo | Operativo | Todo efectivo se registra (con observación si no hay comprobante); en v1.1 saldo por medio de pago para cuadrar por separado. |
+| Saldo del portal no cuadra con banco + efectivo | Operativo | Todo efectivo se registra (con observación si no hay comprobante); saldo por medio de pago y traspasos entre banco y efectivo desde v1.0 para cuadrar por separado. |
 | Movimientos quedan sin validar por mucho tiempo | Experiencia | Contador visible de "por validar" para el administrador; dos administradores. |
 | Datos de menores de edad | Normativo | Apoderado obligatorio, autorización del apoderado para menores de 14, sin datos de salud y acceso restringido (9.3, 9.4). |
 | Formulario de inscripción usado para spam o para averiguar datos | Técnico | Solo envío, sin respuestas que revelen datos, límite de envíos y revisión humana antes de crear nada (9.4). |
@@ -534,3 +541,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 1.2 | §5, §6.11, §6.12, §9.2 y §9.3: club obligatorio para jinete y caballo; caballo sin número de registro ni propietario; fecha de nacimiento y contacto del jinete opcionales; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha registrada | Aprobación de Participantes v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.3 | §5 y §5.2: entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; `Inscripcion` en una prueba; `Pago` a inscripción o cargo. §6.4, §6.5 y §6.7: cargos, pagos por validar descuentan saldo, retiro con retenido, devolución de sobrante, por cobrar con cargos y por asignar precisado | Aprobación de Inscripción de binomios v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.4 | §4, §11, §12 y §13: la importación desde Excel pasa a v1.1. §5: entidad `Importacion`. §6.12: plantilla para terceros, cualquier formato con mapeo propuesto por IA, fechas y RUT no reconocidos como advertencia, lo ya inscrito se omite, montos y pagos de la planilla como listas. §3, §7 (principio 8), §8 y §9.4: la IA del proyecto pasa de la API de Claude a la API de Gemini de pago, para importación y conciliación, con Google como encargado | Aprobación de Importación desde Excel v1.0 (decisiones de Rod) |
+| 2026-09-27 | 1.5 | §2.2: fila de traspasos entre medios de pago (solo administrador). §4: el saldo por medio de pago pasa a v1.0 y los KPIs de v1.1 se precisan. §5 y §5.2: entidad `Traspaso`. §6.7: saldo por medio de pago y definiciones de los KPIs de v1.1. §11 y §13: se ajustan | Aprobación de Dashboard v1.0 (decisiones de Rod) |

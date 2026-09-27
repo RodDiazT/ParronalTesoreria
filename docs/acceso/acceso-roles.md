@@ -1,6 +1,6 @@
 # Acceso y roles
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -355,7 +355,8 @@ export type Accion =
   | "validar" | "anular" | "anular_propio_por_validar"
   | "marcar_pendiente_pagado" | "gestionar_accesos" | "configurar"
   | "cerrar_evento" | "ver_auditoria" | "ver_auditoria_propia"
-  | "ver_comision"; // lista de 3.6, derivada de "Ver dashboard y listados"
+  | "ver_comision" // lista de 3.6, derivada de "Ver dashboard y listados"
+  | "registrar_traspaso"; // solo administrador (marco §2.2; Dashboard §3.4)
 
 const MATRIZ: Record<Rol, readonly Accion[]> = { /* transcripción literal del marco §2.2 */ };
 
@@ -472,3 +473,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el pa
 | 2026-09-27 | 0.2 | Lista de solo lectura **Comisión** para ayudantes y observadores (nombre, imagen y rol, sin correos); la invitación no vence; tope de 5 accesos como aviso que no bloquea; la pantalla de solicitud pendiente no muestra nombres; el motivo del rechazo es interno; el rol al aprobar no viene preseleccionado; se corrige la restricción `CHECK` de la membresía | Segunda ronda de preguntas con Rod |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido | Aprobación |
 | 2026-09-27 | 1.1 | §3.8: el aviso declara a Google (API de Gemini de pago) como encargado de tratamiento para la IA de importación y conciliación, con transferencia fuera de Chile. Sube `AVISO_PRIVACIDAD_VERSION`: todos los usuarios vuelven a aceptarlo | Aprobación de Importación desde Excel v1.0 |
+| 2026-09-27 | 1.2 | §5.4: acción `registrar_traspaso` (solo administrador) | Aprobación de Dashboard v1.0 (marco v1.5, §2.2) |

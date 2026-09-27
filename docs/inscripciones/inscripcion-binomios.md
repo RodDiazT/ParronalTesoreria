@@ -1,6 +1,6 @@
 # Inscripción de binomios
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -284,7 +284,7 @@ Pagos recibidos en revisión: $15.000
 | Por asignar | 3.7. |
 | Retiros | Ítems retirados con pagado, devuelto y retenido. |
 
-Arriba, los totales: por cobrar, pagado (del cual por validar) y por asignar.
+Arriba, los totales: por cobrar, pagado (del cual por validar) y por asignar. La pestaña activa se refleja en la URL (`?pestana=por-cobrar`, etc.; Dashboard §5.5).
 
 **Ficha del binomio:** jinete (con alertas), caballo, club del binomio, inscripciones y cuota con estado, pagos, devoluciones, acciones según permisos y línea de tiempo de auditoría. La ficha del jinete y la del club (Participantes §3.9) agregan su estado de cuenta y los botones **Inscribir**, **Registrar pago**, **Agregar cargo** y **Copiar estado de cuenta**.
 
@@ -757,3 +757,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: cobro por prueba con lista configurable; cuota fija por binomio automática; pensión y alojamiento como cargos a jinete o club; inscripción sin validación (se valida el dinero); ayudante ajusta con aviso "Visto"; pago por validar descuenta el saldo al registrarse y se muestra "Pagado · por validar"; retiro con devolución total o parcial solo por el administrador; alertas de edad sin bloquear; tarifa fija al inscribir; cambios de prueba o caballo conservan el pago; devoluciones solo por el administrador; "Copiar estado de cuenta" para cobrar; categorías libres de pensión y alojamiento solo para no inscritos |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido. El marco general pasa a v1.3 y Movimientos a v1.1 con los cambios de la sección 6 | Aprobación |
 | 2026-09-27 | 1.1 | El hijo Importación desde Excel pasa a v1.1 (§1, §2). §5.1: `importacionId` opcional en `Binomio` e `Inscripcion`. §5.3: `inscribir` acepta transacción externa, `importacionId` y `auditar: false` | Aprobación de Importación desde Excel v1.0 |
+| 2026-09-27 | 1.2 | §3.12: la pestaña de `/inscripciones` se refleja en la URL (Dashboard §5.5) | Aprobación de Dashboard v1.0 |

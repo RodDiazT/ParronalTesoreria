@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -225,7 +225,7 @@ Reglas del abono:
 | Sin respaldo | Marcados sin respaldo, con su observación. |
 | Sin identificar | Ingresos sin categoría (3.3). |
 
-Filtros combinables: tipo, categoría, contraparte, medio de pago, rango de fechas, quién registró, naturaleza y "mostrar anulados". Arriba, los totales de lo filtrado: ingresos, gastos y neto en dinero validado, y aparte el monto por validar y el valor en especie. Las definiciones de esos totales son las del marco §6.7; el tablero completo es del Dashboard.
+Filtros combinables: tipo, categoría, contraparte, medio de pago, rango de fechas, quién registró, naturaleza y "mostrar anulados". Arriba, los totales de lo filtrado: ingresos, gastos y neto en dinero validado, y aparte el monto por validar y el valor en especie. Las definiciones de esos totales son las del marco §6.7; el tablero completo es del Dashboard. La pestaña y los filtros se reflejan en la URL con el contrato de Dashboard §5.5, para que cada indicador abra su lista filtrada.
 
 **Ficha** `/movimientos/[id]`: todos los datos, los respaldos (miniaturas que abren en grande), el estado de validación con el último comentario, los abonos si los hay, el enlace a la inscripción si es de sistema, los botones según permisos y la **línea de tiempo** de auditoría (3.10).
 
@@ -448,7 +448,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | `agregarRespaldo(movimientoId, archivo)` | `registrar` | 3.9. |
 | `anularRespaldo(respaldoId, motivo, reemplazo?)` | `anular`, o dueño en por validar u observado | 3.9. |
 | `marcarRespaldoVisto(respaldoId)` | `validar` | 3.4. |
-| `resumenPendientesDe(usuarioId)` | `gestionar_accesos` | Implementa la función de Acceso y roles §5.3: por validar u observados enviados por esa persona, y reembolsos pendientes a su nombre. |
+| `resumenPendientesDe(usuarioId)` | `gestionar_accesos`, o cualquier rol cuando `usuarioId` es el propio (bloque "Lo mío" del Dashboard) | Implementa la función de Acceso y roles §5.3: por validar u observados enviados por esa persona, y reembolsos pendientes a su nombre. |
 
 Consultas: `listarMovimientos(filtros)`, `obtenerMovimiento(id)`, `bandejaPorValidar()`, `contadorPorValidar()`, `lineaDeTiempo(entidad, id)` y `listarAuditoria(filtros)` (esta última, `ver_auditoria`).
 
@@ -565,3 +565,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: contraparte obligatoria en pendientes (salvo reembolsos) y en categorías marcadas; guardado con foto en un solo envío con reintento; marcar pagado por un ayudante vuelve a por validar; abonos enlazados que se descuentan al validarse; fechas de hecho y de pago; validación de a uno; especie comprometida o recibida; respaldos agregables en cualquier estado; auditoría por movimiento y general; listado con pestañas; nombre de origen obligatorio en transferencias; el administrador corrige observados; ingreso sin identificar; anulación en cascada; descripción corta; observador sin nombre de origen ni observaciones |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; Organización y evento pasa a v1.2 con la marca `exigeContraparte` | Aprobación |
 | 2026-09-27 | 1.1 | Cascada de anulación a `Devolucion`; aviso en categorías de referencia de conceptos; función interna `registrarMovimientoSistema`; fila de pensión y alojamiento remite a los cargos | Aprobación de Inscripción de binomios v1.0 |
+| 2026-09-27 | 1.2 | §3.8: pestaña y filtros del listado en la URL (Dashboard §5.5). §5.3: `resumenPendientesDe` permitido para el propio usuario | Aprobación de Dashboard v1.0 |
