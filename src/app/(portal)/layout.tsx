@@ -29,13 +29,14 @@ export default async function PortalLayout({
       where: { estado: "solicitada" },
     });
     porValidar = await db(ctx).movimiento.count({
-      where: { estadoValidacion: "por_validar" },
+      where: { estadoValidacion: "por_validar", anulado: false },
     });
   } else if (ctx.rol === "ayudante") {
     misObservados = await db(ctx).movimiento.count({
       where: {
         estadoValidacion: "observado",
         registradoPorId: ctx.usuario.id,
+        anulado: false,
       },
     });
   }

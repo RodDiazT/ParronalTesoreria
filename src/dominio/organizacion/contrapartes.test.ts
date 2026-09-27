@@ -7,8 +7,8 @@ import {
   ejecutarFusionarContrapartes,
   ejecutarSuprimirDatosContraparte,
   ejecutarBuscarParecidosContrapartes,
-  ocultarDatosContraparte,
 } from "./contrapartes";
+import { ocultarDatosContraparte } from "@/lib/utilidades";
 import { prisma } from "@/lib/db";
 import { db } from "@/lib/contexto";
 import { Contexto } from "@/lib/permisos";

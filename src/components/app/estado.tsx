@@ -32,3 +32,5 @@ export function ChipEstado({ tono, texto, entidad, estado }: ChipEstadoProps) {
     </span>
   );
 }
+
+export { ChipEstado as Estado };

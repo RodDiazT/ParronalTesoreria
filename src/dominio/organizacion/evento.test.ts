@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import {
-  ejecutarActualizarEvento,
-  validarMagicBytesImagen,
-} from "./acciones";
+import { ejecutarActualizarEvento } from "./acciones";
+import { validarMagicBytesImagen } from "@/lib/utilidades";
 import { prisma } from "@/lib/db";
 import { db } from "@/lib/contexto";
 import { Contexto } from "@/lib/permisos";

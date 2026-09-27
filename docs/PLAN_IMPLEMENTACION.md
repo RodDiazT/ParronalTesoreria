@@ -147,40 +147,41 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 ### Fase 4: Movimientos, Respaldos y Validación de Tesorería
 **Documento base:** `docs/movimientos/movimientos.md`
 
-#### Paso 4.1: Formulario de Registro Rápido (Celular Primero)
-- **Archivos:** `src/components/app/hoja-registrar.tsx`, `src/app/movimientos/nuevo/page.tsx`.
-- **Qué hace:**
-  - Selección de tipo (Gasto / Ingreso), monto en CLP con teclado numérico, fecha de ocurrencia, medio de pago (transferencia, efectivo, otro).
-  - Estado de pago: `pagado` o `pendiente`. Si es gasto pagado por un ayudante de su bolsillo (`pagadoPorId`), nace como por pagar a esa persona.
-  - Selectores desplegables de categoría y contraparte (con opción de creación en línea en un toque).
-  - Regla de respaldo u observación: subida de comprobante o casilla obligatoria `sinRespaldo` con justificación.
+- [x] **4.1 Formulario de Registro Rápido (Celular Primero):**
+  - `src/app/(portal)/movimientos/nuevo/page.tsx` y `formulario-movimiento.tsx`: Formulario táctil en una sola columna con teclado numérico, selección de tipo (Gasto / Ingreso), estado de pago (`pagado` o `pendiente`), y soporte para gastos reembolsables (`pagadoPorId` asignado al usuario o selección de miembro).
+  - Selectores desplegables `<SelectorCategoria>` y `<SelectorContraparte>` con soporte para "No sé de qué es" (ingresos sin identificar) y creación rápida de contrapartes.
+  - Regla de respaldo u observación: subida obligatoria de fotos/PDF o casilla obligatoria `sinRespaldo` con justificación en caso de no adjuntar boleta.
+  - Modal de advertencia de posibles duplicados (±1 día y mismo monto) que no bloquea pero alerta al usuario.
+  - Generación de `claveCliente` en cliente (`crypto.randomUUID()`) para garantizar envíos idempotentes sin duplicar ante reintentos o desconexiones de red.
+- [x] **4.2 Compresión y Servidor Seguro de Respaldos:**
+  - `src/lib/archivos/compresion.ts`: Compresión en cliente mediante Canvas HTML5 (máx. 1600 px, JPEG 80%), eliminando metadatos EXIF por privacidad y habilitando envíos ultrarrápidos con baja cobertura móvil.
+  - `src/lib/archivos/almacenamiento.ts`: Guardado atómico en disco persistente (`RUTA_RESPALDOS`), con validación de magic bytes (JPEG, PNG, PDF; rechazo estricto de SVG, HTML y ejecutables).
+  - `src/app/api/respaldos/[id]/route.ts`: Endpoint seguro que verifica membresía de organización y rol (oculto a observadores), con cabeceras `Cache-Control: private, no-store` y `X-Content-Type-Options: nosniff`.
+- [x] **4.3 Acciones de Servidor y Listado de Movimientos:**
+  - `src/dominio/movimientos/acciones.ts`: Acciones de servidor con validación Zod, idempotencia por `claveCliente`, cálculo de totales con `filtroSumable`, autovalidación de administradores, y trazabilidad completa en `RegistroAuditoria`.
+  - `src/dominio/movimientos/reglas.ts`: Reglas de dominio para fechas futuras, validación de especie (solo ingresos), contrapartes requeridas, y enmascaramiento de privacidad para observadores (`ocultarDatosMovimiento`).
+  - `src/app/(portal)/movimientos/page.tsx` y `lista-movimientos.tsx`: Listado con pestañas interactivas (*Todos*, *Por validar*, *Observados*, *Por cobrar*, *Por pagar*, *Sin respaldo*, *Sin identificar*), filtros reflejados en URL, tarjetas táctiles de dos líneas y fila de totales plegable.
+  - `src/app/(portal)/movimientos/[id]/page.tsx` y `ficha-movimiento.tsx`: Ficha detallada con galería de comprobantes, visor modal ampliado, línea de tiempo de auditoría, e historial de abonos enlazados. Modales contextuales de edición con control de concurrencia (`version`), anulación con cascada (restitución de saldos de abonos y anulación de devoluciones vinculadas), adición y anulación justificada de comprobantes individuales.
+- [x] **4.4 Bandeja de Validación y Probidad de Tesorería:**
+  - `src/app/(portal)/movimientos/validar/page.tsx` y `bandeja-validar.tsx`: Bandeja de validación de a un movimiento a la vez para administradores, con visualizador amplio del comprobante y datos clave en un solo vistazo.
+  - Acciones rápidas en un clic: botón `Validar` (verde prominente) y botón `Observar` con comentario obligatorio para devolver al ayudante.
+  - Cumplimiento estricto del principio de probidad (`exigirNoPropio`): ningún administrador puede validar ni autoaprobar movimientos registrados por él mismo.
+  - Sección de "Respaldos nuevos" para comprobantes agregados posteriormente a movimientos ya validados, con botón "Marcar como visto".
+- [x] **4.5 Cobranzas, Pagos de Pendientes y Abonos Parciales:**
+  - `src/dominio/movimientos/abonos.ts`: Manejo concurrente de pagos totales y abonos parciales (`marcarPagado`), con bloqueo de fila (`SELECT FOR UPDATE` implícito en transacción Prisma) para evitar condiciones de carrera.
+  - Los abonos parciales crean un movimiento hijo enlazado (`abonoDeId`). Si lo registra un administrador, descuenta el saldo inmediatamente; si lo registra un ayudante, queda `por_validar` y descuenta el saldo al momento de la validación.
+  - Al anular un abono validado, se restituye atómicamente el saldo pendiente al movimiento original.
+  - Pantalla general de auditoría `src/app/(portal)/auditoria/page.tsx` y `vista-auditoria.tsx`: Vista exclusiva para administradores con filtros por entidad, acción y usuario, y visor de diferencias JSON antes/después.
 
-#### Paso 4.2: Compresión y Servidor Seguro de Respaldos
-- **Archivos:** `src/lib/archivos/compresion.ts`, `src/app/api/respaldos/[id]/route.ts`.
-- **Qué hace:**
-  - Compresión en el cliente con HTML5 Canvas (máx. 1600 px, JPEG) para envíos ultrarrápidos con baja señal.
-  - Almacenamiento seguro en disco persistente (`/data/respaldos/movimientos/...`).
-  - Route handler que valida membresía y rol (oculto para observador) con cabeceras `Cache-Control: private, no-store`.
-
-#### Paso 4.3: Acciones de Servidor de Movimientos
-- **Archivos:** `src/dominio/movimientos/acciones.ts`.
-- **Qué hace:**
-  - `registrarMovimiento`: Idempotencia por `claveCliente`, autovalidación de administradores, aviso de duplicados (±1 día y mismo monto).
-  - `editarMovimiento` y `anularMovimiento`: Control por `version`, motivo de anulación obligatorio, nunca borrado físico.
-
-#### Paso 4.4: Bandeja de Validación y Observación
-- **Archivos:** `src/app/movimientos/page.tsx` (pestañas *Por validar*, *Observados*, *Todos*).
-- **Qué hace:**
-  - Validación individual por el administrador revisando el comprobante.
-  - Acción de `observarMovimiento`: comentario obligatorio, devuelve el ítem al ayudante para corrección.
-  - Aplicación estricta de `exigirNoPropio`: nadie valida sus propios movimientos.
-
-#### Paso 4.5: Cobranzas, Pagos de Pendientes y Abonos
-- **Archivos:** `src/dominio/movimientos/abonos.ts`.
-- **Qué hace:**
-  - Marcar pagado: total o creación de abono parcial enlazado (`abonoDeId`).
-  - Bloqueo de fila para evitar condiciones de carrera en pagos simultáneos.
-  - Deducción de saldos al validarse el abono.
+**Criterios de verificación de Fase 4:**
+- [x] Formulario móvil en una columna con teclado numérico, selector táctil de archivos/cámara con compresión Canvas y modal de duplicados.
+- [x] Endpoint de respaldos seguro `/api/respaldos/[id]` con validación estricta de magic bytes (JPEG/PNG/PDF) y bloqueo a rol observador.
+- [x] Listado `/movimientos` con pestañas de estado, filtros sincronizados en URL y totales filtrados por `filtroSumable`.
+- [x] Ficha de detalle `/movimientos/[id]` con auditoría visual, galería de comprobantes, y modales para editar, observar, anular y abonar.
+- [x] Bandeja administrativa `/movimientos/validar` con navegación uno a uno, probidad `exigirNoPropio` y revisión de respaldos nuevos.
+- [x] Módulo `/auditoria` para administradores con historial completo de transacciones.
+- [x] 19 pruebas de integración exhaustivas en `movimientos.test.ts` cubriendo idempotencia, probidad, abonos, anulación en cascada y privacidad.
+- [x] 83 tests pasando al 100% en todo el proyecto (9 suites de Vitest) y compilación limpia en Next.js (`npm run build`).
 
 ---
 

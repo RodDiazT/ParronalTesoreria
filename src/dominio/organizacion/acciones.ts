@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { obtenerContexto, db, registrarAuditoria } from "@/lib/contexto";
 import { Contexto, exigir } from "@/lib/permisos";
-import { normalizarNombre } from "@/lib/utilidades";
+import { normalizarNombre, validarMagicBytesImagen } from "@/lib/utilidades";
 
 const eventoSchema = z.object({
   id: z.string(),
@@ -19,53 +19,6 @@ const eventoSchema = z.object({
 });
 
 export type EventoFormData = z.infer<typeof eventoSchema>;
-
-/**
- * Valida magic bytes de imagen para permitir únicamente PNG, JPEG o WebP.
- * Prohíbe SVG por seguridad (docs/organizacion/organizacion-evento.md §3.3 y §5.4).
- */
-export function validarMagicBytesImagen(buffer: Buffer): {
-  valido: boolean;
-  tipoMime?: string;
-  extension?: string;
-  error?: string;
-} {
-  if (buffer.length < 12) {
-    return { valido: false, error: "Archivo dañado o demasiado pequeño." };
-  }
-
-  // PNG: 89 50 4E 47 0D 0A 1A 0A
-  if (
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47 &&
-    buffer[4] === 0x0d &&
-    buffer[5] === 0x0a &&
-    buffer[6] === 0x1a &&
-    buffer[7] === 0x0a
-  ) {
-    return { valido: true, tipoMime: "image/png", extension: "png" };
-  }
-
-  // JPEG: FF D8 FF
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return { valido: true, tipoMime: "image/jpeg", extension: "jpg" };
-  }
-
-  // WebP: RIFF .... WEBP
-  if (
-    buffer.toString("ascii", 0, 4) === "RIFF" &&
-    buffer.toString("ascii", 8, 12) === "WEBP"
-  ) {
-    return { valido: true, tipoMime: "image/webp", extension: "webp" };
-  }
-
-  return {
-    valido: false,
-    error: "Formato no permitido. Solo se aceptan imágenes PNG, JPEG o WebP (no se permite SVG).",
-  };
-}
 
 export async function ejecutarActualizarEvento(ctx: Contexto, datos: EventoFormData) {
   exigir(ctx, "configurar");

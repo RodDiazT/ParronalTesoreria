@@ -42,3 +42,6 @@ carga-inicial.json
 *.local.json
 carga-inicial.local.json
 !carga-inicial.ejemplo.json
+
+# archivos temporales de desarrollo
+/scratch/

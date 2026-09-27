@@ -44,7 +44,7 @@ export function itemsMenu(
     porRevisar.push({
       id: "validar",
       etiqueta: "Validar",
-      href: "/movimientos?pestana=por_validar",
+      href: "/movimientos/validar",
       contador: contadores.porValidar > 0 ? contadores.porValidar : undefined,
     });
   } else if (ctx.rol === "ayudante") {

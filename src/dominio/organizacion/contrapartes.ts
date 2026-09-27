@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { obtenerContexto, db, registrarAuditoria } from "@/lib/contexto";
 import { Contexto, exigirRol } from "@/lib/permisos";
-import { normalizarNombre, validarRut, sonNombresParecidos } from "@/lib/utilidades";
+import { normalizarNombre, validarRut, sonNombresParecidos, ocultarDatosContraparte } from "@/lib/utilidades";
 
 const contraparteSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(120, "Máximo 120 caracteres."),
@@ -14,7 +14,7 @@ const contraparteSchema = z.object({
   rut: z.string().trim().optional().nullable(),
 });
 
-export type ContraparteInput = z.infer<typeof contraparteSchema>;
+export type ContraparteInput = z.input<typeof contraparteSchema>;
 
 export interface ContraparteDTO {
   id: string;
@@ -32,23 +32,7 @@ export interface ContraparteDTO {
   movimientosCount?: number;
 }
 
-/**
- * Suprime contacto y RUT si el rol del usuario es observador.
- * (docs/organizacion/organizacion-evento.md §3.5 y §5.2)
- */
-export function ocultarDatosContraparte<T extends { contacto?: string | null; rut?: string | null }>(
-  ctx: Contexto,
-  contraparte: T
-): T {
-  if (ctx.rol === "observador") {
-    return {
-      ...contraparte,
-      contacto: null,
-      rut: null,
-    };
-  }
-  return contraparte;
-}
+
 
 export async function ejecutarBuscarParecidosContrapartes(ctx: Contexto, nombre: string): Promise<{ id: string; nombre: string }[]> {
   const activas = await db(ctx).contraparte.findMany({
@@ -105,6 +89,7 @@ export async function ejecutarCrearContraparte(ctx: Contexto, datos: Contraparte
 
   const nueva = await db(ctx).contraparte.create({
     data: {
+      organizacionId: ctx.organizacionId,
       nombre,
       nombreNormalizado: nombreNorm,
       esAuspiciador,

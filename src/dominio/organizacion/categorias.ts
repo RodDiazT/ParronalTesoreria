@@ -57,6 +57,7 @@ export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategori
 
   const nueva = await db(ctx).categoria.create({
     data: {
+      organizacionId: ctx.organizacionId,
       nombre,
       nombreNormalizado: nombreNorm,
       tipo,
