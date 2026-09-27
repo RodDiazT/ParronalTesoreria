@@ -1,6 +1,6 @@
 # Dashboard
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -75,20 +75,21 @@ e. **¿Se resuelve con algo existente?** En parte: el listado de Movimientos mue
 
 Ruta `/` (inicio). Es la primera pantalla después de entrar, para los tres roles (decisión de Rod). Encabezado de Organización y evento §3.6 y la hora de cálculo: "Actualizado 15:42".
 
-Orden de los bloques:
+Orden, bloques visibles y plegados: los define UX/UI §3.4 (`docs/interfaz/ux-ui.md`). Resumen:
 
 | Bloque | Administrador | Ayudante | Observador |
 |---|---|---|---|
-| 1. Botones **Gasto**, **Ingreso** y **Pago de inscripción** | Sí | Sí | No |
-| 2. Avisos (3.5) | Sí | No | No |
-| 3. **Lo mío** (3.6) | No | Sí | No |
-| 4. Indicadores (3.2 y 3.3) | Sí | Sí | Sí |
+| 1. **Por revisar**: avisos (3.5) como filas | Sí | No | No |
+| 1. **Lo mío** (3.6) | No | Sí | No |
+| 2. Saldo de caja con saldo por medio (3.3) | Sí | Sí | Sí |
+| 3. Por cobrar, Por pagar y Resultado proyectado (3.2) | Sí | Sí | Sí |
+| 4. **Ver detalle**, plegado: Ingresos percibidos, Gastos pagados y las tarjetas "aparte" (3.2) | Sí | Sí | Sí |
 | 5. **Copiar resumen** (3.7) | Sí | No | Sí |
 | 6. **Más indicadores** (v1.1, 3.9), plegado | Sí | Sí | Sí |
 
-- Los botones del bloque 1 llevan a `/movimientos/nuevo?tipo=gasto`, `/movimientos/nuevo?tipo=ingreso` e `/inscripciones/pago`. Están arriba y son grandes para registrar en menos de un minuto (marco §3). El botón fijo **+ Registrar** de Movimientos §5.4 se mantiene en las demás pantallas.
+- Registrar se hace con el botón "+" de UX/UI §3.2 (Gasto, Ingreso, Pago de inscripción e Inscribir binomio), presente también en el inicio para administrador y ayudante. El inicio ya no tiene botones de registro propios.
 - Si no hay evento configurado, el inicio muestra el mensaje de Organización y evento §3.6.
-- Sin datos, cada indicador muestra $0 y el inicio muestra "Todavía no hay movimientos. Registra el primero con los botones de arriba" (solo a administrador y ayudante).
+- Sin datos, cada indicador muestra $0 y el inicio muestra "Todavía no hay movimientos. Registra el primero con el botón +" (solo a administrador y ayudante).
 
 ### 3.2 Indicadores (v1.0)
 
@@ -106,7 +107,9 @@ Todas las definiciones son las del marco §6.7 (solo movimientos no anulados de 
 | **Por asignar** (aparte) | Monto de `totalPorAsignar`. Se oculta si es $0. | `/inscripciones?pestana=por-asignar`. |
 | **En especie** (aparte) | Suma de valores estimados y la línea "de lo cual comprometido $X" si hay especie pendiente. Texto: "No suma a la caja". Se oculta si es $0. | `/movimientos?naturaleza=especie`. |
 
-Reglas de presentación:
+Reglas de presentación (la forma visual es de UX/UI §3.4 y §3.6):
+
+- Por cobrar y Por pagar muestran el total; al tocarlos se abre una hoja con sus dos líneas de desglose, y cada línea abre su lista.
 
 - Las tarjetas "aparte" van en una fila separada y en gris, para no confundirlas con dinero disponible (marco §6.7).
 - Un monto negativo (saldo o resultado proyectado) se muestra con signo menos y en rojo. No es un error: puede pasar si se pagó algo antes de recibir fondos.
@@ -152,7 +155,7 @@ Saldo de caja            $1.250.000
 
 ### 3.5 Avisos del administrador (v1.0)
 
-Franjas arriba de los indicadores, cada una con su contador y enlace. Solo se muestran mientras haya algo que revisar (decisión de Rod):
+Filas del bloque **Por revisar** del inicio (UX/UI §3.4), cada una con su contador y enlace. Solo se muestran mientras haya algo que revisar (decisión de Rod):
 
 | Aviso | Condición | Enlace | Dueño de la regla |
 |---|---|---|---|
@@ -271,7 +274,7 @@ Aparece cuando Conciliación con cartola esté implementada (decisión de Rod):
 ### 3.10 Evento cerrado o rendido (v1.1)
 
 - El inicio muestra una etiqueta "Evento cerrado el 30-11-2026" o "Rendido el …" junto al nombre.
-- Los botones de registro se ocultan para el ayudante (solo el administrador registra después del cierre; marco §6.10).
+- El botón "+" se oculta para el ayudante (solo el administrador registra después del cierre; marco §6.10).
 - Los indicadores incluyen los movimientos posteriores al cierre (son dinero real). Si hay alguno, una línea bajo el saldo: "Incluye $X registrados después del cierre".
 - Los avisos siguen apareciendo si hay algo pendiente (por ejemplo, por asignar).
 
@@ -279,7 +282,7 @@ Aparece cuando Conciliación con cartola esté implementada (decisión de Rod):
 
 | Elemento | Administrador | Ayudante | Observador |
 |---|---|---|---|
-| Botones de registro | Sí | Sí (no con evento cerrado) | No |
+| Botón "+" (UX/UI §3.2) | Sí | Sí (no con evento cerrado) | No |
 | Avisos | Sí | No | No |
 | Lo mío | No | Sí | No |
 | Indicadores de 3.2 y saldo por medio | Sí | Sí | Sí |
@@ -419,7 +422,7 @@ El archivo del traspaso se comprime en el navegador con `<CapturaRespaldo>` (Mov
 | `/traspasos/nuevo` | Administrador | Formulario de 3.4. |
 | `/api/traspasos/[id]/archivo` | Administrador y ayudante | Comprobante del traspaso. |
 | `<TarjetaIndicador>` | Todos | Monto, líneas de desglose, ayuda y enlace. |
-| `<FranjaAviso>` | Administrador | 3.5. |
+| `<BloquePorRevisar>` | Administrador | 3.5, como filas (UX/UI §3.4). |
 | `<BloqueLoMio>` | Ayudante | 3.6. |
 | `<BotonCopiarResumen>` | Administrador y observador | 3.7, con respaldo de hoja inferior. |
 | `<MasIndicadores>` (v1.1) | Todos | Carga diferida de 3.9. |
@@ -505,7 +508,7 @@ Con `registrarAuditoria` (marco §6.8). Entidad `Traspaso`, acciones `crear` y `
 | El desglose banco / efectivo no cuadra porque no se registran los giros o depósitos | Operativo | Traspasos (3.4); saldo negativo en rojo con ayuda (3.3); revisar la cuadratura cada semana y el día del concurso. |
 | Se confunde "por validar" o "en especie" con dinero disponible | Experiencia | Tarjetas aparte en gris con texto de ayuda (3.2). |
 | Resultado proyectado leído como dinero seguro | Experiencia | Texto de ayuda "Lo que quedaría si se cobra y se paga todo lo pendiente". |
-| El ayudante tarda en registrar porque el inicio es largo | Experiencia | Botones de registro arriba y botón fijo **+ Registrar** (3.1). |
+| El ayudante tarda en registrar porque el inicio es largo | Experiencia | Botón "+" siempre visible (UX/UI §3.2) e inicio con lo secundario plegado (UX/UI §3.4). |
 | Carga lenta con señal baja | Experiencia | Solo texto en v1.0, gráficos diferidos, hora de cálculo visible (3.8). |
 | Resumen copiado con datos desactualizados | Operativo | Lleva fecha y hora de cálculo. |
 | Comprobante de traspaso con datos bancarios visible al observador | Normativo | Servido solo tras `puedeVerRespaldos` (5.3). |
@@ -520,3 +523,4 @@ Con `registrarAuditoria` (marco §6.8). Entidad `Traspaso`, acciones `crear` y `
 |---|---|---|---|
 | 2026-09-27 | 1.0 | Documento aprobado sin borrador previo, por pedido de Rod | Sesión con Rod: el documento cubre v1.0 y v1.1; el Dashboard es el inicio para todos, con botones de registro para administrador y ayudante; el saldo por medio de pago pasa a v1.0, con traspasos entre banco y efectivo solo por el administrador; cada indicador abre su lista filtrada; línea "de lo cual, aporte inicial"; bloque "Lo mío" del ayudante; avisos de por asignar, ajustes por ver y alertas de menores para el administrador; "Copiar resumen" para administrador y observador; % pagadas por monto y por cantidad; ingresos y gastos por categoría; evolución de ingresos y gastos con horizonte configurable (por defecto, desde la creación del evento hasta su cierre) y agrupación automática; estado de conciliación para el administrador |
 | 2026-09-27 | 1.1 | §3.5 y §3.6: aviso "inscripciones por formulario por revisar" para administrador y ayudante (v1.1); §5: contador en `avisosAdministrador` y `loMio` | Aprobación de Formulario de inscripción v1.0 |
+| 2026-09-27 | 1.2 | §3.1: el orden y lo plegado del inicio pasan a UX/UI §3.4 y se eliminan los botones Gasto, Ingreso y Pago de inscripción (los reemplaza el "+" de UX/UI §3.2). §3.2: Por cobrar y Por pagar abren su desglose en una hoja. §3.5: los avisos son filas de "Por revisar" | Aprobación de UX/UI v1.0 |

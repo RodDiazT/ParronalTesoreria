@@ -1,6 +1,6 @@
 # Acceso y roles
 
-Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -149,7 +149,7 @@ La matriz del marco §2.2 es la regla. Aquí solo se precisa cómo se ve en la i
 
 | | Administrador | Ayudante | Observador | Solicitante |
 |---|---|---|---|---|
-| Menú | Todo, incluidos **Usuarios** y **Configuración** | Registro, listados, dashboard, **Comisión**, Mi cuenta | Dashboard, listados, **Comisión**, Mi cuenta | Solo `/solicitud` y Mi cuenta |
+| Menú (grupos, contadores y orden en UX/UI §3.3) | Todo, incluidos **Usuarios** y **Configuración** | Registro, listados, dashboard, **Comisión**, Mi cuenta | Dashboard, listados, **Comisión**, Mi cuenta | Solo `/solicitud` y Mi cuenta |
 | Lista de quiénes tienen acceso | Completa en **Usuarios** (correo, estado, historial, acciones) | **Comisión**: nombre, imagen y rol de cada acceso activo, sin correos | Igual que el ayudante | No |
 | Botones de acciones no permitidas | — | No se muestran | No se muestran | — |
 | Datos personales y respaldos | Sí | Sí | Se ocultan en el servidor, no solo en la interfaz | — |
@@ -383,9 +383,9 @@ export function exigir(ctx: Contexto, accion: Accion): void; // lanza 403
 | `/mi-cuenta` | Con sesión | Datos, rol, aviso, cierre de sesión y descarga de datos (3.6, 3.9). |
 | `/sin-permiso` | Con sesión | Página del 403. |
 | Middleware | Todas | Sin sesión → `/ingresar`. Con sesión y sin aviso aceptado → `/bienvenida`. El resto lo resuelve `obtenerContexto`. Excepciones públicas: `/ingresar`, `/privacidad` y, en v1.1, `/inscribirse/*` (Formulario de inscripción §5.3). |
-| Menú | Con membresía activa | Ítems según `permisos` y contador de solicitudes para administradores. |
+| Menú | Con membresía activa | Ítems según `permisos` y contador de solicitudes para administradores; hamburguesa en el celular y lateral en el computador (UX/UI §3.3). |
 
-Diseño para el celular: listas con tarjetas, botones grandes y confirmaciones en hoja inferior. Las pantallas de usuarios se usan poco y pueden ser simples.
+Diseño para el celular con los patrones de UX/UI §3.7 a §3.10: listas con tarjetas, botones grandes y confirmaciones en hoja inferior. Las pantallas de usuarios se usan poco y pueden ser simples.
 
 ### 5.6 Auditoría
 
@@ -476,3 +476,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el pa
 | 2026-09-27 | 1.1 | §3.8: el aviso declara a Google (API de Gemini de pago) como encargado de tratamiento para la IA de importación y conciliación, con transferencia fuera de Chile. Sube `AVISO_PRIVACIDAD_VERSION`: todos los usuarios vuelven a aceptarlo | Aprobación de Importación desde Excel v1.0 |
 | 2026-09-27 | 1.2 | §5.4: acción `registrar_traspaso` (solo administrador) | Aprobación de Dashboard v1.0 (marco v1.5, §2.2) |
 | 2026-09-27 | 1.3 | §3.8: el aviso completo agrega los datos del formulario de inscripción; sube `AVISO_PRIVACIDAD_VERSION`. §5.5: el middleware deja pública `/inscribirse/*` | Aprobación de Formulario de inscripción v1.0 |
+| 2026-09-27 | 1.4 | §3.6 y §5.5: el menú por rol se presenta según UX/UI §3.3 (grupos, contadores, hamburguesa en el celular y lateral en el computador); se mantiene ocultar lo no permitido | Aprobación de UX/UI v1.0 |

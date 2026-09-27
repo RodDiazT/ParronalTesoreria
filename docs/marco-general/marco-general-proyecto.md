@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.6 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.7 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -351,6 +351,7 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 |---|---|---|
 | Aplicación | Next.js (versión estable vigente, App Router) con TypeScript | Una sola app para pantallas y API; menos piezas que desplegar; el ejecutor la implementa con rapidez. |
 | Interfaz | Tailwind CSS, diseño mobile-first | Rápido de construir y liviano en el celular. |
+| Componentes e íconos | shadcn/ui (copiado al repositorio), lucide-react y sonner; fuente del sistema; modo claro y oscuro según el sistema; instalable con manifiesto y sin service worker en v1.0. Detalle en `docs/interfaz/ux-ui.md` §5 | Componentes accesibles sin construirlos a mano, sin servicio ni costo; nada que descargar con mala señal. |
 | Validación de datos | Zod, compartido entre formulario y servidor | Una sola definición de reglas por formulario. |
 | Base de datos | PostgreSQL de Railway | Relacional, adecuado para montos y auditoría; incluido en la cuenta existente. |
 | Acceso a datos | Prisma | Esquema declarativo y migraciones versionadas en el repositorio. |
@@ -448,6 +449,7 @@ Ante un acceso no autorizado, el administrador revoca las membresías afectadas,
 | `inscripciones/` | Jinetes, apoderados, caballos, clubes, binomios, inscripciones, pagos, importación desde Excel y formulario de inscripción. |
 | `dashboard/` | Indicadores y KPIs. |
 | `rendicion/` | Cierre del evento, informe de rendición y exportaciones. |
+| `interfaz/` | Navegación, sistema visual y patrones comunes de pantalla. |
 
 La auditoría es transversal y la define este documento (6.8); cada dominio la invoca.
 
@@ -458,6 +460,9 @@ prisma/schema.prisma            modelos del dominio (sección 5)
 src/app/                        rutas y pantallas de Next.js
 src/dominio/<dominio>/          reglas de negocio, acciones de servidor y consultas por dominio
 src/lib/                        auth, acceso a datos con filtro por organización, auditoría, archivos
+src/lib/presentacion/           formato de montos y fechas, estados visuales, menú (UX/UI §5.5)
+src/components/ui/              componentes base de shadcn/ui
+src/components/app/             componentes comunes de la interfaz (UX/UI §5.4)
 docs/                           documentación
 ```
 
@@ -483,6 +488,7 @@ Datos iniciales: la organización, el evento y los administradores se crean con 
 | Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores de 6.7, saldo por medio de pago y traspasos en v1.0; KPIs ampliados en v1.1 | v1.0 / v1.1 | Movimientos, Inscripciones |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | v1.1 | Movimientos |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | v1.1 | Movimientos, Inscripciones |
+| UX/UI | `docs/interfaz/ux-ui.md` | Navegación (menú y botón "+"), sistema visual, estados, montos, listas, fichas, formularios, inicio plegado e instalable | v1.0 | Componentes con pantallas |
 
 Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Importación desde Excel" (v1.0), "Formulario de inscripción" (v1.1), "Conciliación con cartola" (v1.1) y "Registro sin señal" (v1.1) y "Exportación para rendición" pasa a llamarse "Cierre y rendición" (misma ruta), porque incluye el cierre del evento. Lo por cobrar y por pagar mínimo queda dentro de Movimientos (v1.0); "Pendientes" conserva la vista consolidada y las tareas (v1.1).
 
@@ -546,3 +552,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 1.4 | §4, §11, §12 y §13: la importación desde Excel pasa a v1.1. §5: entidad `Importacion`. §6.12: plantilla para terceros, cualquier formato con mapeo propuesto por IA, fechas y RUT no reconocidos como advertencia, lo ya inscrito se omite, montos y pagos de la planilla como listas. §3, §7 (principio 8), §8 y §9.4: la IA del proyecto pasa de la API de Claude a la API de Gemini de pago, para importación y conciliación, con Google como encargado | Aprobación de Importación desde Excel v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.5 | §2.2: fila de traspasos entre medios de pago (solo administrador). §4: el saldo por medio de pago pasa a v1.0 y los KPIs de v1.1 se precisan. §5 y §5.2: entidad `Traspaso`. §6.7: saldo por medio de pago y definiciones de los KPIs de v1.1. §11 y §13: se ajustan | Aprobación de Dashboard v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.6 | §4 y §9.4: el formulario de inscripción recibe un binomio por envío con comprobante opcional, muestra la configuración del evento y sugiere los clubes activos, sin mostrar otros registros. §5: entidad `EnlaceFormulario` y detalle de `SolicitudInscripcion`. §9.2: remitente del formulario. §9.5: solicitudes rechazadas o vencidas a los 30 días | Aprobación de Formulario de inscripción v1.0 |
+| 2026-09-27 | 1.7 | §8: fila de componentes e íconos (shadcn/ui, lucide-react, sonner, fuente del sistema, modo claro y oscuro, instalable). §10.1: carpeta de dominio `interfaz/`. §10.2: `src/lib/presentacion/`, `src/components/ui/` y `src/components/app/`. §11: UX/UI como hijo de primer nivel | Aprobación de UX/UI v1.0 |

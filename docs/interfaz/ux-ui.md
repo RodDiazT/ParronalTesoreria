@@ -1,6 +1,6 @@
 # UX/UI — Sistema de interfaz
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -590,3 +590,4 @@ Sin cambios: Participantes, Importación desde Excel y Formulario de inscripció
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador: navegación con menú hamburguesa (lateral en el computador) y un "+" con cuatro acciones; inicio con saldo y tres cifras, el resto plegado; cuatro tonos de estado con palabra; tarjetas de dos líneas; ingresos en verde y gastos en rojo; modo claro y oscuro según el sistema; shadcn/ui; instalable (recortable a v1.1); buscador general en v1.1 | Decisiones de Rod en la sesión |
+| 2026-09-27 | 1.0 | Aprobado por Rod sin cambios; se aplican los cambios de la sección 6 a los documentos dueños | Aprobación |

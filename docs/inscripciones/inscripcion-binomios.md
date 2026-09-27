@@ -1,6 +1,6 @@
 # Inscripción de binomios
 
-Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -277,7 +277,7 @@ Pagos recibidos en revisión: $15.000
 
 | Pestaña | Contenido |
 |---|---|
-| Binomios | Jinete, caballo, club del binomio, pruebas, total, pagado, saldo y estado. Filtros: club, prueba, estado y, para administrador y ayudante, "Con alertas". Búsqueda por jinete o caballo. |
+| Binomios | Tarjeta de dos líneas (UX/UI §3.7): jinete · caballo · saldo; club · N pruebas · estado. Total y pagado, en la ficha. Filtros: club, prueba, estado y, para administrador y ayudante, "Con alertas". Búsqueda por jinete o caballo. |
 | Por prueba | Por cada prueba: inscripciones vigentes, monto total y pagado. Sin cupos. |
 | Cargos | Cuotas y servicios con sujeto, concepto, cantidad, monto y estado. |
 | Por cobrar | Ítems con saldo, agrupados por club, con el total. |
@@ -760,3 +760,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 1.1 | El hijo Importación desde Excel pasa a v1.1 (§1, §2). §5.1: `importacionId` opcional en `Binomio` e `Inscripcion`. §5.3: `inscribir` acepta transacción externa, `importacionId` y `auditar: false` | Aprobación de Importación desde Excel v1.0 |
 | 2026-09-27 | 1.2 | §3.12: la pestaña de `/inscripciones` se refleja en la URL (Dashboard §5.5) | Aprobación de Dashboard v1.0 |
 | 2026-09-27 | 1.3 | §2: fila del Formulario de inscripción. §3.12: pestaña Por revisar. §5.3: `registrarPagoInscripciones` acepta `tx` y `respaldoExistente` | Aprobación de Formulario de inscripción v1.0 |
+| 2026-09-27 | 1.4 | §3.12: la pestaña Binomios se muestra como tarjeta de dos líneas (UX/UI §3.7) | Aprobación de UX/UI v1.0 |

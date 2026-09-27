@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -68,7 +68,7 @@ e. **¿Se resuelve con algo existente?** No. Es el núcleo del portal; hoy solo 
 
 ### 3.1 Registrar un movimiento (ayudante o administrador, desde el celular)
 
-Botón fijo **+ Registrar** en todas las pantallas para quien puede registrar. Primero se elige **Gasto** o **Ingreso** (dos botones grandes). El formulario muestra primero lo imprescindible y pliega lo opcional:
+Se entra con el botón **+** de UX/UI §3.2 (`docs/interfaz/ux-ui.md`), que ofrece **Gasto**, **Ingreso**, **Pago de inscripción** e **Inscribir binomio**; los dos primeros abren este formulario. El formulario muestra primero lo imprescindible y pliega lo opcional:
 
 | Campo | Regla |
 |---|---|
@@ -135,7 +135,7 @@ La validación rechaza un movimiento sin categoría.
 
 ### 3.4 Validar u observar (administrador)
 
-**Aviso dentro del portal:** el menú muestra **Validar · N** y el inicio del administrador una franja "Hay N movimientos por validar ($ total)", mientras haya alguno.
+**Aviso dentro del portal:** el menú muestra **Validar · N** (UX/UI §3.3) y el inicio del administrador una fila de "Por revisar" "Hay N movimientos por validar ($ total)", mientras haya alguno.
 
 **Bandeja** `/movimientos/validar`, de a uno (decisión de Rod), del más antiguo al más reciente:
 
@@ -213,7 +213,7 @@ Reglas del abono:
 
 ### 3.8 Listado y ficha
 
-**Listado** `/movimientos`, con tarjetas para el celular (fecha, monto con signo visual, categoría, contraparte o descripción, iconos de respaldo, estado de pago y de validación) y pestañas rápidas (decisión de Rod):
+**Listado** `/movimientos`, con tarjetas de dos líneas (descripción y monto con signo; fecha, categoría y un solo estado, según UX/UI §3.5 y §3.7; el resto en la ficha) y pestañas rápidas (decisión de Rod):
 
 | Pestaña | Contenido |
 |---|---|
@@ -225,7 +225,7 @@ Reglas del abono:
 | Sin respaldo | Marcados sin respaldo, con su observación. |
 | Sin identificar | Ingresos sin categoría (3.3). |
 
-Filtros combinables: tipo, categoría, contraparte, medio de pago, rango de fechas, quién registró, naturaleza y "mostrar anulados". Arriba, los totales de lo filtrado: ingresos, gastos y neto en dinero validado, y aparte el monto por validar y el valor en especie. Las definiciones de esos totales son las del marco §6.7; el tablero completo es del Dashboard. La pestaña y los filtros se reflejan en la URL con el contrato de Dashboard §5.5, para que cada indicador abra su lista filtrada.
+Filtros combinables: tipo, categoría, contraparte, medio de pago, rango de fechas, quién registró, naturaleza y "mostrar anulados". Arriba, en una línea desplegable (UX/UI §3.7), los totales de lo filtrado: ingresos, gastos y neto en dinero validado, y aparte el monto por validar y el valor en especie. Las definiciones de esos totales son las del marco §6.7; el tablero completo es del Dashboard. La pestaña y los filtros se reflejan en la URL con el contrato de Dashboard §5.5, para que cada indicador abra su lista filtrada.
 
 **Ficha** `/movimientos/[id]`: todos los datos, los respaldos (miniaturas que abren en grande), el estado de validación con el último comentario, los abonos si los hay, el enlace a la inscripción si es de sistema, los botones según permisos y la **línea de tiempo** de auditoría (3.10).
 
@@ -456,7 +456,7 @@ Consultas: `listarMovimientos(filtros)`, `obtenerMovimiento(id)`, `bandejaPorVal
 
 | Ruta o componente | Rol | Contenido |
 |---|---|---|
-| Botón **+ Registrar** | Administrador y ayudante | Fijo abajo a la derecha, en todas las pantallas. |
+| Botón **+** | Administrador y ayudante | Definido en UX/UI §3.2. |
 | `/movimientos/nuevo?tipo=gasto\|ingreso` | Administrador y ayudante | Formulario de 3.1, una columna, botones grandes, campos opcionales plegados. |
 | `/movimientos` | Todos con membresía activa | Listado con pestañas, filtros y totales (3.8). |
 | `/movimientos/[id]` | Todos (con lo oculto al observador) | Ficha, respaldos, abonos, acciones y línea de tiempo (3.8, 3.10). |
@@ -464,7 +464,7 @@ Consultas: `listarMovimientos(filtros)`, `obtenerMovimiento(id)`, `bandejaPorVal
 | `/auditoria` | Administrador | Pantalla general con filtros (3.10). |
 | `/api/respaldos/[id]` | Administrador y ayudante | Sirve el archivo tras `puedeVerRespaldos` y aislamiento. |
 | `<CapturaRespaldo>` | Administrador y ayudante | Cámara o archivo, compresión, conversión HEIC y vista previa. |
-| Menú e inicio | Administrador | Contador **Validar · N** y franja de por validar (3.4). |
+| Menú e inicio | Administrador | Contador **Validar · N** del menú (UX/UI §3.3) y fila de por validar del inicio (Dashboard §3.5). |
 
 Diseño celular primero (marco §7, principio 6): contraste alto para exterior, objetivos táctiles de al menos 44 px, teclado numérico en montos, sin tablas anchas.
 
@@ -567,3 +567,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 | 2026-09-27 | 1.1 | Cascada de anulación a `Devolucion`; aviso en categorías de referencia de conceptos; función interna `registrarMovimientoSistema`; fila de pensión y alojamiento remite a los cargos | Aprobación de Inscripción de binomios v1.0 |
 | 2026-09-27 | 1.2 | §3.8: pestaña y filtros del listado en la URL (Dashboard §5.5). §5.3: `resumenPendientesDe` permitido para el propio usuario | Aprobación de Dashboard v1.0 |
 | 2026-09-27 | 1.3 | §5.3: `registrarMovimientoSistema` acepta un archivo ya copiado al volumen como respaldo | Aprobación de Formulario de inscripción v1.0 |
+| 2026-09-27 | 1.4 | §3.1 y §5.4: el botón "+ Registrar" de dos opciones pasa a ser el "+" de UX/UI §3.2 con cuatro acciones. §3.8: tarjeta de dos líneas con un solo estado y totales en una línea desplegable. §5.4: contador del menú según UX/UI §3.3 | Aprobación de UX/UI v1.0 |

@@ -1,6 +1,6 @@
 # Organización y evento
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -209,7 +209,7 @@ En cada solicitud, la función única de contexto (marco §10.2):
 
 La base impide dos eventos `abierto` en la misma organización.
 
-El encabezado de todas las pantallas muestra logo y nombre de la organización y nombre y fechas del evento vigente.
+El encabezado de todas las pantallas muestra el logo y el nombre del evento vigente; el nombre de la organización y las fechas del evento van en la cabecera del menú y en el inicio (UX/UI §3.1).
 
 ### 3.7 Casos borde revisados
 
@@ -378,7 +378,7 @@ Reglas de código:
 | `/api/organizacion/logo` | Todos con membresía activa | Sirve el logo desde el volumen tras verificar la membresía. |
 | `<SelectorCategoria tipo>` | Administrador y ayudante | Para Movimientos (3.4). |
 | `<SelectorContraparte tipoMovimiento>` | Administrador y ayudante | Búsqueda, aviso de duplicado y creación en línea (3.5). |
-| Encabezado | Todos | Logo, organización y evento vigente (3.6). |
+| Encabezado | Todos | Logo y evento vigente; organización y fechas en el menú y el inicio (3.6; UX/UI §3.1). |
 
 Validación con Zod compartida entre formulario y servidor para evento, organización, categoría y contraparte. Cada edición envía `version` y el servidor rechaza si no coincide.
 
@@ -455,3 +455,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | 2026-09-27 | 1.1 | Revisión de puntos abiertos: las fechas del evento son informativas; configuración del evento solo con evento abierto; "Devoluciones" fuera del selector (solo desde la inscripción); aviso y reactivación ante nombre de categoría desactivada; categorías nuevas al final; la fusión sube la `version` de los movimientos; usuario opcional en auditoría para el script; validación de referencias entre organizaciones (`exigirDeLaOrganizacion`); se anotan los pendientes que pertenecen a Acceso y roles, Movimientos e Inscripción de binomios | Revisión pedida por Rod; decisiones de Rod sobre Devoluciones y fechas |
 | 2026-09-27 | 1.1 | Aprobado por Rod | Aprobación |
 | 2026-09-27 | 1.2 | Marca "Exige contraparte" en `Categoria` (3.4, 5.1, 5.5), activa en "Auspicios" al cargar; se remiten a Movimientos §3.2 la contraparte obligatoria y la validación de fechas | Aprobación de Movimientos v1.0 |
+| 2026-09-27 | 1.3 | §3.6 y §5.4: el encabezado muestra logo y nombre del evento; organización y fechas pasan a la cabecera del menú y al inicio | Aprobación de UX/UI v1.0 |

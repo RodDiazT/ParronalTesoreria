@@ -34,22 +34,22 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
-| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.6) | v1.0 | — |
-| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.2) | v1.0 | Marco general |
-| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.3) | v1.0 | Marco general |
-| Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.3) | v1.0 | Marco general |
+| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.7) | v1.0 | — |
+| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.3) | v1.0 | Marco general |
+| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.4) | v1.0 | Marco general |
+| Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.4) | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.0) | v1.0 | Marco general |
-| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.3) | v1.0 | Marco general |
+| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.4) | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla para terceros, cualquier planilla con mapeo asistido por IA, vista previa, duplicados y carga de binomios | Aprobado (v1.1) | v1.1 | Inscripción de binomios |
-| Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores del marco §6.7, saldo por medio de pago y traspasos, avisos, "Lo mío" y resumen copiable en v1.0; % pagadas, por categoría, evolución y conciliación en v1.1 | Aprobado (v1.1) | v1.0 | Marco general |
+| Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores del marco §6.7, saldo por medio de pago y traspasos, avisos, "Lo mío" y resumen copiable en v1.0; % pagadas, por categoría, evolución y conciliación en v1.1 | Aprobado (v1.2) | v1.0 | Marco general |
 | Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, un binomio por solicitud con comprobante opcional, clubes autocompletados, revisión con vínculo a lo existente, aceptación con pago y autorización del apoderado | Aprobado (v1.0) | v1.1 | Inscripción de binomios |
-| UX/UI | `docs/interfaz/ux-ui.md` | Navegación (menú y botón "+"), sistema visual con modo claro y oscuro, estados, montos, listas, fichas, formularios, inicio plegado e instalable | En revisión (v0.1) | v1.0 | Marco general |
+| UX/UI | `docs/interfaz/ux-ui.md` | Navegación (menú y botón "+"), sistema visual con modo claro y oscuro, estados, montos, listas, fichas, formularios, inicio plegado e instalable | Aprobado (v1.0) | v1.0 | Marco general |
 | Registro sin señal | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local en el teléfono y cola de envío al volver la conexión | Pendiente | v1.1 | Movimientos |
 | Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce por monto, fecha y nombre, sugerencias con IA y confirmación | Pendiente | v1.1 | Marco general |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | Pendiente | v1.1 | Marco general |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | Pendiente | v1.1 | Marco general |
 
-Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Dashboard. Importación desde Excel pasó a v1.1 (marco v1.4). Con Dashboard aprobado, todos los documentos del núcleo v1.0 están aprobados.
+Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Dashboard. Importación desde Excel pasó a v1.1 (marco v1.4). Con Dashboard y UX/UI aprobados, todos los documentos del núcleo v1.0 están aprobados.
 
 ## Tareas pendientes del responsable
 
@@ -123,7 +123,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.6",
+      "version": "1.7",
       "actualizado": "2026-09-27"
     },
     {
@@ -138,7 +138,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.2",
+      "version": "1.3",
       "actualizado": "2026-09-27"
     },
     {
@@ -155,7 +155,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "dependencias": [
         "organizacion-evento"
       ],
-      "version": "1.3",
+      "version": "1.4",
       "actualizado": "2026-09-27"
     },
     {
@@ -173,7 +173,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
         "acceso-roles",
         "organizacion-evento"
       ],
-      "version": "1.3",
+      "version": "1.4",
       "actualizado": "2026-09-27"
     },
     {
@@ -208,7 +208,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
         "participantes",
         "movimientos"
       ],
-      "version": "1.3",
+      "version": "1.4",
       "actualizado": "2026-09-27"
     },
     {
@@ -246,7 +246,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
         "acceso-roles",
         "organizacion-evento"
       ],
-      "version": "1.1",
+      "version": "1.2",
       "actualizado": "2026-09-27"
     },
     {
@@ -276,7 +276,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "padre": "marco-general",
       "dominio": "interfaz",
       "descripcion": "Navegación (menú y botón \"+\"), sistema visual con modo claro y oscuro, estados, montos, listas, fichas, formularios, inicio plegado e instalable",
-      "estado": "revision",
+      "estado": "aprobado",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [
@@ -287,7 +287,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
         "inscripcion-binomios",
         "dashboard"
       ],
-      "version": "0.1",
+      "version": "1.0",
       "actualizado": "2026-09-27"
     },
     {
@@ -549,3 +549,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.17 | Formulario de inscripción pasa a revisión (v0.1); dependencias: se agregan Importación desde Excel y Movimientos; tarea t-016 (club). Al aprobarse, el marco general sube a v1.6, Inscripción de binomios, Movimientos y Acceso y roles a v1.3, e Importación desde Excel y Dashboard a v1.1 (sección 6 del borrador) | Borrador de Formulario de inscripción |
 | 2026-09-27 | 1.18 | Formulario de inscripción aprobado (v1.0) con dos cambios de Rod: el apoderado no bloquea el envío (marca "Falta apoderado") y el club se autocompleta con los clubes activos. Marco general a v1.6, Inscripción de binomios, Movimientos y Acceso y roles a v1.3, Importación desde Excel y Dashboard a v1.1 | Aprobación de Formulario de inscripción |
 | 2026-09-27 | 1.19 | UX/UI pasa a revisión (v0.1); nuevo dominio y carpeta `interfaz/`. Al aprobarse, el marco general sube a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 (sección 6 del borrador) | Borrador de UX/UI pedido por Rod |
+| 2026-09-27 | 1.20 | UX/UI aprobado (v1.0) sin cambios. Marco general a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 | Aprobación de UX/UI |
