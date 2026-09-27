@@ -4,7 +4,7 @@
 
 ## Resumen
 
-Están aprobados el marco general y los componentes Organización y evento, Acceso y roles, Movimientos, Participantes e Inscripción de binomios; todavía no hay código. Si se ejecutara lo aprobado, el proyecto tendría definidos:
+Están aprobados el marco general y los componentes Organización y evento, Acceso y roles, Movimientos, Participantes, Inscripción de binomios e Importación desde Excel (v1.1); todavía no hay código. Si se ejecutara lo aprobado, el proyecto tendría definidos:
 
 - quién puede hacer qué: dos administradores, ayudantes, observadores y solicitantes;
 - el modelo de datos: organización, evento, movimientos, jinetes, caballos, apoderados, clubes, binomios, pruebas, conceptos, inscripciones, cargos, pagos y devoluciones;
@@ -21,7 +21,9 @@ Con Participantes, además: administradores y ayudantes registran clubes, jinete
 
 Con Inscripción de binomios, además: el administrador configura las pruebas del evento (tarifa y límites de edad) y los conceptos que se cobran aparte (una cuota por binomio que se carga sola, y pensión o alojamiento que se cargan a mano a un jinete o club). Administradores y ayudantes inscriben binomios en pruebas desde el celular, con avisos de edad que no bloquean, y registran pagos: cada pago es un movimiento de "Inscripciones" que se reparte solo, de lo más antiguo a lo más reciente, y lo que sobra queda por asignar. El estado de cada inscripción o cargo se calcula (pendiente, parcial, pagado, becado, anulado o retirado) y muestra "por validar" mientras su pago no se valida. Los descuentos y becas llevan motivo, y los que hace un ayudante llegan al administrador para marcarlos como vistos o revertirlos. Solo el administrador desasigna pagos, retira binomios con devolución total, parcial o ninguna (lo no devuelto queda retenido) y devuelve sobrantes. Las fichas de jinete y club muestran el estado de cuenta y lo copian como texto para cobrar por WhatsApp. El observador ve montos y estados, pero no alertas, motivos ni estados de cuenta.
 
-Cada pantalla se construye a partir del documento de su componente. El núcleo (acceso, movimientos, inscripciones con importación desde Excel y dashboard) debe estar en uso a más tardar el 2026-10-04.
+Con Importación desde Excel (v1.1), además: el administrador descarga una plantilla sin datos personales para enviarla a otras comisiones o clubes, y sube esa plantilla o cualquier planilla. La plantilla se reconoce sola; para otros formatos, la IA (Gemini de pago) propone qué columna es cada dato y el administrador lo confirma, o lo elige a mano. La vista previa vincula sola lo que coincide exacto, deja decidir lo parecido, omite lo ya inscrito y muestra errores y advertencias. Al confirmar se crean en una transacción clubes, jinetes, apoderados, caballos, binomios e inscripciones con la tarifa vigente y la cuota automática, sin pagos. Los pagos y montos que traiga la planilla quedan como listas para registrar o ajustar. La importación queda en auditoría con su archivo original y se puede anular lo que no tenga pagos.
+
+Cada pantalla se construye a partir del documento de su componente. El núcleo (acceso, movimientos, participantes e inscripciones, y dashboard) debe estar en uso a más tardar el 2026-10-04. La importación desde Excel es v1.1.
 
 ## Stack o recursos confirmados
 
@@ -43,7 +45,8 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | Inscripciones en código | Modelos `Prueba`, `Concepto`, `Binomio`, `Inscripcion`, `Cargo`, `Pago` y `Devolucion` con índices únicos parciales y `CHECK`; `estadoItem` como única función de estado; `repartirMonto`; `porCobrarInscripciones` y `totalPorAsignar` para el Dashboard; `registrarMovimientoSistema` y cascada `anularEnCascadaPorMovimiento`; permisos `inscripciones.*` | Inscripción de binomios, §5 |
 | Participantes en código | Modelos `Club`, `Jinete`, `Apoderado`, `JineteApoderado` y `Caballo`; `edadEnEvento` como única función de edad; `alertasJinete`; `buscarParecidos` compartida con Importación desde Excel; permisos `participantes.*` | Participantes, §5 |
 | Idioma del código | Dominio en español sin tildes; términos técnicos en inglés | Marco general, §8 |
-| IA de conciliación (v1.1) | API de Claude, opcional | Marco general, §8 |
+| Importación en código (v1.1) | Modelo `Importacion`; `importacionId` en `Binomio` e `Inscripcion`; `exceljs` para leer y generar planillas; `normalizarFilas` determinista, `resolverFilas` con `buscarParecidos`, confirmación en una transacción con `inscribir(tx)` y auditoría única; archivos en `RUTA_RESPALDOS/importaciones/…` | Importación desde Excel, §5 |
+| IA (v1.1, importación y conciliación) | API de Gemini de pago tras la capa `src/lib/ia/` (`sugerir` con salida validada por Zod); `GEMINI_API_KEY`, `GEMINI_NIVEL_PAGO=confirmado`, `GEMINI_MODELO`; opcional | Marco general, §8; Importación desde Excel, §5.5 |
 
 ## Herramientas, proveedores e integraciones
 
@@ -52,7 +55,7 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | GitHub (`RodDiazT/ParronalTesoreria`) | Repositorio de documentos y código | Marco general, §10 |
 | Railway | Hosting de app, base de datos y volumen | Marco general, §8 |
 | Google (OAuth) | Inicio de sesión, alcances `openid email profile`, pantalla de consentimiento publicada | Marco general, §8; Acceso y roles, §5.7 |
-| Anthropic (API de Claude) | Sugerencias de conciliación, v1.1 | Marco general, §8 y §9.4 |
+| Google (API de Gemini, nivel de pago) | Mapeo de planillas importadas y sugerencias de conciliación, v1.1; encargado de tratamiento | Marco general, §8 y §9.4; Importación desde Excel, §4 |
 
 ## Componentes aprobados
 
@@ -63,6 +66,7 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | Movimientos | Registro de ingresos y gastos con respaldo u observación, validación de a uno, pendientes y abonos, reembolsos, especie, sin identificar, anulación en cascada y pantalla de auditoría | `docs/movimientos/movimientos.md` |
 | Inscripción de binomios | Pruebas y conceptos configurables, inscripción de binomios, cuota automática y cargos, pagos repartidos con por asignar, ajustes con aviso, retiros y devoluciones, estado de cuenta copiable | `docs/inscripciones/inscripcion-binomios.md` |
 | Participantes | Clubes, jinetes, apoderados y caballos con club obligatorio, edad calculada a la fecha del evento, alertas de menores que no bloquean, avisos de duplicado y fusión | `docs/inscripciones/participantes.md` |
+| Importación desde Excel (v1.1) | Plantilla para terceros, cualquier planilla con mapeo asistido por IA o manual, vista previa con duplicados y ya inscritos, carga en una transacción sin pagos, listas de pagos informados y anulación de lo importado | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` |
 | Acceso y roles | Ingreso con Google, aviso de privacidad, solicitudes, invitaciones, roles, revocación con mínimo de un administrador, lista de la comisión y matriz de permisos en el servidor | `docs/acceso/acceso-roles.md` |
 
 ## Control de cambios
@@ -77,3 +81,4 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | 2026-09-27 | 1.5 | Se registra Movimientos aprobado y su implementación en código; Organización y evento v1.2 | Aprobación de Movimientos |
 | 2026-09-27 | 1.6 | Se registra Participantes aprobado y su implementación en código; marco general v1.2 | Aprobación de Participantes |
 | 2026-09-27 | 1.7 | Se registra Inscripción de binomios aprobado y su implementación en código; marco general v1.3 y Movimientos v1.1 | Aprobación de Inscripción de binomios |
+| 2026-09-27 | 1.8 | Se registra Importación desde Excel aprobado (v1.1) y su implementación en código; la IA del proyecto pasa a Gemini de pago; marco general v1.4, Acceso y roles v1.1 e Inscripción de binomios v1.1 | Aprobación de Importación desde Excel |

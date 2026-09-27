@@ -1,6 +1,6 @@
 # Acceso y roles
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -187,7 +187,7 @@ Texto genérico (decisión de Rod): no nombra al club ni lleva un correo de cont
 
 **Resumen (en `/bienvenida`):**
 
-> Este portal lo usa la comisión organizadora del concurso para registrar y rendir los ingresos y gastos del evento. Al ingresar, guardamos tu nombre, correo e imagen de Google y un registro de las acciones que realizas. Los usamos solo para gestionar tu acceso y dejar trazabilidad de la tesorería; no se publican ni se comparten con terceros. Se conservan hasta un año después de que el club aprueba la rendición del evento. Para acceder, corregir o suprimir tus datos, u oponerte a su uso, escribe al administrador del evento.
+> Este portal lo usa la comisión organizadora del concurso para registrar y rendir los ingresos y gastos del evento. Al ingresar, guardamos tu nombre, correo e imagen de Google y un registro de las acciones que realizas. Los usamos solo para gestionar tu acceso y dejar trazabilidad de la tesorería; no se publican ni se ceden a terceros; algunos datos se procesan con un proveedor de inteligencia artificial que actúa por encargo de la comisión. Se conservan hasta un año después de que el club aprueba la rendición del evento. Para acceder, corregir o suprimir tus datos, u oponerte a su uso, escribe al administrador del evento.
 
 **Texto completo (en `/privacidad`)**, que agrega:
 
@@ -195,6 +195,7 @@ Texto genérico (decisión de Rod): no nombra al club ni lleva un correo de cont
 - finalidad única: administrar y rendir la tesorería del evento (marco §9.2);
 - datos de usuarios: nombre, correo e imagen de Google, mensaje de solicitud, fecha de aceptación del aviso y registro de acciones;
 - que el portal también contiene datos de jinetes, apoderados, clubes, auspiciadores y proveedores, tratados con la misma finalidad y conservación (marco §9.2, §9.5);
+- encargado de tratamiento: Google (API de Gemini, servicio de pago), que procesa por encargo de la comisión, fuera de Chile, parte de los datos de las planillas de inscripción que se importan (incluidos datos de menores) y, en v1.1, de las cartolas, solo para sugerir cómo leerlas; no los usa para otros fines (marco §9.4; Importación desde Excel §4);
 - conservación: hasta la aprobación de la rendición más un año (marco §9.5);
 - derechos: acceso, rectificación, supresión, oposición y portabilidad, pidiéndolos al administrador del evento (marco §9.6);
 - normativa: Ley 19.628 y Ley 21.719.
@@ -470,3 +471,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el pa
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: alta por solicitud e invitación; aviso de solicitudes solo dentro del portal; los dos administradores con iguales poderes y mínimo de uno activo; quien fue rechazado o revocado puede volver a solicitar; sesión de 30 días renovable; revocación conserva los pendientes con advertencia; aviso de privacidad con texto genérico; mensaje opcional al solicitar |
 | 2026-09-27 | 0.2 | Lista de solo lectura **Comisión** para ayudantes y observadores (nombre, imagen y rol, sin correos); la invitación no vence; tope de 5 accesos como aviso que no bloquea; la pantalla de solicitud pendiente no muestra nombres; el motivo del rechazo es interno; el rol al aprobar no viene preseleccionado; se corrige la restricción `CHECK` de la membresía | Segunda ronda de preguntas con Rod |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido | Aprobación |
+| 2026-09-27 | 1.1 | §3.8: el aviso declara a Google (API de Gemini de pago) como encargado de tratamiento para la IA de importación y conciliación, con transferencia fuera de Chile. Sube `AVISO_PRIVACIDAD_VERSION`: todos los usuarios vuelven a aceptarlo | Aprobación de Importación desde Excel v1.0 |

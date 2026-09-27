@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -98,7 +98,7 @@ Reglas de rol:
 | Visibilidad en tiempo real | Tiempo para registrar un gasto con foto desde el celular | < 1 minuto |
 | Cuadratura | Diferencia entre el saldo del portal y el saldo real (banco + efectivo) al cierre | $0 |
 | Rendición al club | Informe de rendición entregado tras el evento | ≤ 30 días después del 2026-11-21 (a más tardar el 2026-12-21) |
-| Costo mínimo | Costo incremental de infraestructura | $0 adicional (cuenta Railway existente de Rod, costo hundido); IA de conciliación < USD 5 en todo el evento |
+| Costo mínimo | Costo incremental de infraestructura | $0 adicional (cuenta Railway existente de Rod, costo hundido); IA (importación y conciliación) < USD 5 en todo el evento |
 | Cuadratura | Líneas de la cartola conciliadas o explicadas al cierre (v1.1) | 100 % |
 
 ---
@@ -115,7 +115,6 @@ Reglas de rol:
 - Estado de pago del movimiento: pagado o pendiente. Esto cubre las **cuentas por cobrar y por pagar mínimas**: reembolsos a ayudantes, proveedores a crédito y auspicios comprometidos.
 - Auspicios en especie o canje, valorizados y separados de la caja.
 - Jinetes, caballos, apoderados, clubes o sociedades, binomios, inscripciones y pagos de inscripción (un pago de inscripción **es** un movimiento de ingreso; ver 6.4).
-- Importación de binomios desde Excel con plantilla, vista previa y detección de duplicados, para cargar lo que ya existe en planillas.
 - Dashboard básico: saldo de caja, ingresos, gastos, por cobrar, por pagar y por validar.
 - Aviso de posible duplicado al registrar.
 - Historial de auditoría.
@@ -128,6 +127,7 @@ Reglas de rol:
 - Pendientes ampliados: vista consolidada de por cobrar y por pagar, y tareas de la comisión.
 - Cierre del evento y rendición: el evento pasa a solo lectura y se exporta el informe de rendición (resumen, libro de movimientos, respaldos y saldo a traspasar) en planilla y PDF.
 - **Formulario de inscripción:** enlace que el administrador comparte; el jinete o su apoderado completa sus datos, los del caballo y las pruebas. Lo enviado queda como **inscripción por revisar**, y el formulario no muestra ningún dato del portal. Un ayudante o administrador la acepta (se crea la inscripción) o la rechaza.
+- **Importación desde Excel:** plantilla descargable para enviar a otras comisiones o clubes, y carga de esa plantilla o de cualquier planilla, con mapeo de columnas propuesto por IA (o manual) y confirmado por el administrador, vista previa y detección de duplicados. Pasa de v1.0 a v1.1 porque no hay inscritos que cargar antes del 2026-10-04 Detalle en `docs/inscripciones/inscripcion-binomios/importacion-excel.md`.
 - **Conciliación con cartola:** el administrador sube la cartola del banco (Excel o CSV), el sistema propone qué movimiento corresponde a cada línea (primero por monto, fecha y nombre; con IA para los casos dudosos) y el administrador confirma cada coincidencia. Nada se concilia sin confirmación humana. Las líneas sin movimiento quedan como alerta para registrarlas.
 
 ### Futuro
@@ -165,6 +165,7 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Inscripcion` | Inscripción de un binomio en una `Prueba`, con su monto a pagar. | Pertenece a un binomio y a una prueba. El detalle (tarifas, ajustes, reglas por edad) lo define su documento. |
 | `Concepto` | Cobro distinto de las pruebas (cuota por binomio, pensión, alojamiento), con tarifa por unidad. | Pertenece a un evento. Se cobra a binomio (automático) o a jinete o club (manual). |
 | `Cargo` | Cobro de un concepto a un binomio, a un jinete o a un club. | Se paga igual que una inscripción, mediante `Pago`. |
+| `Importacion` (v1.1) | Planilla subida para cargar binomios: archivo original, mapeo, estado y resumen. | Pertenece a un evento. Crea o vincula participantes, binomios e inscripciones; nunca pagos. Detalle en `docs/inscripciones/inscripcion-binomios/importacion-excel.md`. |
 | `SolicitudInscripcion` (v1.1) | Datos enviados por formulario, aún no aceptados. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones. |
 | `Movimiento` | Ingreso o gasto del evento. | Pertenece a un evento; tiene categoría, contraparte opcional, respaldos y pagos de inscripción asociados. |
 | `Respaldo` | Archivo (foto o PDF) que respalda un movimiento o su pago. | Pertenece a un movimiento. Un movimiento puede tener varios. |
@@ -211,6 +212,7 @@ Organizacion ─┬─ Membresia ── Usuario
                          │                              └─ Cargo (cuota)
                          ├─ Cargo (Jinete o Club)
                          ├─ SolicitudInscripcion (v1.1)
+                         ├─ Importacion (v1.1) → Binomio, Inscripcion
                          └─ Cartola (v1.1)
 RegistroAuditoria → (cualquier entidad), siempre con organizacionId
 ```
@@ -304,10 +306,11 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 - Todo jinete menor de 18 años a la fecha del evento debe tener al menos un apoderado, y el menor de 14, la autorización del apoderado (9.3). El portal lo exige mediante **alertas visibles que no bloquean** el registro ni la inscripción. Para los adultos, el apoderado (contacto de emergencia) es opcional.
 - Un mismo jinete, caballo, club o apoderado se registra una sola vez por organización. Al crear uno nuevo, el sistema avisa si existe otro con nombre parecido (y bloquea si el RUT se repite). Detalle en `docs/inscripciones/participantes.md` §3.5.
 
-### 6.12 Importación desde Excel
+### 6.12 Importación desde Excel (v1.1)
 
-- El portal entrega una plantilla descargable. El administrador la completa (o adapta su planilla) y la sube.
-- Antes de guardar se muestra una **vista previa**: filas nuevas, filas que coinciden con registros existentes y filas con errores (campo obligatorio vacío, fecha inválida) y filas con advertencias (menor sin apoderado, sin fecha de nacimiento), que se pueden importar. Nada se guarda sin confirmación.
+- El portal entrega una plantilla descargable, sin datos personales, para enviarla a otras comisiones o clubes. El administrador sube esa plantilla o **cualquier otra planilla**: la plantilla se reconoce sola; para otros formatos, la IA propone qué columna es cada dato y el administrador lo confirma, o lo elige a mano. La IA nunca escribe datos de las filas (principio 9).
+- Antes de guardar se muestra una **vista previa**: filas nuevas, filas que coinciden con registros existentes (las exactas se vinculan solas y las parecidas las decide el administrador), inscripciones ya existentes (se omiten), filas con errores (falta jinete, caballo, club o prueba), que no se importan, y filas con advertencias (menor sin apoderado, sin fecha de nacimiento, fecha o RUT no reconocidos, que se importan sin ese dato), que se importan. Nada se guarda sin confirmación.
+- Las inscripciones se crean con la tarifa vigente; los montos y pagos que traiga la planilla quedan como listas para ajustar o registrar después.
 - La importación crea o vincula jinetes, apoderados, caballos, clubes, binomios e inscripciones. No crea pagos: los pagos se registran como movimientos con respaldo.
 - Cada importación queda en auditoría como una sola acción, con el archivo original guardado como respaldo.
 
@@ -329,7 +332,7 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 5. **El club es un dato.** Nombres, fechas y montos del club o del concurso nunca van en el código.
 6. **Celular primero.** Cada pantalla de registro se diseña para una mano, en exterior y con mala señal.
 7. **Dimensionado para 5 usuarios.** Sin colas, caches, microservicios ni servicios pagados adicionales.
-8. **Costo incremental cero.** Todo corre en la cuenta Railway existente. La única excepción es la IA de conciliación (v1.1), de uso puntual y opcional.
+8. **Costo incremental cero.** Todo corre en la cuenta Railway existente. La única excepción es la IA (API de Gemini de pago) para la importación y la conciliación (v1.1), de uso puntual y opcional.
 9. **La IA propone, una persona decide.** Ninguna sugerencia automática modifica dinero, pagos ni estados sin confirmación de un administrador.
 
 ---
@@ -348,13 +351,13 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 | Compresión de fotos | En el navegador, antes de subir (máx. ~1600 px, JPEG) | Menos datos con mala señal y menos espacio. |
 | Registro sin señal (v1.1) | Borrador local en el navegador (IndexedDB) y cola de envío | Sin servicios externos. |
 | Exportación (v1.1) | Planilla (XLSX o CSV) y PDF generados en el servidor | Sin servicios externos. |
-| Lectura de Excel (importación v1.0, cartola v1.1) | Librería de lectura de XLSX/CSV en el servidor | Sin servicios externos. |
-| IA para conciliación (v1.1) | API de Claude (Anthropic), llamada solo al pedir sugerencias, con clave en variable de entorno `ANTHROPIC_API_KEY` | Es el único costo variable del proyecto: unos pocos centavos de dólar por cartola a esta escala. Solo se usa para lo que el cruce exacto no resuelve, y el portal funciona igual sin clave configurada. |
+| Lectura de Excel (importación y cartola, v1.1) | Librería de lectura de XLSX/CSV en el servidor | Sin servicios externos. |
+| IA para importación y conciliación (v1.1) | API de Gemini (Google) **en el nivel de pago**, detrás de una capa propia que no depende del proveedor (`src/lib/ia/`, Importación desde Excel §5.5). Variables `GEMINI_API_KEY`, `GEMINI_NIVEL_PAGO` (`confirmado` solo con la facturación activa) y `GEMINI_MODELO` | Decisión de Rod: un solo proveedor de IA. El nivel gratuito no se usa porque sus términos prohíben enviar datos personales y permiten usar el contenido para mejorar productos. Es el único costo variable del proyecto: fracciones de centavo de dólar por planilla o cartola a esta escala. El portal funciona igual sin IA configurada. |
 | Pruebas | Vitest para reglas de negocio, permisos y aislamiento | Las reglas de dinero y de acceso se prueban antes de desplegar. |
 | Despliegue | Cuenta Railway existente de Rod, URL entregada por la plataforma, sin dominio propio | Costo hundido; HTTPS incluido. |
 | Idioma del código | Dominio en español sin tildes (modelos `Movimiento`, `Inscripcion`; campos `montoClp`, `estadoValidacion`); términos técnicos del framework en inglés | Los nombres coinciden con los documentos; no hace falta tabla de equivalencias. Columnas en la base en `snake_case`. |
 
-Variables de entorno mínimas: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RUTA_RESPALDOS`. En v1.1, opcional: `ANTHROPIC_API_KEY`.
+Variables de entorno mínimas: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RUTA_RESPALDOS`. En v1.1, opcionales: `GEMINI_API_KEY`, `GEMINI_NIVEL_PAGO` y `GEMINI_MODELO`.
 
 Copias de seguridad: se verifica si el plan de Railway incluye respaldo de la base y del volumen. Si no, en v1.0 se hace una copia manual semanal (volcado de la base + descarga de respaldos) y la exportación de v1.1 sirve como copia fuera de Railway.
 
@@ -401,7 +404,7 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 - HTTPS en todo el tráfico (Railway).
 - Auditoría inmutable de accesos, cambios de rol y operaciones sobre datos.
 - El formulario de inscripción (v1.1) solo recibe datos: no muestra ni confirma la existencia de ningún registro, y tiene límite de envíos para evitar abuso.
-- Conciliación con IA (v1.1): Anthropic actúa como encargado de tratamiento; se le envían solo los campos de 6.13.
+- IA (v1.1): Google (API de Gemini, nivel de pago) actúa como encargado de tratamiento, con transferencia fuera de Chile declarada en el aviso de privacidad. En la conciliación se le envían solo los campos de 6.13. En la importación, los encabezados y hasta 20 filas completas de la planilla, incluidos datos de menores (decisión de Rod), sin el archivo ni datos del portal (Importación desde Excel §3.4 y §4). El contenido enviado no se guarda.
 
 ### 9.5 Conservación
 
@@ -464,7 +467,7 @@ Datos iniciales: la organización, el evento y los administradores se crean con 
 | Registro sin señal (hijo de Movimientos) | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local y cola de envío | v1.1 | Movimientos |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | v1.0 | Organización |
 | Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | v1.0 | Participantes, Movimientos |
-| Importación desde Excel (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga | v1.0 | Inscripción de binomios |
+| Importación desde Excel (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, cualquier formato con mapeo asistido por IA, vista previa, duplicados y carga | v1.1 | Inscripción de binomios |
 | Formulario de inscripción (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace público de solo envío, solicitudes por revisar, autorización del apoderado | v1.1 | Inscripción de binomios |
 | Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce, sugerencias con IA y confirmación | v1.1 | Movimientos |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de 6.7 en v1.0; KPIs ampliados en v1.1 | v1.0 / v1.1 | Movimientos, Inscripciones |
@@ -486,11 +489,11 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 5 | Documentar y aprobar Movimientos | 2026-09-29 | 4 |
 | 6 | Documentar y aprobar Participantes | 2026-09-30 | 4 |
 | 7 | Documentar y aprobar Inscripción de binomios (requiere pruebas y tarifas: tarea t-002) | 2026-09-30 | 5, 6 |
-| 8 | Documentar y aprobar Importación desde Excel (requiere la planilla actual) | 2026-10-01 | 7 |
+| 8 | Documentar y aprobar Importación desde Excel (pasa a v1.1; se implementa en el paso 12) | 2026-09-27 | 7 |
 | 9 | Documentar y aprobar Dashboard (v1.0) | 2026-10-01 | 5, 7 |
 | 10 | Implementar 4 → 9 a medida que se aprueban | 2026-09-29 → 2026-10-03 | 3 y cada documento |
-| 11 | Importar los binomios existentes, prueba con los ayudantes en celular y puesta en uso | 2026-10-04 | 10 |
-| 12 | Documentar e implementar Formulario de inscripción | ≤ 2026-10-18 | 11 |
+| 11 | Prueba con los ayudantes en celular y puesta en uso | 2026-10-04 | 10 |
+| 12 | Documentar e implementar Formulario de inscripción; implementar Importación desde Excel | ≤ 2026-10-18 (importación ≤ 2026-10-25) | 11 |
 | 13 | Documentar e implementar Registro sin señal | ≤ 2026-10-25 | 11 |
 | 14 | Documentar e implementar Conciliación con cartola | ≤ 2026-11-07 | 11 |
 | 15 | Documentar e implementar Dashboard v1.1, Pendientes y Cierre y rendición | ≤ 2026-11-14 | 11 |
@@ -502,7 +505,7 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 
 | Riesgo | Tipo | Mitigación |
 |---|---|---|
-| No llegar al 2026-10-04 con todo el núcleo | Operativo | Orden de prioridad dentro de v1.0: acceso → movimientos → participantes e inscripciones → importación → dashboard. Si falta tiempo, la importación se hace una vez con un script asistido y el dashboard empieza como una sola pantalla de totales. |
+| No llegar al 2026-10-04 con todo el núcleo | Operativo | Orden de prioridad dentro de v1.0: acceso → movimientos → participantes e inscripciones → dashboard. La importación pasó a v1.1. Si falta tiempo, el dashboard empieza como una sola pantalla de totales. |
 | Señal baja en el club el día del evento | Experiencia | Fotos comprimidas y reintento en v1.0; registro sin señal en v1.1, probado en terreno antes del 14-nov; verificar si habrá wifi (tarea). |
 | Pérdida de datos o archivos en Railway | Técnico | Verificar respaldos del plan; copia manual semanal hasta la exportación de v1.1. |
 | Fuga de datos entre organizaciones | Normativo | Función única de contexto y prueba automática de aislamiento. |
@@ -511,7 +514,8 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | Movimientos quedan sin validar por mucho tiempo | Experiencia | Contador visible de "por validar" para el administrador; dos administradores. |
 | Datos de menores de edad | Normativo | Apoderado obligatorio, autorización del apoderado para menores de 14, sin datos de salud y acceso restringido (9.3, 9.4). |
 | Formulario de inscripción usado para spam o para averiguar datos | Técnico | Solo envío, sin respuestas que revelen datos, límite de envíos y revisión humana antes de crear nada (9.4). |
-| Sugerencias de IA erróneas en la conciliación | Operativo | La IA solo propone; cada coincidencia la confirma un administrador (principio 9). |
+| Sugerencias de IA erróneas en la conciliación o en el mapeo de una planilla | Operativo | La IA solo propone; cada coincidencia o columna la confirma un administrador (principio 9). |
+| Datos personales (incluidos de menores) enviados a la IA | Normativo | Solo nivel de pago, activado con `GEMINI_NIVEL_PAGO=confirmado`; envío mínimo; encargado declarado en el aviso (9.4; Importación desde Excel §4). |
 | Duplicados de jinetes o caballos al importar o por formulario | Operativo | Vista previa con coincidencias y aviso de nombres parecidos (6.11, 6.12). |
 | Uso de la cuenta Railway personal para datos del club | Operativo | Queda como decisión explícita de Rod; si el club asume el proyecto en el futuro, se traspasa el servicio. |
 | Obligación tributaria por auspicios no resuelta | Normativo | Tarea t-001; el portal permite registrar el número de documento emitido en la observación. |
@@ -529,3 +533,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 1.1 | §10.2: la lista de categorías iniciales pasa a Organización y evento §3.4, que agrega la categoría de sistema "Aporte inicial" | Aprobación de Organización y evento v1.0 (dueño único de la lista) |
 | 2026-09-27 | 1.2 | §5, §6.11, §6.12, §9.2 y §9.3: club obligatorio para jinete y caballo; caballo sin número de registro ni propietario; fecha de nacimiento y contacto del jinete opcionales; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha registrada | Aprobación de Participantes v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.3 | §5 y §5.2: entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; `Inscripcion` en una prueba; `Pago` a inscripción o cargo. §6.4, §6.5 y §6.7: cargos, pagos por validar descuentan saldo, retiro con retenido, devolución de sobrante, por cobrar con cargos y por asignar precisado | Aprobación de Inscripción de binomios v1.0 (decisiones de Rod) |
+| 2026-09-27 | 1.4 | §4, §11, §12 y §13: la importación desde Excel pasa a v1.1. §5: entidad `Importacion`. §6.12: plantilla para terceros, cualquier formato con mapeo propuesto por IA, fechas y RUT no reconocidos como advertencia, lo ya inscrito se omite, montos y pagos de la planilla como listas. §3, §7 (principio 8), §8 y §9.4: la IA del proyecto pasa de la API de Claude a la API de Gemini de pago, para importación y conciliación, con Google como encargado | Aprobación de Importación desde Excel v1.0 (decisiones de Rod) |

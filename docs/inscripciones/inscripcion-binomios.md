@@ -1,12 +1,12 @@
 # Inscripción de binomios
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
 - **Padre:** `docs/marco-general/marco-general-proyecto.md`. Alcance dentro del padre: entidades `Binomio`, `Inscripcion` y `Pago` (§5), pagos de inscripción (§6.4), por cobrar de inscripciones (§6.5), indicadores "por cobrar" y "por asignar" (§6.7) y anulación (§6.8).
 - **Hijos:**
-  - `docs/inscripciones/inscripcion-binomios/importacion-excel.md` (v1.0): plantilla, vista previa y carga de binomios e inscripciones.
+  - `docs/inscripciones/inscripcion-binomios/importacion-excel.md` (v1.1): plantilla, cualquier planilla con mapeo asistido por IA, vista previa y carga de binomios e inscripciones.
   - `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` (v1.1): enlace de solo envío y solicitudes por revisar.
 - **Depende de:** `docs/inscripciones/participantes.md` (jinetes, caballos, clubes, selectores, `edadEnEvento`, alertas) y `docs/movimientos/movimientos.md` (registro de ingresos y gastos, respaldos, validación, anulación en cascada, sin identificar). Además usa `docs/organizacion/organizacion-evento.md` (contexto, evento vigente, `db(ctx)`, categorías de sistema) y `docs/acceso/acceso-roles.md` (`puede`, `exigir`, `esPropio`).
 - **Secciones:**
@@ -39,7 +39,7 @@ Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor
 | Movimientos | Usa el registro de ingresos y gastos con respaldo, `claveCliente`, validación, aviso de duplicado, anulación y la clasificación de ingresos sin identificar. Es dueño del `Pago`, de los flujos con las categorías de sistema "Inscripciones" y "Devoluciones" y de lo por asignar (Movimientos §2). Al aprobarse este documento, Movimientos pasa a v1.1 con los detalles de la sección 6. |
 | Organización y evento | Usa el evento vigente y las categorías de sistema `inscripciones` y `devoluciones`. Llena el espacio que dejó reservado en la vista previa del cambio de fechas (3.13). Responde su pendiente sobre alojamiento y pensión por noches: la cantidad se ingresa a mano, así que un cambio de fechas no la modifica (3.4). |
 | Acceso y roles | Aplica la matriz con `exigir(ctx, accion)` y agrega acciones a la tabla única (5.4). |
-| Importación desde Excel (hijo, v1.0) | Crea binomios e inscripciones con las funciones de 5.2 y 5.3, sin pagos (marco §6.12). La cuota automática se carga igual que al inscribir a mano. |
+| Importación desde Excel (hijo, v1.1) | Crea binomios e inscripciones con `inscribir` (5.3) dentro de su propia transacción, sin pagos (marco §6.12). La cuota automática se carga igual que al inscribir a mano. Marca lo creado con `importacionId` (5.1). |
 | Formulario de inscripción (hijo, v1.1) | Al aceptar una solicitud llama a `inscribir` (5.3). |
 | Dashboard | Toma "por cobrar" y "por asignar" de las funciones de 5.2 y no los recalcula. |
 | Cierre y rendición (v1.1) | Usa el estado de cuenta, los retiros (retenido y devuelto) y el desglose por prueba y concepto. |
@@ -428,6 +428,7 @@ model Binomio {
   jineteId        String
   caballoId       String
   clubId          String    // copiado del jinete al crear; editable por evento (3.10)
+  importacionId   String?   // Importación desde Excel que lo creó
   anulado         Boolean   @default(false)
   motivoAnulacion String?
   anuladoPorId    String?
@@ -461,6 +462,7 @@ model Inscripcion {
   anuladoPorId     String?
   anuladoEn        DateTime?
   claveCliente     String    // de la operación inscribir (idempotencia)
+  importacionId    String?   // Importación desde Excel que la creó
   registradoPorId  String
   version          Int       @default(1)
   creadoEn         DateTime  @default(now())
@@ -583,7 +585,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | Función | Permiso (5.4) | Efecto |
 |---|---|---|
 | `crearPrueba`, `editarPrueba`, `crearConcepto`, `editarConcepto`, `ordenar…`, `desactivar…`, `reactivar…` | `configurar` | 3.1. |
-| `inscribir({ jineteId, caballoId, clubId, pruebas: [{ pruebaId, montoClp?, motivo? }], claveCliente })` | `inscripciones.inscribir` | 3.2 y cuota automática (3.4). La usan Importación y el Formulario. |
+| `inscribir({ jineteId, caballoId, clubId, pruebas: [{ pruebaId, montoClp?, motivo? }], claveCliente })` | `inscripciones.inscribir` | 3.2 y cuota automática (3.4). La usan Importación y el Formulario. La función interna acepta además `tx` (transacción externa), `importacionId` y `auditar: false`, que solo usa Importación desde Excel (§5.7 y §5.8 de ese documento). |
 | `agregarCargo({ conceptoId, jineteId \| clubId, cantidad, precioUnitarioClp, descripcion?, motivo?, claveCliente })` | `inscripciones.inscribir` | 3.4. |
 | `ajustarItem(tipo, id, { montoClp \| cantidad \| precioUnitarioClp, motivo }, version)` | `inscripciones.inscribir` | 3.3; aviso si no administra. |
 | `cambiarPrueba(inscripcionId, pruebaId, ajustar?, version)` | `inscripciones.inscribir` | 3.9. |
@@ -754,3 +756,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: cobro por prueba con lista configurable; cuota fija por binomio automática; pensión y alojamiento como cargos a jinete o club; inscripción sin validación (se valida el dinero); ayudante ajusta con aviso "Visto"; pago por validar descuenta el saldo al registrarse y se muestra "Pagado · por validar"; retiro con devolución total o parcial solo por el administrador; alertas de edad sin bloquear; tarifa fija al inscribir; cambios de prueba o caballo conservan el pago; devoluciones solo por el administrador; "Copiar estado de cuenta" para cobrar; categorías libres de pensión y alojamiento solo para no inscritos |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido. El marco general pasa a v1.3 y Movimientos a v1.1 con los cambios de la sección 6 | Aprobación |
+| 2026-09-27 | 1.1 | El hijo Importación desde Excel pasa a v1.1 (§1, §2). §5.1: `importacionId` opcional en `Binomio` e `Inscripcion`. §5.3: `inscribir` acepta transacción externa, `importacionId` y `auditar: false` | Aprobación de Importación desde Excel v1.0 |

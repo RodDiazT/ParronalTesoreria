@@ -13,6 +13,8 @@ docs/
 ├── acceso/
 │   └── acceso-roles.md
 ├── inscripciones/
+│   ├── inscripcion-binomios/
+│   │   └── importacion-excel.md
 │   ├── inscripcion-binomios.md
 │   └── participantes.md
 ├── movimientos/
@@ -27,13 +29,13 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
-| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.3) | v1.0 | — |
+| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.4) | v1.0 | — |
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.2) | v1.0 | Marco general |
-| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.0) | v1.0 | Marco general |
+| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.1) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.1) | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.0) | v1.0 | Marco general |
-| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.0) | v1.0 | Marco general |
-| Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga de binomios | Pendiente | v1.0 | Inscripción de binomios |
+| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.1) | v1.0 | Marco general |
+| Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla para terceros, cualquier planilla con mapeo asistido por IA, vista previa, duplicados y carga de binomios | Aprobado (v1.0) | v1.1 | Inscripción de binomios |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de la sección 6.7 del marco en v1.0; KPIs ampliados en v1.1 | Pendiente | v1.0 | Marco general |
 | Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, solicitudes por revisar y autorización del apoderado | Pendiente | v1.1 | Inscripción de binomios |
 | Registro sin señal | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local en el teléfono y cola de envío al volver la conexión | Pendiente | v1.1 | Movimientos |
@@ -41,7 +43,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | Pendiente | v1.1 | Marco general |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | Pendiente | v1.1 | Marco general |
 
-Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Importación desde Excel → Dashboard.
+Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Dashboard. Importación desde Excel pasó a v1.1 (marco v1.4).
 
 ## Tareas pendientes del responsable
 
@@ -55,6 +57,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Pendiente |
 | t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
 | t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Pendiente |
+| t-015 | Activar la facturación de la API de Gemini en el proyecto de Google Cloud, crear la clave, configurar una alerta de presupuesto de USD 5 y entregar la clave a Claude Code fuera del repositorio | Importación desde Excel | Pendiente |
 
 ### Club
 
@@ -69,6 +72,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | t-010 | Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB) | Organización y evento | Pendiente |
 | t-012 | Acordar con el club cómo la comisión pide y guarda la autorización del apoderado para menores de 14 años (mensaje o papel firmado) | Participantes | Pendiente |
 | t-013 | Acordar con el club la política de devolución por retiro: hasta cuándo se devuelve y cuánto se retiene | Inscripción de binomios | Pendiente |
+| t-014 | Definir con el club cómo recibirán las inscripciones las otras comisiones o clubes y enviarles la plantilla | Importación desde Excel | Pendiente |
 
 ## Datos estructurados
 
@@ -112,7 +116,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.3",
+      "version": "1.4",
       "actualizado": "2026-09-27"
     },
     {
@@ -144,7 +148,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "dependencias": [
         "organizacion-evento"
       ],
-      "version": "1.0",
+      "version": "1.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -197,7 +201,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
         "participantes",
         "movimientos"
       ],
-      "version": "1.0",
+      "version": "1.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -207,14 +211,14 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "ruta": "docs/inscripciones/inscripcion-binomios/importacion-excel.md",
       "padre": "inscripcion-binomios",
       "dominio": "inscripciones",
-      "descripcion": "Plantilla, vista previa, duplicados y carga de binomios",
-      "estado": "pendiente",
+      "descripcion": "Plantilla para terceros, cualquier planilla con mapeo asistido por IA, vista previa, duplicados y carga de binomios",
+      "estado": "aprobado",
       "reemplazado_por": null,
-      "fase": "v1.0",
+      "fase": "v1.1",
       "dependencias": [
         "participantes"
       ],
-      "version": "0.0",
+      "version": "1.0",
       "actualizado": "2026-09-27"
     },
     {
@@ -451,6 +455,26 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "estado": "pendiente",
       "creada": "2026-09-27",
       "cerrada": null
+    },
+    {
+      "id": "t-014",
+      "descripcion": "Definir con el club cómo recibirán las inscripciones las otras comisiones o clubes y enviarles la plantilla",
+      "categoria": "club",
+      "responsable": "Rod",
+      "origen": "importacion-excel",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
+    },
+    {
+      "id": "t-015",
+      "descripcion": "Activar la facturación de la API de Gemini en el proyecto de Google Cloud, crear la clave, configurar una alerta de presupuesto de USD 5 y entregar la clave a Claude Code fuera del repositorio",
+      "categoria": "desarrollo",
+      "responsable": "Rod",
+      "origen": "importacion-excel",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
     }
   ]
 }
@@ -476,3 +500,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.12 | Participantes aprobado (v1.0): fecha de nacimiento y contacto del jinete opcionales. Marco general a v1.2. Queda desbloqueada Inscripción de binomios (Participantes y Movimientos aprobados) | Aprobación de Participantes |
 | 2026-09-27 | 1.13 | Inscripción de binomios pasa a revisión (v0.1); t-002 incluye la cuota por binomio; tarea t-013. Al aprobarse, el marco general sube a v1.3 (entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; por cobrar con cargos) y Movimientos a v1.1 (cascada a devoluciones, aviso en categorías de referencia, `registrarMovimientoSistema`) | Borrador de Inscripción de binomios |
 | 2026-09-27 | 1.14 | Inscripción de binomios aprobado (v1.0). Marco general a v1.3 y Movimientos a v1.1. Quedan desbloqueados Importación desde Excel, Dashboard, Formulario de inscripción, Pendientes y Cierre y rendición | Aprobación de Inscripción de binomios |
+| 2026-09-27 | 1.15 | Importación desde Excel aprobado (v1.0), fase v1.1; se crea la carpeta `inscripciones/inscripcion-binomios/`. Marco general a v1.4 (importación a v1.1, entidad `Importacion`, IA con Gemini de pago), Acceso y roles a v1.1 (aviso de privacidad con encargado de IA) e Inscripción de binomios a v1.1 (`importacionId`, `inscribir` con transacción externa). Tareas t-014 (club) y t-015 (desarrollo). El núcleo v1.0 queda con Dashboard como único documento pendiente | Aprobación de Importación desde Excel |
