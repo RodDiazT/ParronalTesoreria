@@ -1,6 +1,6 @@
 # Organización y evento
 
-Estado: En revisión · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -451,3 +451,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión de trabajo con Rod: carga por script con edición básica en pantalla; aporte inicial como categoría de sistema de uso opcional; evento con fechas de inicio, término, referencia para la edad y lugar; contrapartes creadas por administrador y ayudante, editadas y fusionadas solo por el administrador, con marcas no excluyentes de auspiciador y proveedor; categorías editables sin subcategorías; un evento abierto sin selector; cambio de fechas con aviso; nombre y logo de la organización editables |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; se registra la actualización del marco §10.2 | Aprobación |
 | 2026-09-27 | 1.1 | Revisión de puntos abiertos: las fechas del evento son informativas; configuración del evento solo con evento abierto; "Devoluciones" fuera del selector (solo desde la inscripción); aviso y reactivación ante nombre de categoría desactivada; categorías nuevas al final; la fusión sube la `version` de los movimientos; usuario opcional en auditoría para el script; validación de referencias entre organizaciones (`exigirDeLaOrganizacion`); se anotan los pendientes que pertenecen a Acceso y roles, Movimientos e Inscripción de binomios | Revisión pedida por Rod; decisiones de Rod sobre Devoluciones y fechas |
+| 2026-09-27 | 1.1 | Aprobado por Rod | Aprobación |

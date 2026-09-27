@@ -11,7 +11,7 @@ Están aprobados el marco general y el componente Organización y evento; todav�
 - cómo se calculan saldo de caja, por cobrar, por pagar y por validar;
 - el stack técnico y las reglas de cumplimiento de datos personales.
 
-Con Organización y evento, además: el club y el concurso se cargan por script; el administrador edita el nombre y logo del club, las fechas y lugar del evento, y las categorías; administradores y ayudantes crean auspiciadores y proveedores desde el celular al registrar, y el administrador corrige, desactiva y fusiona duplicados. Toda consulta queda aislada por organización.
+Con Organización y evento, además: el club y el concurso se cargan por script; el administrador edita el nombre y logo del club, las fechas y lugar del evento, y las categorías; administradores y ayudantes crean auspiciadores y proveedores desde el celular al registrar, y el administrador corrige, desactiva y fusiona duplicados. Toda consulta queda aislada por organización y toda referencia entre registros se valida contra la organización. Las fechas del evento son los días del concurso y no restringen la fecha de los movimientos.
 
 Cada pantalla se construye a partir del documento de su componente. El núcleo (acceso, movimientos, inscripciones con importación desde Excel y dashboard) debe estar en uso a más tardar el 2026-10-04.
 
@@ -28,7 +28,7 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | Archivos de respaldo | Volumen persistente de Railway, servidos solo por la app | Marco general, §8 |
 | Pruebas | Vitest (reglas, permisos, aislamiento) | Marco general, §8 |
 | Despliegue | Cuenta Railway existente de Rod, URL de la plataforma | Marco general, §8 |
-| Aislamiento en código | Función `obtenerContexto` y cliente Prisma extendido `db(ctx)` que agrega `organizacionId`; ESLint prohíbe el cliente sin extender | Organización y evento, §5.2 |
+| Aislamiento en código | Función `obtenerContexto`, cliente Prisma extendido `db(ctx)` que agrega `organizacionId` y `exigirDeLaOrganizacion` para validar referencias; ESLint prohíbe el cliente sin extender | Organización y evento, §5.2 |
 | Idioma del código | Dominio en español sin tildes; términos técnicos en inglés | Marco general, §8 |
 | IA de conciliación (v1.1) | API de Claude, opcional | Marco general, §8 |
 
@@ -55,3 +55,4 @@ Cada pantalla se construye a partir del documento de su componente. El núcleo (
 | 2026-09-27 | 1.0 | Creación del archivo de estado | Inicio del proyecto |
 | 2026-09-27 | 1.1 | Se registra el marco general aprobado y el stack confirmado | Aprobación del marco general |
 | 2026-09-27 | 1.2 | Se registra Organización y evento aprobado y el mecanismo de aislamiento en código | Aprobación de Organización y evento |
+| 2026-09-27 | 1.3 | Organización y evento v1.1 aprobado: validación de referencias entre organizaciones y fechas del evento informativas | Aprobación de Organización y evento v1.1 |
