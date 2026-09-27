@@ -8,18 +8,20 @@
 docs/
 ├── _INDICE_MAESTRO.md
 ├── _ESTADO_PROYECTO.md
-└── marco-general/
-    └── marco-general-proyecto.md
+├── marco-general/
+│   └── marco-general-proyecto.md
+└── organizacion/
+    └── organizacion-evento.md
 ```
 
-Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripciones/`, `dashboard/`, `rendicion/`) se crean cuando se aprueba el primer documento de cada una. Los hijos van en una subcarpeta con el nombre del padre (por ejemplo, `inscripciones/inscripcion-binomios/`).
+Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripciones/`, `dashboard/`, `rendicion/`) se crean con el primer documento de cada una (borrador o aprobado). Los hijos van en una subcarpeta con el nombre del padre (por ejemplo, `inscripciones/inscripcion-binomios/`).
 
 ## Documentos
 
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
 | Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado | v1.0 | — |
-| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Pendiente | v1.0 | Marco general |
+| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | En revisión (v0.1) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Pendiente | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Pendiente | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Pendiente | v1.0 | Marco general |
@@ -46,6 +48,9 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
 | t-006 | Confirmar si habrá wifi en el club el día del evento | Registro sin señal | Pendiente |
 | t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
 | t-008 | Validar con el club el plazo de rendición de 30 días (hasta el 2026-12-21) | Cierre y rendición | Pendiente |
+| t-009 | Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión | Organización y evento | Pendiente |
+| t-010 | Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB) | Organización y evento | Pendiente |
+| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Pendiente |
 
 ## Datos estructurados
 
@@ -100,11 +105,11 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
       "padre": "marco-general",
       "dominio": "organizacion",
       "descripcion": "Aislamiento, carga inicial, configuración del evento, categorías y contrapartes",
-      "estado": "pendiente",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "0.0",
+      "version": "0.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -370,6 +375,33 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
       "estado": "pendiente",
       "creada": "2026-09-27",
       "cerrada": null
+    },
+    {
+      "id": "t-009",
+      "descripcion": "Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión",
+      "responsable": "Rod",
+      "origen": "organizacion-evento",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
+    },
+    {
+      "id": "t-010",
+      "descripcion": "Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB)",
+      "responsable": "Rod",
+      "origen": "organizacion-evento",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
+    },
+    {
+      "id": "t-011",
+      "descripcion": "Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores",
+      "responsable": "Rod",
+      "origen": "organizacion-evento",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
     }
   ]
 }
@@ -382,3 +414,4 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
 |---|---|---|---|
 | 2026-09-27 | 1.0 | Creación del índice con los componentes identificados y las tareas iniciales | Inicio del proyecto |
 | 2026-09-27 | 1.1 | Marco general aprobado (v1.0). Se agregan Participantes, Importación desde Excel, Formulario de inscripción, Registro sin señal y Conciliación con cartola; "Exportación para rendición" pasa a "Cierre y rendición"; se agrega la columna Fase; tareas t-005 a t-008 y se precisan t-002 y t-003 | Aprobación del marco general |
+| 2026-09-27 | 1.2 | Organización y evento pasa a revisión (v0.1); se crea la carpeta `organizacion/`; tareas t-009 a t-011 | Borrador de Organización y evento |
