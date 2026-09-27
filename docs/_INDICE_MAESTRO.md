@@ -442,4 +442,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.5 | Acceso y roles pasa a revisión (v0.2); se crea la carpeta `acceso/` | Borrador de Acceso y roles |
 | 2026-09-27 | 1.6 | Organización y evento v1.1 en revisión: cierra puntos abiertos (fechas informativas, Devoluciones fuera del selector, referencias entre organizaciones, evento cerrado en solo lectura) | Revisión pedida por Rod |
 | 2026-09-27 | 1.7 | Organización y evento aprobado (v1.1); se corrige la numeración del control de cambios (dos líneas 1.5) | Aprobación de Rod |
-| 2026-09-27 | 1.6 | Acceso y roles aprobado (v1.0). Movimientos queda desbloqueado (depende de Acceso y roles y de Organización y evento) | Aprobación de Acceso y roles |
+| 2026-09-27 | 1.8 | Acceso y roles aprobado (v1.0). Movimientos queda desbloqueado (depende de Acceso y roles y de Organización y evento) | Aprobación de Acceso y roles |
