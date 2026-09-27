@@ -1,6 +1,6 @@
 # Acceso y roles
 
-Estado: En revisión · Versión 0.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -469,3 +469,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el pa
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: alta por solicitud e invitación; aviso de solicitudes solo dentro del portal; los dos administradores con iguales poderes y mínimo de uno activo; quien fue rechazado o revocado puede volver a solicitar; sesión de 30 días renovable; revocación conserva los pendientes con advertencia; aviso de privacidad con texto genérico; mensaje opcional al solicitar |
 | 2026-09-27 | 0.2 | Lista de solo lectura **Comisión** para ayudantes y observadores (nombre, imagen y rol, sin correos); la invitación no vence; tope de 5 accesos como aviso que no bloquea; la pantalla de solicitud pendiente no muestra nombres; el motivo del rechazo es interno; el rol al aprobar no viene preseleccionado; se corrige la restricción `CHECK` de la membresía | Segunda ronda de preguntas con Rod |
+| 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido | Aprobación |
