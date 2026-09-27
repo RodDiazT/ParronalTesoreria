@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: En revisión · Versión 0.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -43,11 +43,13 @@ El portal registra y controla. No cobra, no paga, no emite documentos tributario
 
 | Actor | Descripción | Qué necesita del proyecto |
 |---|---|---|
-| Administrador | Tesorero (presidente de la comisión) y **un administrador de respaldo**. Configura, aprueba accesos, valida, cierra y rinde. | Control total, trazabilidad de lo que hacen los demás, saber en todo momento cuánto hay y qué falta. |
+| Administrador | Tesorero (presidente de la comisión) y **un administrador de respaldo**. Registra movimientos, inscripciones y pagos igual que un ayudante y, además, configura, aprueba accesos, valida, cierra y rinde. | Control total, trazabilidad de lo que hacen los demás, saber en todo momento cuánto hay y qué falta. |
 | Ayudante | Miembro de la comisión que registra ingresos, gastos, inscripciones y pagos. | Registrar un movimiento en menos de un minuto desde el celular, en la cancha. |
 | Observador | Socio autorizado, solo lectura. | Ver balance, KPIs y detalle sin poder modificar. |
 | Solicitante | Persona que inició sesión con Google sin acceso aprobado. | Saber que su solicitud está pendiente. No ve ningún dato. |
-| Participante (binomio jinete–caballo) | No usa el portal en v1. | Que su inscripción y pagos queden bien registrados. |
+| Jinete / amazona | Persona que monta. No usa el portal en v1.0; en v1.1 puede enviar su inscripción por formulario. | Que su inscripción y pagos queden bien registrados. |
+| Apoderado | Adulto responsable vinculado a un jinete, contacto ante emergencias. No usa el portal. | Ser ubicable ante una emergencia. |
+| Club o sociedad | Club, sociedad o criadero al que pertenece un jinete o un caballo. No usa el portal. Puede ser quien paga. | Que sus pagos queden bien asignados. |
 | Auspiciador / Proveedor | No usan el portal. Contrapartes de ingresos y gastos. | Que sus aportes o cobros queden registrados. |
 | Club (directorio) | Destinatario de la rendición final. No usa el portal. | Recibir un informe cuadrado con respaldos y el saldo a traspasar. |
 
@@ -59,8 +61,11 @@ Escala de diseño: **5 usuarios como máximo** por organización. Nada se dimens
 |---|---|---|---|---|
 | Ver dashboard y listados | Sí | Sí | Sí | No |
 | Ver archivos de respaldo | Sí | Sí | **No** (solo ve que existe) | No |
-| Ver datos de contacto y RUT de contrapartes | Sí | Sí | **No** | No |
-| Registrar movimientos, inscripciones y pagos | Sí | Sí | No | No |
+| Ver datos personales (contacto, RUT, fecha de nacimiento, apoderado) | Sí | Sí | **No** | No |
+| Registrar movimientos, inscripciones y pagos | Sí (queda validado al registrar) | Sí (queda por validar) | No | No |
+| Importar binomios desde Excel | Sí | No | No | No |
+| Revisar inscripciones recibidas por formulario (v1.1) | Sí | Sí | No | No |
+| Subir cartola y confirmar la conciliación (v1.1) | Sí | No | No | No |
 | Editar un movimiento propio **por validar u observado** | Sí | Sí | No | No |
 | Editar un movimiento validado | Sí (queda en auditoría) | No | No | No |
 | Validar u observar movimientos | Sí | No | No | No |
@@ -93,7 +98,8 @@ Reglas de rol:
 | Visibilidad en tiempo real | Tiempo para registrar un gasto con foto desde el celular | < 1 minuto |
 | Cuadratura | Diferencia entre el saldo del portal y el saldo real (banco + efectivo) al cierre | $0 |
 | Rendición al club | Informe de rendición entregado tras el evento | ≤ 15 días después del 2026-11-21 (propuesta, a confirmar con el club) |
-| Costo mínimo | Costo incremental de infraestructura | $0 adicional (cuenta Railway existente de Rod, costo hundido) |
+| Costo mínimo | Costo incremental de infraestructura | $0 adicional (cuenta Railway existente de Rod, costo hundido); IA de conciliación < USD 5 en todo el evento |
+| Cuadratura | Líneas de la cartola conciliadas o explicadas al cierre (v1.1) | 100 % |
 
 ---
 
@@ -108,7 +114,8 @@ Reglas de rol:
 - Movimientos de ingreso y gasto con respaldo (foto o PDF) u observación, validación, observación del administrador y anulación con motivo.
 - Estado de pago del movimiento: pagado o pendiente. Esto cubre las **cuentas por cobrar y por pagar mínimas**: reembolsos a ayudantes, proveedores a crédito y auspicios comprometidos.
 - Auspicios en especie o canje, valorizados y separados de la caja.
-- Binomios, inscripciones y pagos de inscripción (un pago de inscripción **es** un movimiento de ingreso; ver 6.4).
+- Jinetes, caballos, apoderados, clubes o sociedades, binomios, inscripciones y pagos de inscripción (un pago de inscripción **es** un movimiento de ingreso; ver 6.4).
+- Importación de binomios desde Excel con plantilla, vista previa y detección de duplicados, para cargar lo que ya existe en planillas.
 - Dashboard básico: saldo de caja, ingresos, gastos, por cobrar, por pagar y por validar.
 - Aviso de posible duplicado al registrar.
 - Historial de auditoría.
@@ -120,19 +127,20 @@ Reglas de rol:
 - KPIs ampliados: recaudación por categoría, % de inscripciones pagadas, evolución en el tiempo, saldo por medio de pago (banco / efectivo).
 - Pendientes ampliados: vista consolidada de por cobrar y por pagar, y tareas de la comisión.
 - Cierre del evento y rendición: el evento pasa a solo lectura y se exporta el informe de rendición (resumen, libro de movimientos, respaldos y saldo a traspasar) en planilla y PDF.
+- **Formulario de inscripción:** enlace que el administrador comparte; el jinete o su apoderado completa sus datos, los del caballo y las pruebas. Lo enviado queda como **inscripción por revisar**, y el formulario no muestra ningún dato del portal. Un ayudante o administrador la acepta (se crea la inscripción) o la rechaza.
+- **Conciliación con cartola:** el administrador sube la cartola del banco (Excel o CSV), el sistema propone qué movimiento corresponde a cada línea (primero por monto, fecha y nombre; con IA para los casos dudosos) y el administrador confirma cada coincidencia. Nada se concilia sin confirmación humana. Las líneas sin movimiento quedan como alerta para registrarlas.
 
 ### Futuro
 
 - Eliminación de datos de contacto al vencer el plazo de conservación (debe estar implementada antes de que venza el primer plazo; ver 9.5).
 - Presupuesto versus real.
-- Autoinscripción de participantes por formulario o enlace.
-- Pagos en línea y conciliación con cartola.
+- Conexión directa con el banco para conciliar sin subir la cartola.
 - Notificaciones de pagos pendientes.
 - Reutilización para otros eventos del club u otros clubes (el modelo ya lo admite; falta solo la experiencia de crear organizaciones desde la interfaz).
 
 ### Fuera de alcance explícito
 
-Contabilidad formal del club; emisión de boletas o facturas; declaraciones ante el SII; cualquier movimiento real de dinero; acceso público a cualquier dato; almacenamiento de datos de tarjetas o credenciales bancarias.
+Contabilidad formal del club; emisión de boletas o facturas; declaraciones ante el SII; **pagos en línea** y cualquier movimiento real de dinero; acceso público a cualquier dato; almacenamiento de datos de tarjetas o credenciales bancarias.
 
 ---
 
@@ -147,12 +155,18 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Membresia` | Usuario + organización + rol + estado. | Estado: `solicitada`, `activa`, `revocada`. Rol: `administrador`, `ayudante`, `observador`. |
 | `Evento` | El concurso. | Pertenece a una organización. Estado: `abierto`, `cerrado`, `rendido`. |
 | `Categoria` | Clasificación de movimientos. | Pertenece a la organización (reutilizable entre eventos). Tipo: `ingreso` o `gasto`. Puede ser de sistema (no se elimina). |
-| `Contraparte` | Persona u organización externa: jinete, auspiciador, proveedor, otro. | Pertenece a la organización. Datos mínimos (ver 9.3). |
+| `Contraparte` | Auspiciador, proveedor u otro tercero de un movimiento. | Pertenece a la organización. Datos mínimos (ver 9.3). |
+| `Club` | Club, sociedad o criadero externo al que pertenece un jinete o un caballo (en la interfaz: "Club / sociedad"). No confundir con `Organizacion`. | Pertenece a la organización. Tiene jinetes y caballos. Puede ser quien paga inscripciones. |
+| `Jinete` | Persona que monta (en la interfaz: "Jinete / amazona"). | Pertenece a la organización (reutilizable entre eventos). Club opcional. Tiene fecha de nacimiento y apoderados. |
+| `Apoderado` | Adulto responsable y contacto de emergencia de un jinete. | Vinculado a uno o varios jinetes (un apoderado puede tener varios hijos inscritos). |
+| `Caballo` | El caballo. | Pertenece a la organización (reutilizable entre eventos). Club o propietario opcional. |
+| `Binomio` | Par jinete + caballo en un evento. | Une `Jinete` y `Caballo` en un `Evento`. Un caballo puede formar binomio con varios jinetes y un jinete con varios caballos; el par se repite una sola vez por evento. |
+| `Inscripcion` | Inscripción de un binomio en una prueba o categoría, con su monto a pagar. | Pertenece a un binomio. El detalle (pruebas, tarifas, descuentos, reglas por edad) lo define su documento. |
+| `SolicitudInscripcion` (v1.1) | Datos enviados por formulario, aún no aceptados. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones. |
 | `Movimiento` | Ingreso o gasto del evento. | Pertenece a un evento; tiene categoría, contraparte opcional, respaldos y pagos de inscripción asociados. |
 | `Respaldo` | Archivo (foto o PDF) que respalda un movimiento o su pago. | Pertenece a un movimiento. Un movimiento puede tener varios. |
-| `Binomio` | Jinete (una `Contraparte`) + caballo, en un evento. | Un jinete con varios caballos son varios binomios. |
-| `Inscripcion` | Inscripción de un binomio con su monto a pagar. | Pertenece a un binomio. El detalle (pruebas, tarifas, descuentos) lo define su documento. |
-| `Pago` | Asignación de un movimiento de ingreso a una inscripción. | Une `Movimiento` e `Inscripcion` con un monto. Un movimiento puede cubrir varias inscripciones. |
+| `Pago` | Asignación de un movimiento de ingreso a una inscripción. | Une `Movimiento` e `Inscripcion` con un monto. Un movimiento puede cubrir varias inscripciones, incluso de distintos jinetes (por ejemplo, un club que paga por todos los suyos). |
+| `Cartola` y `LineaCartola` (v1.1) | Cartola bancaria subida y cada una de sus líneas. | Cada línea se concilia con cero o un movimiento, previa confirmación del administrador. |
 | `Pendiente` | Tarea de la comisión (v1.1). | No representa dinero: lo por cobrar y por pagar se deriva de movimientos e inscripciones. |
 | `RegistroAuditoria` | Evento de auditoría inmutable. | Referencia a la entidad afectada, al usuario y a la organización. |
 
@@ -167,6 +181,8 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `medioPago` | `transferencia`, `efectivo`, `otro` | |
 | `estadoPago` | `pagado`, `pendiente` | Ingreso pendiente = por cobrar. Gasto pendiente = por pagar. |
 | `pagadoPor` | `caja` o un `Usuario` | Solo gastos. Si es un usuario, el gasto nace pendiente de reembolso. |
+| `nombreOrigen` | texto | Solo ingresos: nombre del titular de la transferencia o de quien entregó el efectivo. Sirve para asignar pagos y conciliar. |
+| `conciliado` | sí/no + línea de cartola (v1.1) | Solo movimientos con transferencia. |
 | `estadoValidacion` | `por_validar`, `validado`, `observado` | |
 | `sinRespaldo` | sí/no | Si es sí, la observación es obligatoria. |
 | `observacion` | texto | Libre; obligatoria sin respaldo. |
@@ -180,11 +196,18 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 Organizacion ─┬─ Membresia ── Usuario
               ├─ Categoria
               ├─ Contraparte
+              ├─ Club ─┬─ Jinete ── Apoderado (varios a varios)
+              │        └─ Caballo
               └─ Evento ─┬─ Movimiento ─┬─ Respaldo
-                         │              └─ Pago ──┐
-                         └─ Binomio ── Inscripcion ┘
+                         │              ├─ Pago ─────────────┐
+                         │              └─ LineaCartola (v1.1)│
+                         ├─ Binomio (Jinete + Caballo) ── Inscripcion
+                         ├─ SolicitudInscripcion (v1.1)
+                         └─ Cartola (v1.1)
 RegistroAuditoria → (cualquier entidad), siempre con organizacionId
 ```
+
+Jinetes, caballos, apoderados y clubes pertenecen a la organización y no al evento, para reutilizarlos en eventos futuros sin volver a cargarlos.
 
 Todas las tablas con datos de negocio llevan `organizacionId`, incluso cuando podría derivarse, para que el aislamiento se aplique con un solo filtro.
 
@@ -266,6 +289,26 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 - `cerrado` (v1.1): lo cierra un administrador cuando no quedan movimientos por validar. Queda de solo lectura; un movimiento que llega después solo lo registra un administrador y queda marcado `posteriorAlCierre`.
 - `rendido`: el club aprobó la rendición. Se registra la fecha, que inicia el plazo de conservación (9.5).
 
+### 6.11 Jinetes, caballos y edad
+
+- Del jinete se registra la **fecha de nacimiento**, porque puede haber pruebas o categorías por edad. La edad se calcula a la fecha que defina el reglamento del concurso (por defecto, la fecha del evento); no se guarda como número.
+- Todo jinete menor de 18 años a la fecha del evento debe tener al menos un apoderado. Para los adultos, el apoderado (contacto de emergencia) es opcional.
+- Un mismo jinete, caballo, club o apoderado se registra una sola vez por organización. Al crear uno nuevo, el sistema avisa si existe otro con nombre parecido (y, si hay, mismo RUT o número de registro del caballo).
+
+### 6.12 Importación desde Excel
+
+- El portal entrega una plantilla descargable. El administrador la completa (o adapta su planilla) y la sube.
+- Antes de guardar se muestra una **vista previa**: filas nuevas, filas que coinciden con registros existentes y filas con errores (campo obligatorio vacío, fecha inválida, menor sin apoderado). Nada se guarda sin confirmación.
+- La importación crea o vincula jinetes, apoderados, caballos, clubes, binomios e inscripciones. No crea pagos: los pagos se registran como movimientos con respaldo.
+- Cada importación queda en auditoría como una sola acción, con el archivo original guardado como respaldo.
+
+### 6.13 Conciliación con cartola (v1.1)
+
+- La conciliación solo **propone**; el administrador confirma cada coincidencia. Un movimiento conciliado queda marcado y enlazado a su línea de cartola.
+- Orden de búsqueda: primero coincidencias exactas (monto y fecha ±2 días), luego por nombre del titular (`nombreOrigen`) y, solo para lo que siga sin resolver, sugerencias con IA.
+- A la IA se le envía lo mínimo: monto, fecha, glosa y nombre de cada línea, y los movimientos candidatos. Nunca números de cuenta ni RUT.
+- Las líneas de cartola sin movimiento quedan como alerta ("ingreso no registrado" o "cargo no registrado"). Los movimientos por transferencia sin línea de cartola al cierre también se destacan.
+
 ---
 
 ## 7. Principios rectores
@@ -277,7 +320,8 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 5. **El club es un dato.** Nombres, fechas y montos del club o del concurso nunca van en el código.
 6. **Celular primero.** Cada pantalla de registro se diseña para una mano, en exterior y con mala señal.
 7. **Dimensionado para 5 usuarios.** Sin colas, caches, microservicios ni servicios pagados adicionales.
-8. **Costo incremental cero.** Todo corre en la cuenta Railway existente.
+8. **Costo incremental cero.** Todo corre en la cuenta Railway existente. La única excepción es la IA de conciliación (v1.1), de uso puntual y opcional.
+9. **La IA propone, una persona decide.** Ninguna sugerencia automática modifica dinero, pagos ni estados sin confirmación de un administrador.
 
 ---
 
@@ -295,11 +339,13 @@ Cualquier documento que muestre estos indicadores los referencia desde aquí; no
 | Compresión de fotos | En el navegador, antes de subir (máx. ~1600 px, JPEG) | Menos datos con mala señal y menos espacio. |
 | Registro sin señal (v1.1) | Borrador local en el navegador (IndexedDB) y cola de envío | Sin servicios externos. |
 | Exportación (v1.1) | Planilla (XLSX o CSV) y PDF generados en el servidor | Sin servicios externos. |
+| Lectura de Excel (importación v1.0, cartola v1.1) | Librería de lectura de XLSX/CSV en el servidor | Sin servicios externos. |
+| IA para conciliación (v1.1) | API de Claude (Anthropic), llamada solo al pedir sugerencias, con clave en variable de entorno `ANTHROPIC_API_KEY` | Es el único costo variable del proyecto: unos pocos centavos de dólar por cartola a esta escala. Solo se usa para lo que el cruce exacto no resuelve, y el portal funciona igual sin clave configurada. |
 | Pruebas | Vitest para reglas de negocio, permisos y aislamiento | Las reglas de dinero y de acceso se prueban antes de desplegar. |
 | Despliegue | Cuenta Railway existente de Rod, URL entregada por la plataforma, sin dominio propio | Costo hundido; HTTPS incluido. |
 | Idioma del código | Dominio en español sin tildes (modelos `Movimiento`, `Inscripcion`; campos `montoClp`, `estadoValidacion`); términos técnicos del framework en inglés | Los nombres coinciden con los documentos; no hace falta tabla de equivalencias. Columnas en la base en `snake_case`. |
 
-Variables de entorno mínimas: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RUTA_RESPALDOS`.
+Variables de entorno mínimas: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RUTA_RESPALDOS`. En v1.1, opcional: `ANTHROPIC_API_KEY`.
 
 Copias de seguridad: se verifica si el plan de Railway incluye respaldo de la base y del volumen. Si no, en v1.0 se hace una copia manual semanal (volcado de la base + descarga de respaldos) y la exportación de v1.1 sirve como copia fuera de Railway.
 
@@ -307,7 +353,7 @@ Copias de seguridad: se verifica si el plan de Railway incluye respaldo de la ba
 
 ## 9. Cumplimiento normativo transversal
 
-Aplica: el proyecto trata datos personales (usuarios, jinetes, auspiciadores, proveedores), datos financieros de terceros contenidos en comprobantes de transferencia, pagos entre personas y una rendición a un tercero (el club). Los documentos de componente referencian esta sección y solo agregan lo específico.
+Aplica: el proyecto trata datos personales (usuarios, jinetes, incluidos **menores de edad**, apoderados, clubes, auspiciadores y proveedores), datos financieros de terceros contenidos en comprobantes de transferencia, pagos entre personas y una rendición a un tercero (el club). Los documentos de componente referencian esta sección y solo agregan lo específico.
 
 ### 9.1 Normativa y vigencia (verificada el 2026-09-27)
 
@@ -324,29 +370,34 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 | Titular | Datos | Base de licitud |
 |---|---|---|
 | Usuario del portal | Correo, nombre e imagen de Google; acciones en auditoría | Consentimiento al solicitar acceso, con aviso de privacidad en la pantalla de solicitud. |
-| Jinete (participante) | Nombre, un medio de contacto (teléfono o correo), nombre del caballo, montos y pagos | Ejecución de la relación de inscripción al concurso. |
+| Jinete / amazona | Nombre, fecha de nacimiento, un medio de contacto, club, RUT opcional, inscripciones y pagos | Ejecución de la relación de inscripción al concurso. En menores de edad, con autorización del apoderado (ver 9.3). |
+| Apoderado | Nombre, teléfono, relación con el jinete | Contacto de emergencia y responsable del menor inscrito. |
+| Club / sociedad | Nombre, contacto, RUT opcional | Ejecución de la relación de inscripción o pago. |
+| Caballo | Nombre, club o propietario, número de registro opcional | No es dato personal, salvo el nombre del propietario si es persona natural. |
 | Auspiciador / Proveedor | Nombre, contacto, RUT opcional | Ejecución del acuerdo de auspicio o compra. |
 | Terceros en comprobantes | Nombre, banco y número de cuenta que aparezcan en un comprobante de transferencia | Necesarios para respaldar el movimiento; acceso restringido. |
 
 ### 9.3 Minimización
 
-- De cada contraparte se pide solo nombre y un medio de contacto. El **RUT es opcional** y se usa solo cuando hay un documento tributario de por medio.
-- No se piden fecha de nacimiento, domicilio ni datos de salud.
-- Si un jinete es **menor de edad**, el contacto registrado es el de su apoderado, y no se registra la edad salvo que una categoría del concurso lo exija (a confirmar en el documento de inscripción).
+- De cada contraparte, club, jinete y apoderado se pide solo nombre y un medio de contacto. El **RUT es opcional**.
+- La fecha de nacimiento del jinete se pide porque hay pruebas por edad (6.11). No se piden domicilio ni datos de salud (tampoco alergias o seguros: el apoderado es el contacto para eso).
+- **Menores de edad:** tienen al menos un apoderado vinculado. Sus datos se tratan atendiendo a su interés superior; en los menores de 14 años, la autorización para tratar sus datos la da el apoderado (en el formulario de v1.1, con una casilla explícita; en la carga manual o por Excel, la comisión la obtiene al recibir la inscripción). Los datos de menores nunca aparecen en exportaciones a terceros distintos del club.
 - Nunca se almacenan datos de tarjetas ni credenciales bancarias.
 
 ### 9.4 Medidas de protección
 
 - Acceso solo con Google y membresía activa aprobada por un administrador; aislamiento estricto por organización (sección 7, principio 4).
-- El observador no ve archivos de respaldo ni datos de contacto (sección 2.2).
+- El observador no ve archivos de respaldo ni datos personales (sección 2.2).
 - Archivos de respaldo fuera de cualquier ruta pública, servidos solo tras verificar la membresía.
 - HTTPS en todo el tráfico (Railway).
 - Auditoría inmutable de accesos, cambios de rol y operaciones sobre datos.
+- El formulario de inscripción (v1.1) solo recibe datos: no muestra ni confirma la existencia de ningún registro, y tiene límite de envíos para evitar abuso.
+- Conciliación con IA (v1.1): Anthropic actúa como encargado de tratamiento; se le envían solo los campos de 6.13.
 
 ### 9.5 Conservación
 
 - Datos y respaldos se conservan hasta que el club aprueba la rendición (evento `rendido`) **más 1 año**.
-- Al vencer ese plazo se eliminan los datos de contacto y RUT de las contrapartes y los archivos de respaldo con datos de terceros; se conserva el libro de movimientos (montos, fechas, categorías y nombres) como historia del club.
+- Al vencer ese plazo se eliminan los datos de contacto, RUT y fechas de nacimiento, los apoderados, los archivos de respaldo con datos de terceros y las cartolas; se conserva el libro de movimientos (montos, fechas, categorías y nombres) como historia del club.
 - La eliminación se implementa antes de que venza el primer plazo (versión futura, con fecha límite derivada del estado `rendido`).
 
 ### 9.6 Derechos de los titulares
@@ -371,8 +422,8 @@ Ante un acceso no autorizado, el administrador revoca las membresías afectadas,
 |---|---|
 | `acceso/` | Login, solicitudes, membresías, roles y permisos. |
 | `organizacion/` | Organización, evento, categorías, contrapartes. |
-| `movimientos/` | Movimientos, respaldos, validación, anulación, por cobrar y por pagar, registro sin señal, pendientes. |
-| `inscripciones/` | Binomios, inscripciones y pagos. |
+| `movimientos/` | Movimientos, respaldos, validación, anulación, por cobrar y por pagar, registro sin señal, pendientes, conciliación con cartola. |
+| `inscripciones/` | Jinetes, apoderados, caballos, clubes, binomios, inscripciones, pagos, importación desde Excel y formulario de inscripción. |
 | `dashboard/` | Indicadores y KPIs. |
 | `rendicion/` | Cierre del evento, informe de rendición y exportaciones. |
 
@@ -402,12 +453,16 @@ Datos iniciales: la organización, el evento y los administradores se crean con 
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | v1.0 | — |
 | Movimientos | `docs/movimientos/movimientos.md` | Registro de ingresos y gastos, respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie, duplicados, auditoría | v1.0 | Acceso, Organización |
 | Registro sin señal (hijo de Movimientos) | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local y cola de envío | v1.1 | Movimientos |
-| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | v1.0 | Movimientos |
+| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | v1.0 | Organización |
+| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | v1.0 | Participantes, Movimientos |
+| Importación desde Excel (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga | v1.0 | Inscripción de binomios |
+| Formulario de inscripción (hijo de Inscripción) | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace público de solo envío, solicitudes por revisar, autorización del apoderado | v1.1 | Inscripción de binomios |
+| Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce, sugerencias con IA y confirmación | v1.1 | Movimientos |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de 6.7 en v1.0; KPIs ampliados en v1.1 | v1.0 / v1.1 | Movimientos, Inscripciones |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | v1.1 | Movimientos |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | v1.1 | Movimientos, Inscripciones |
 
-Cambios respecto del índice inicial: se agrega "Registro sin señal" (v1.1) y "Exportación para rendición" pasa a llamarse "Cierre y rendición" (misma ruta), porque incluye el cierre del evento. Lo por cobrar y por pagar mínimo queda dentro de Movimientos (v1.0); "Pendientes" conserva la vista consolidada y las tareas (v1.1).
+Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Importación desde Excel" (v1.0), "Formulario de inscripción" (v1.1), "Conciliación con cartola" (v1.1) y "Registro sin señal" (v1.1) y "Exportación para rendición" pasa a llamarse "Cierre y rendición" (misma ruta), porque incluye el cierre del evento. Lo por cobrar y por pagar mínimo queda dentro de Movimientos (v1.0); "Pendientes" conserva la vista consolidada y las tareas (v1.1).
 
 ---
 
@@ -420,13 +475,17 @@ Cambios respecto del índice inicial: se agrega "Registro sin señal" (v1.1) y "
 | 3 | Esqueleto técnico: Next.js, Prisma con el modelo de la sección 5, Auth.js, función de contexto por organización, auditoría, script de carga, despliegue en Railway | 2026-09-29 | 1, 2 |
 | 4 | Documentar y aprobar Organización y evento + Acceso y roles | 2026-09-28 | 1 |
 | 5 | Documentar y aprobar Movimientos | 2026-09-29 | 4 |
-| 6 | Documentar y aprobar Inscripción de binomios (requiere tarifas: tarea t-002) | 2026-09-30 | 5 |
-| 7 | Documentar y aprobar Dashboard (v1.0) | 2026-10-01 | 5, 6 |
-| 8 | Implementar 4 → 7 a medida que se aprueban | 2026-09-29 → 2026-10-03 | 3 y cada documento |
-| 9 | Prueba con los ayudantes en celular, carga inicial real y puesta en uso | 2026-10-04 | 8 |
-| 10 | Documentar e implementar Registro sin señal | ≤ 2026-10-25 | 9 |
-| 11 | Documentar e implementar Dashboard v1.1, Pendientes y Cierre y rendición | ≤ 2026-11-14 | 9 |
-| 12 | Prueba en terreno (señal real en el club) | ≤ 2026-11-14 | 10 |
+| 6 | Documentar y aprobar Participantes | 2026-09-30 | 4 |
+| 7 | Documentar y aprobar Inscripción de binomios (requiere pruebas y tarifas: tarea t-002) | 2026-09-30 | 5, 6 |
+| 8 | Documentar y aprobar Importación desde Excel (requiere la planilla actual) | 2026-10-01 | 7 |
+| 9 | Documentar y aprobar Dashboard (v1.0) | 2026-10-01 | 5, 7 |
+| 10 | Implementar 4 → 9 a medida que se aprueban | 2026-09-29 → 2026-10-03 | 3 y cada documento |
+| 11 | Importar los binomios existentes, prueba con los ayudantes en celular y puesta en uso | 2026-10-04 | 10 |
+| 12 | Documentar e implementar Formulario de inscripción | ≤ 2026-10-18 | 11 |
+| 13 | Documentar e implementar Registro sin señal | ≤ 2026-10-25 | 11 |
+| 14 | Documentar e implementar Conciliación con cartola | ≤ 2026-11-07 | 11 |
+| 15 | Documentar e implementar Dashboard v1.1, Pendientes y Cierre y rendición | ≤ 2026-11-14 | 11 |
+| 16 | Prueba en terreno (señal real en el club) | ≤ 2026-11-14 | 13 |
 
 ---
 
@@ -434,14 +493,17 @@ Cambios respecto del índice inicial: se agrega "Registro sin señal" (v1.1) y "
 
 | Riesgo | Tipo | Mitigación |
 |---|---|---|
-| No llegar al 2026-10-04 con todo el núcleo | Operativo | Orden de prioridad dentro de v1.0: acceso → movimientos → inscripciones → dashboard. Si falta tiempo, el dashboard puede empezar como una sola pantalla de totales. |
+| No llegar al 2026-10-04 con todo el núcleo | Operativo | Orden de prioridad dentro de v1.0: acceso → movimientos → participantes e inscripciones → importación → dashboard. Si falta tiempo, la importación se hace una vez con un script asistido y el dashboard empieza como una sola pantalla de totales. |
 | Señal baja en el club el día del evento | Experiencia | Fotos comprimidas y reintento en v1.0; registro sin señal en v1.1, probado en terreno antes del 14-nov; verificar si habrá wifi (tarea). |
 | Pérdida de datos o archivos en Railway | Técnico | Verificar respaldos del plan; copia manual semanal hasta la exportación de v1.1. |
 | Fuga de datos entre organizaciones | Normativo | Función única de contexto y prueba automática de aislamiento. |
 | Doble conteo de dinero (pago de inscripción registrado también como ingreso suelto) | Operativo | Un pago de inscripción es un movimiento con asignación (6.4); aviso de duplicado (6.9). |
 | Saldo del portal no cuadra con banco + efectivo | Operativo | Todo efectivo se registra (con observación si no hay comprobante); en v1.1 saldo por medio de pago para cuadrar por separado. |
 | Movimientos quedan sin validar por mucho tiempo | Experiencia | Contador visible de "por validar" para el administrador; dos administradores. |
-| Datos de menores de edad | Normativo | Contacto del apoderado y sin edad salvo necesidad (9.3). |
+| Datos de menores de edad | Normativo | Apoderado obligatorio, autorización del apoderado para menores de 14, sin datos de salud y acceso restringido (9.3, 9.4). |
+| Formulario de inscripción usado para spam o para averiguar datos | Técnico | Solo envío, sin respuestas que revelen datos, límite de envíos y revisión humana antes de crear nada (9.4). |
+| Sugerencias de IA erróneas en la conciliación | Operativo | La IA solo propone; cada coincidencia la confirma un administrador (principio 9). |
+| Duplicados de jinetes o caballos al importar o por formulario | Operativo | Vista previa con coincidencias y aviso de nombres parecidos (6.11, 6.12). |
 | Uso de la cuenta Railway personal para datos del club | Operativo | Queda como decisión explícita de Rod; si el club asume el proyecto en el futuro, se traspasa el servicio. |
 | Obligación tributaria por auspicios no resuelta | Normativo | Tarea t-001; el portal permite registrar el número de documento emitido en la observación. |
 
@@ -452,3 +514,4 @@ Cambios respecto del índice inicial: se agrega "Registro sin señal" (v1.1) y "
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Inicio del proyecto |
+| 2026-09-27 | 0.2 | Jinete, caballo, apoderado y club como entidades separadas; binomio como par jinete + caballo; fecha de nacimiento y apoderado obligatorio para menores; importación desde Excel (v1.0); formulario de inscripción y conciliación con cartola asistida por IA (v1.1); pagos en línea fuera de alcance; se explicita que el administrador también registra | Revisión de Rod |
