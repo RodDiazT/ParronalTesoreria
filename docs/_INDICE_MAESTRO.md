@@ -10,6 +10,8 @@ docs/
 ├── _ESTADO_PROYECTO.md
 ├── marco-general/
 │   └── marco-general-proyecto.md
+├── acceso/
+│   └── acceso-roles.md
 └── organizacion/
     └── organizacion-evento.md
 ```
@@ -22,7 +24,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 |---|---|---|---|---|---|
 | Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.1) | v1.0 | — |
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.0) | v1.0 | Marco general |
-| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Pendiente | v1.0 | Marco general |
+| Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | En revisión (v0.2) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Pendiente | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Pendiente | v1.0 | Marco general |
 | Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | Pendiente | v1.0 | Marco general |
@@ -129,13 +131,13 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "padre": "marco-general",
       "dominio": "acceso",
       "descripcion": "Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad",
-      "estado": "pendiente",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [
         "organizacion-evento"
       ],
-      "version": "0.0",
+      "version": "0.2",
       "actualizado": "2026-09-27"
     },
     {
@@ -437,3 +439,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.2 | Organización y evento pasa a revisión (v0.1); se crea la carpeta `organizacion/`; tareas t-009 a t-011 | Borrador de Organización y evento |
 | 2026-09-27 | 1.3 | Organización y evento aprobado (v1.0); marco general a v1.1 (§10.2 remite la lista de categorías a Organización y evento) | Aprobación de Organización y evento |
 | 2026-09-27 | 1.4 | Esquema 1.1: las tareas agregan el campo `categoria` (`desarrollo` o `club`); la tabla de tareas se separa por categoría | Pedido de Rod para distinguir lo que configura él de lo que debe definir con el club |
+| 2026-09-27 | 1.5 | Acceso y roles pasa a revisión (v0.2); se crea la carpeta `acceso/` | Borrador de Acceso y roles |
