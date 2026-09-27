@@ -29,7 +29,7 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 └────────────────────────────────────┬───────────────────────────────────┘
                                      ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ FASE 2: Acceso, Privacidad y Gestión de Miembros (docs/acceso)         │
+│ FASE 2: Acceso, Privacidad y Gestión de Miembros [COMPLETADA]          │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      ▼
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -72,44 +72,32 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 
 ---
 
-### Fase 2: Acceso, Privacidad y Gestión de Miembros
+### Fase 2: Acceso, Privacidad y Gestión de Miembros (Completada el 2026-09-27)
 **Documento base:** `docs/acceso/acceso-roles.md`
 
-#### Paso 2.1: Pantallas Públicas de Ingreso y Privacidad
-- **Archivos:** `src/app/ingresar/page.tsx`, `src/app/privacidad/page.tsx`.
-- **Qué hace:**
-  - `/ingresar`: Botón de inicio de sesión con Google (`signIn("google")`), sin revelar datos ni nombres del club a extraños (marco §9.4). Muestra mensajes de error claros en español (cuenta no verificada, sesión expirada).
-  - `/privacidad`: Texto completo y estático del aviso de privacidad según §3.8 (finalidad, derechos Ley 19.628 y 21.719, conservación hasta 1 año post rendición, encargado Google Gemini).
-
-#### Paso 2.2: Bienvenida y Aceptación de Privacidad
-- **Archivos:** `src/app/bienvenida/page.tsx`, `src/dominio/acceso/acciones.ts` (`aceptarAviso`).
-- **Qué hace:**
-  - Resumen del aviso con casilla obligatoria de consentimiento informado antes de habilitar el botón "Continuar".
-  - Registra `avisoVersion: 1`, `avisoAceptadoEn: now()` y auditoría inmutable `aceptar_aviso`.
-
-#### Paso 2.3: Solicitud de Acceso para Nuevos Usuarios
-- **Archivos:** `src/app/solicitud/page.tsx`, `src/dominio/acceso/acciones.ts` (`solicitarAcceso`).
-- **Qué hace:**
-  - Pantalla para usuarios con sesión pero sin membresía activa. Estados visuales: "Solicitud enviada", "Acceso rechazado" (con opción de reintentar si el administrador lo autoriza), "Acceso revocado".
-  - Utiliza `obtenerOrganizacionUnica()` para asociar la solicitud sin violar aislamiento.
-
-#### Paso 2.4: Administración de Usuarios y Solicitudes
-- **Archivos:** `src/app/usuarios/page.tsx`, `src/dominio/acceso/acciones.ts` (`aprobarSolicitud`, `rechazarSolicitud`, `invitar`, `cambiarRol`, `revocar`, `reactivar`).
-- **Qué hace:**
-  - Pestañas: *Solicitudes pendientes* (con contador), *Con acceso*, *Sin acceso* y botón *Invitar por correo*.
-  - Regla crítica transaccional: Bloqueo `SELECT FOR UPDATE` para garantizar que la organización nunca quede sin al menos un administrador activo (§5.3).
-  - Al revocar o reactivar, elimina de inmediato las sesiones activas (`Session`) de ese usuario.
-
-#### Paso 2.5: Comisión y Perfil de Usuario
-- **Archivos:** `src/app/comision/page.tsx`, `src/app/mi-cuenta/page.tsx`.
-- **Qué hace:**
-  - `/comision`: Lista accesible para ayudantes y observadores con nombre, foto y rol de miembros activos (sin correos personales).
-  - `/mi-cuenta`: Datos propios, rol, aceptación del aviso y botón "Cerrar sesión en todos mis dispositivos".
+- [x] **2.1 Pantallas Públicas de Ingreso y Privacidad:**
+  - `src/app/ingresar/page.tsx`: Botón de inicio de sesión con Google (`signIn("google")`), sin revelar datos ni nombres del club a extraños (marco §9.4). Mensajes de error en español para fallas de autenticación.
+  - `src/app/privacidad/page.tsx`: Texto completo y estático del aviso de privacidad según §3.8 (finalidad única, derechos Ley 19.628 y 21.719, conservación hasta 1 año post rendición, encargado Google Gemini de pago sin uso para entrenamiento).
+- [x] **2.2 Bienvenida y Aceptación de Privacidad:**
+  - `src/app/bienvenida/page.tsx` y `src/app/bienvenida/formulario-bienvenida.tsx`: Resumen del aviso con casilla obligatoria de consentimiento informado antes de habilitar el botón "Continuar".
+  - `src/dominio/acceso/acciones.ts` (`aceptarAviso` y `ejecutarAceptarAviso`): Registra `avisoVersion: 1`, `avisoAceptadoEn: now()` y auditoría inmutable `aceptar_aviso`.
+- [x] **2.3 Solicitud de Acceso para Nuevos Usuarios:**
+  - `src/app/solicitud/page.tsx` y `src/app/solicitud/formulario-solicitud.tsx`: Pantalla para usuarios con sesión pero sin membresía activa. Los tres estados normados: "Aún no tienes acceso" (con campo opcional de mensaje hasta 200 caracteres), "Solicitud pendiente" (con fecha y mensaje) y "No tienes acceso" (con opción de reintentar solicitud).
+  - `src/dominio/acceso/acciones.ts` (`solicitarAcceso` y `ejecutarSolicitarAcceso`): Asocia la solicitud a la única organización vía `obtenerOrganizacionUnica()`, previene duplicados y audita la acción.
+- [x] **2.4 Administración de Usuarios y Solicitudes:**
+  - `src/app/usuarios/page.tsx` y `src/app/usuarios/gestor-usuarios.tsx`: Pestañas *Solicitudes pendientes* (con contador), *Con acceso* (con distintivo "Invitado, sin ingreso") y *Sin acceso*.
+  - Botón *Invitar por correo* (`invitar`), cambio de rol (`cambiarRol`), rechazo (`rechazarSolicitud`), revocación con motivo y advertencia de pendientes (`revocar`), reactivación (`reactivar`) y supresión de datos conforme a ley (`suprimirDatosUsuario`).
+  - Regla crítica transaccional: Bloqueo `SELECT FOR UPDATE` en PostgreSQL para garantizar que la organización nunca quede sin al menos un administrador activo (§5.3). Cierre inmediato de sesiones activas en revocación.
+- [x] **2.5 Comisión y Perfil de Usuario:**
+  - `src/app/comision/page.tsx`: Lista de solo lectura para ayudantes y observadores con nombre, foto y rol de miembros activos (oculta correos personales, invitados sin ingreso, solicitudes y revocados).
+  - `src/app/mi-cuenta/page.tsx`: Datos propios de Google, rol, aceptación de privacidad, botones "Cerrar sesión en este equipo", "Cerrar sesión en todos mis dispositivos" y "Descargar mis datos" (`/api/mi-cuenta/descargar` en JSON).
+  - `src/app/sin-permiso/page.tsx`: Pantalla amigable para errores 403 de control de acceso.
 
 **Criterios de verificación de Fase 2:**
-- Tests en Vitest de transiciones de estado de `Membresia`.
-- Test de concurrencia: intento simultáneo de revocar al último administrador rechazado.
-- Login verificado con Google OAuth y redirección automática por middleware.
+- [x] Tests en Vitest de transiciones de estado de `Membresia` (solicitada, activa, revocada, rechazada).
+- [x] Test de concurrencia y regla de integridad: bloqueo simultáneo para impedir revocar o bajar de rol al último administrador.
+- [x] Login verificado con Google OAuth y redirección automática por middleware y `obtenerContexto`.
+- [x] 41 tests unitarios y de integración pasando al 100% y build de Next.js sin errores ni advertencias de linter.
 
 ---
 

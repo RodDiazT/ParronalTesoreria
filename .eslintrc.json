@@ -19,6 +19,7 @@
         "src/lib/auth/**",
         "src/lib/auth.ts",
         "src/lib/contexto.ts",
+        "src/dominio/acceso/**",
         "scripts/**",
         "**/*.test.ts"
       ],

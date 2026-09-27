@@ -1,0 +1,80 @@
+import { redirect } from "next/navigation";
+import { obtenerContexto, db } from "@/lib/contexto";
+import { exigir } from "@/lib/permisos";
+import { NavegacionSimple } from "@/components/app/navegacion-simple";
+import { GestorUsuarios, MembresiaDTO } from "./gestor-usuarios";
+
+export const metadata = {
+  title: "Usuarios · Tesorería",
+  description: "Gestión de accesos, roles y miembros del portal",
+};
+
+export default async function UsuariosPage() {
+  const ctx = await obtenerContexto();
+
+  try {
+    exigir(ctx, "gestionar_accesos");
+  } catch {
+    redirect("/sin-permiso");
+  }
+
+  // Uso de db(ctx) para garantizar aislamiento por organización
+  const rawMembresias = await db(ctx).membresia.findMany({
+    include: {
+      usuario: {
+        select: {
+          id: true,
+          correo: true,
+          nombre: true,
+          imagen: true,
+          ultimoIngresoEn: true,
+        },
+      },
+    },
+    orderBy: [
+      { estado: "asc" },
+      { creadoEn: "desc" },
+    ],
+  });
+
+  const membresias: MembresiaDTO[] = rawMembresias.map((m) => ({
+    id: m.id,
+    usuarioId: m.usuarioId,
+    rol: m.rol,
+    estado: m.estado,
+    mensajeSolicitud: m.mensajeSolicitud,
+    solicitadaEn: m.solicitadaEn,
+    aprobadaEn: m.aprobadaEn,
+    revocadaEn: m.revocadaEn,
+    motivoRevocacion: m.motivoRevocacion,
+    version: m.version,
+    usuario: {
+      id: m.usuario.id,
+      correo: m.usuario.correo,
+      nombre: m.usuario.nombre,
+      imagen: m.usuario.imagen,
+      ultimoIngresoEn: m.usuario.ultimoIngresoEn,
+    },
+  }));
+
+  const solicitudesPendientes = membresias.filter((m) => m.estado === "solicitada").length;
+
+  return (
+    <div className="min-h-screen bg-fondo text-texto">
+      <NavegacionSimple
+        titulo="Usuarios"
+        subtitulo={ctx.evento?.nombre || "Comisión Organizadora"}
+        volverHref="/"
+        rol={ctx.rol}
+        solicitudesPendientes={solicitudesPendientes}
+      />
+
+      <main className="mx-auto max-w-3xl p-4 sm:p-6 pb-24">
+        <GestorUsuarios
+          membresias={membresias}
+          usuarioActualId={ctx.usuario.id}
+        />
+      </main>
+    </div>
+  );
+}

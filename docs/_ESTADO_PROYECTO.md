@@ -7,13 +7,15 @@
 Están aprobados el marco general y todos los componentes del núcleo v1.0 (Organización y evento, Acceso y roles, Movimientos, Participantes, Inscripción de binomios, Dashboard y UX/UI) junto con los aprobados para v1.1 (Importación desde Excel y Formulario de inscripción).
 
 **Estado de la implementación técnica (2026-09-27):**
-La **Fase 1 (Esqueleto técnico, Base de Datos, Carga Inicial y Núcleo de Aislamiento y Permisos)** está **completada y operativa**:
-- **Infraestructura y Base de Datos:** Proyecto enlazado a Railway con PostgreSQL y volumen persistente (`/data/respaldos`). Los 24 modelos de datos del esquema de Prisma fueron migrados a producción, incluyendo claves foráneas, índices de búsqueda, índices únicos parciales (`evento_un_abierto`, `binomio_no_anulado`, `inscripcion_no_anulada`) y restricciones `CHECK` de integridad financiera y reglas de negocio.
-- **Carga inicial:** Script `scripts/carga-inicial.ts` ejecutado exitosamente contra Railway Postgres; creó la organización *Club Ecuestre Parronal Las Marias*, el evento *Concurso Ecuestre Parronal* (2026-11-21), el administrador `rodrigodiaztapia@gmail.com` con membresía activa y las 13 categorías iniciales (con sus claves de sistema `inscripciones`, `devoluciones`, `aporte_inicial`). Idempotencia probada.
-- **Aislamiento y Contexto:** Implementada la función `obtenerContexto()` y el cliente extendido `db(ctx)` en `src/lib/contexto.ts`, que inyecta automáticamente el filtro por `organizacionId` en todas las consultas y escrituras. Implementadas `exigirDeLaOrganizacion()` para validar referencias foráneas y `registrarAuditoria()`. Regla de ESLint `no-restricted-imports` configurada para impedir el uso del cliente sin extender fuera de las capas autorizadas.
-- **Autenticación y Sesiones:** Configurado Auth.js (v5) con Google OAuth en `src/lib/auth.ts`, variables cargadas en Railway y local (`.env.local`), y adaptador propio `src/lib/auth/adaptador.ts` que mapea a la entidad en español `Usuario` descartando tokens innecesarios. Middleware de Edge en `src/middleware.ts` para redirigir a `/ingresar`.
-- **Permisos y Pruebas:** Matriz de permisos completa en `src/lib/permisos.ts` con funciones `puede(ctx, accion)`, `exigir(ctx, accion)`, `esPropio()`, `exigirNoPropio()`, `ocultarDatosPersonales()` y `normalizarNombre()` / `validarRut()`. 16 tests unitarios en Vitest pasando al 100%.
-- **Frontend base:** Next.js 15 App Router configurado con Tailwind CSS v4 y paleta de tokens CSS de modo claro/oscuro de `docs/interfaz/ux-ui.md` §5.2 en `src/app/globals.css`.
+- **Fase 1 (Esqueleto técnico, Base de Datos, Carga Inicial y Núcleo de Aislamiento y Permisos):** COMPLETADA. Infraestructura Railway, 24 modelos Prisma migrados, carga inicial, `db(ctx)`, `permisos.ts` y Auth.js.
+- **Fase 2 (Acceso, Privacidad y Gestión de Miembros):** COMPLETADA.
+  - Pantallas públicas `/ingresar` (con Google OAuth y mensajes de error en español) y `/privacidad` (aviso completo normado Ley 19.628 / 21.719 con mención de IA Gemini).
+  - Pantalla `/bienvenida` con consentimiento informado obligatorio previo a la habilitación de funciones.
+  - Pantalla `/solicitud` con los tres estados visuales para solicitantes sin revelar datos del club.
+  - Panel administrativo `/usuarios` con pestañas *Solicitudes*, *Con acceso* y *Sin acceso*, invitación por correo, cambio de rol, revocación con cierre inmediato de sesiones, reactivación y supresión de datos conforme a ley.
+  - Regla crítica del administrador mínimo activo protegida por transacción con bloqueo `SELECT FOR UPDATE` en PostgreSQL.
+  - Lista de miembros `/comision` (oculta correos privados a ayudantes y observadores) y pantalla `/mi-cuenta` con cierre de sesiones en todos los dispositivos y descarga de datos personales JSON (`/api/mi-cuenta/descargar`).
+  - Suite de 41 tests unitarios y de integración pasando al 100% y build de Next.js limpio.
 
 El plan paso a paso y la estrategia completa de avance se detallan en [`docs/PLAN_IMPLEMENTACION.md`](PLAN_IMPLEMENTACION.md).
 
