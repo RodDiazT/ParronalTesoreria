@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -436,7 +436,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | Función | Permiso (Acceso y roles §5.4) | Efecto |
 |---|---|---|
 | `registrarMovimiento(datos, archivos)` | `registrar` | 3.1, 3.2, 3.3. Multipart. Devuelve el existente si la `claveCliente` ya se usó. |
-| `registrarMovimientoSistema(tx, ctx, { claveSistema, … }, archivos)` | Interna (la llaman los flujos de Inscripción de binomios con sus permisos) | Mismas reglas de 3.1 y 3.2 para las categorías de sistema `inscripciones` y `devoluciones`, sin pasar por el selector, dentro de la transacción del llamador. |
+| `registrarMovimientoSistema(tx, ctx, { claveSistema, … }, archivos)` | Interna (la llaman los flujos de Inscripción de binomios con sus permisos) | Mismas reglas de 3.1 y 3.2 para las categorías de sistema `inscripciones` y `devoluciones`, sin pasar por el selector, dentro de la transacción del llamador. En lugar de `archivos` puede recibir la ruta de un archivo ya copiado a `RUTA_RESPALDOS/movimientos/…` (lo usa Formulario de inscripción §5.2 para el comprobante), con las mismas verificaciones de tipo y tamaño. |
 | `buscarPosiblesDuplicados(datos)` | `registrar` | Marco §6.9, hasta 3 candidatos. |
 | `editarMovimiento(id, cambios, version)` | `editar_propio_no_validado` (con `esPropio` sobre `enviadoAValidarPorId`) o `editar_validado` | 3.11. Si el ayudante edita un observado, pasa a `por_validar`. |
 | `reenviarMovimiento(id, version)` | `editar_propio_no_validado` | `observado` → `por_validar`. |
@@ -566,3 +566,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; Organización y evento pasa a v1.2 con la marca `exigeContraparte` | Aprobación |
 | 2026-09-27 | 1.1 | Cascada de anulación a `Devolucion`; aviso en categorías de referencia de conceptos; función interna `registrarMovimientoSistema`; fila de pensión y alojamiento remite a los cargos | Aprobación de Inscripción de binomios v1.0 |
 | 2026-09-27 | 1.2 | §3.8: pestaña y filtros del listado en la URL (Dashboard §5.5). §5.3: `resumenPendientesDe` permitido para el propio usuario | Aprobación de Dashboard v1.0 |
+| 2026-09-27 | 1.3 | §5.3: `registrarMovimientoSistema` acepta un archivo ya copiado al volumen como respaldo | Aprobación de Formulario de inscripción v1.0 |

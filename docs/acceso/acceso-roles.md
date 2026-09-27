@@ -1,6 +1,6 @@
 # Acceso y roles
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -198,6 +198,7 @@ Texto genérico (decisión de Rod): no nombra al club ni lleva un correo de cont
 - encargado de tratamiento: Google (API de Gemini, servicio de pago), que procesa por encargo de la comisión, fuera de Chile, parte de los datos de las planillas de inscripción que se importan (incluidos datos de menores) y, en v1.1, de las cartolas, solo para sugerir cómo leerlas; no los usa para otros fines (marco §9.4; Importación desde Excel §4);
 - conservación: hasta la aprobación de la rendición más un año (marco §9.5);
 - derechos: acceso, rectificación, supresión, oposición y portabilidad, pidiéndolos al administrador del evento (marco §9.6);
+- formulario de inscripción (v1.1): datos del remitente (nombre, teléfono o correo y relación con el jinete) y comprobante de pago que adjunte; si la solicitud no se acepta, sus datos se eliminan a los 30 días (Formulario de inscripción §4);
 - normativa: Ley 19.628 y Ley 21.719.
 
 El texto de `/privacidad` sirve también como base del texto breve para el canal de inscripción (marco §9.6), que adapta el Formulario de inscripción (v1.1).
@@ -381,7 +382,7 @@ export function exigir(ctx: Contexto, accion: Accion): void; // lanza 403
 | `/comision` | Administrador, ayudante y observador | Nombre, imagen y rol de los accesos activos, sin correos (3.6). |
 | `/mi-cuenta` | Con sesión | Datos, rol, aviso, cierre de sesión y descarga de datos (3.6, 3.9). |
 | `/sin-permiso` | Con sesión | Página del 403. |
-| Middleware | Todas | Sin sesión → `/ingresar`. Con sesión y sin aviso aceptado → `/bienvenida`. El resto lo resuelve `obtenerContexto`. |
+| Middleware | Todas | Sin sesión → `/ingresar`. Con sesión y sin aviso aceptado → `/bienvenida`. El resto lo resuelve `obtenerContexto`. Excepciones públicas: `/ingresar`, `/privacidad` y, en v1.1, `/inscribirse/*` (Formulario de inscripción §5.3). |
 | Menú | Con membresía activa | Ítems según `permisos` y contador de solicitudes para administradores. |
 
 Diseño para el celular: listas con tarjetas, botones grandes y confirmaciones en hoja inferior. Las pantallas de usuarios se usan poco y pueden ser simples.
@@ -474,3 +475,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 11. Si el plazo aprieta, el pa
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido | Aprobación |
 | 2026-09-27 | 1.1 | §3.8: el aviso declara a Google (API de Gemini de pago) como encargado de tratamiento para la IA de importación y conciliación, con transferencia fuera de Chile. Sube `AVISO_PRIVACIDAD_VERSION`: todos los usuarios vuelven a aceptarlo | Aprobación de Importación desde Excel v1.0 |
 | 2026-09-27 | 1.2 | §5.4: acción `registrar_traspaso` (solo administrador) | Aprobación de Dashboard v1.0 (marco v1.5, §2.2) |
+| 2026-09-27 | 1.3 | §3.8: el aviso completo agrega los datos del formulario de inscripción; sube `AVISO_PRIVACIDAD_VERSION`. §5.5: el middleware deja pública `/inscribirse/*` | Aprobación de Formulario de inscripción v1.0 |

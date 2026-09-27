@@ -1,6 +1,6 @@
 # Inscripción de binomios
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -40,7 +40,7 @@ Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor
 | Organización y evento | Usa el evento vigente y las categorías de sistema `inscripciones` y `devoluciones`. Llena el espacio que dejó reservado en la vista previa del cambio de fechas (3.13). Responde su pendiente sobre alojamiento y pensión por noches: la cantidad se ingresa a mano, así que un cambio de fechas no la modifica (3.4). |
 | Acceso y roles | Aplica la matriz con `exigir(ctx, accion)` y agrega acciones a la tabla única (5.4). |
 | Importación desde Excel (hijo, v1.1) | Crea binomios e inscripciones con `inscribir` (5.3) dentro de su propia transacción, sin pagos (marco §6.12). La cuota automática se carga igual que al inscribir a mano. Marca lo creado con `importacionId` (5.1). |
-| Formulario de inscripción (hijo, v1.1) | Al aceptar una solicitud llama a `inscribir` (5.3). |
+| Formulario de inscripción (hijo, v1.1) | Al aceptar una solicitud llama, en una sola transacción, a `inscribir` (5.3) y, si trae comprobante, a `registrarPagoInscripciones` con `tx` y el comprobante como respaldo existente. Agrega la pestaña **Por revisar** en `/inscripciones` (3.12). |
 | Dashboard | Toma "por cobrar" y "por asignar" de las funciones de 5.2 y no los recalcula. |
 | Cierre y rendición (v1.1) | Usa el estado de cuenta, los retiros (retenido y devuelto) y el desglose por prueba y concepto. |
 | Conciliación con cartola (v1.1) | Concilia los movimientos de pago y de devolución como cualquier otro. |
@@ -283,6 +283,7 @@ Pagos recibidos en revisión: $15.000
 | Por cobrar | Ítems con saldo, agrupados por club, con el total. |
 | Por asignar | 3.7. |
 | Retiros | Ítems retirados con pagado, devuelto y retenido. |
+| Por revisar (v1.1) | Solicitudes del formulario, solo administrador y ayudante (Formulario de inscripción §3.5). |
 
 Arriba, los totales: por cobrar, pagado (del cual por validar) y por asignar. La pestaña activa se refleja en la URL (`?pestana=por-cobrar`, etc.; Dashboard §5.5).
 
@@ -592,7 +593,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | `cambiarParBinomio(binomioId, { jineteId? , caballoId? }, version)` | `inscripciones.inscribir` | 3.9. |
 | `moverInscripcion(inscripcionId, binomioDestino \| { jineteId, caballoId }, version)` | `inscripciones.inscribir` | 3.9. |
 | `cambiarClubBinomio(binomioId, clubId, version)` | `inscripciones.inscribir` | 3.10. |
-| `registrarPagoInscripciones(datosMovimiento, archivos, reparto)` | `inscripciones.inscribir` | 3.6. |
+| `registrarPagoInscripciones(datosMovimiento, archivos, reparto)` | `inscripciones.inscribir` | 3.6. La función interna acepta además `tx` (transacción externa) y `respaldoExistente` (ruta de un archivo ya copiado al volumen en lugar de `archivos`), que solo usa Formulario de inscripción (§5.6 de ese documento). |
 | `asignarPorAsignar(movimientoId, reparto, version)` | `inscripciones.administrar`, o `inscripciones.inscribir` con `esPropio` sobre `enviadoAValidarPorId` y movimiento por validar u observado | 3.7. |
 | `corregirReparto(movimientoId, reparto, version)` | Igual que la anterior | 3.7. |
 | `desasignarPago(pagoId, motivo)` | `inscripciones.administrar` | 3.7. |
@@ -758,3 +759,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido. El marco general pasa a v1.3 y Movimientos a v1.1 con los cambios de la sección 6 | Aprobación |
 | 2026-09-27 | 1.1 | El hijo Importación desde Excel pasa a v1.1 (§1, §2). §5.1: `importacionId` opcional en `Binomio` e `Inscripcion`. §5.3: `inscribir` acepta transacción externa, `importacionId` y `auditar: false` | Aprobación de Importación desde Excel v1.0 |
 | 2026-09-27 | 1.2 | §3.12: la pestaña de `/inscripciones` se refleja en la URL (Dashboard §5.5) | Aprobación de Dashboard v1.0 |
+| 2026-09-27 | 1.3 | §2: fila del Formulario de inscripción. §3.12: pestaña Por revisar. §5.3: `registrarPagoInscripciones` acepta `tx` y `respaldoExistente` | Aprobación de Formulario de inscripción v1.0 |

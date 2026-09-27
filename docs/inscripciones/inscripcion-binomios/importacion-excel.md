@@ -1,6 +1,6 @@
 # Importación desde Excel
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -406,7 +406,7 @@ type MapeoImportacion = {
 - `detectarMapeo(ctx, libro, hoja)`: aplica el orden de 3.3 (plantilla → anterior por `firmaEncabezados` → IA → manual) y devuelve `{ mapeo, origen, notas }`.
 - `mapeoPorEncabezados(encabezados, pruebas)`: el modo manual: sinónimos fijos en español ("jinete", "amazona", "binomio", "caballo", "ejemplar", "club", "sociedad", "f. nac", "fecha de nacimiento", "rut", "teléfono", "celular", "apoderado", "pagado", "abono") y coincidencia exacta de pruebas con `normalizarNombre`.
 - `normalizarFilas(filas, mapeo, pruebas)` → `{ filas: FilaNormalizada[], errores, advertencias }`, según 3.5. Es **determinista y pura**: toda la lectura de datos pasa por aquí, nunca por la IA.
-- `resolverFilas(ctx, filasNormalizadas, evento)` → `Resolucion`: agrupa por binomio, aplica 3.6 con `buscarParecidos` y el índice de binomios e inscripciones vigentes del evento, y calcula el total con las tarifas vigentes y la cuota automática. Carga una vez las listas de clubes, jinetes, caballos y apoderados de la organización (escala de Participantes §3) y resuelve en memoria.
+- `resolverFilas(ctx, filasNormalizadas, evento)` → `Resolucion`: agrupa por binomio, aplica 3.6 con `buscarParecidos` y el índice de binomios e inscripciones vigentes del evento, y calcula el total con las tarifas vigentes y la cuota automática. Carga una vez las listas de clubes, jinetes, caballos y apoderados de la organización (escala de Participantes §3) y resuelve en memoria. La regla por entidad de 3.6 vive en `coincidenciaParticipante(listas, entidad, datos)`, compartida con Formulario de inscripción (§5.4 de ese documento).
 - `firmarResolucion(resolucion)` → `sha256` de una forma canónica (ids resueltos, pruebas y omitidas).
 - `aplicarDecisiones(resolucion, decisiones)`: aplica "vincular a X", "crear nuevo", "reactivar y vincular", "es el mismo" y "son distintos". Rechaza si queda algo por decidir.
 
@@ -559,3 +559,4 @@ Todo es v1.1: meta de implementación ≤ 2026-10-25, para usarlo cuando lleguen
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 1.0 | Primera versión, aprobada por Rod. Pasa a v1.1 porque no hay inscritos que cargar; plantilla descargable completa por binomio para otras comisiones; acepta cualquier planilla con mapeo propuesto por IA (Gemini de pago, filas completas) o manual; equivalencias de pruebas sin crear pruebas; vínculo automático solo ante coincidencia exacta; lo ya inscrito se omite; pagos de la planilla como lista por registrar; tarifa vigente siempre. Marco general a v1.4, Acceso y roles a v1.1 e Inscripción de binomios a v1.1 | Sesión con Rod y aprobación directa |
+| 2026-09-27 | 1.1 | §5.4: la regla por entidad de 3.6 pasa a `coincidenciaParticipante`, compartida con el Formulario de inscripción; sin cambio de comportamiento | Aprobación de Formulario de inscripción v1.0 |

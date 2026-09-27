@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.5 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.6 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -127,7 +127,7 @@ Reglas de rol:
 - KPIs ampliados: ingresos y gastos por categoría, % de inscripciones pagadas (por monto y por cantidad), evolución de ingresos y gastos con horizonte configurable y estado de la conciliación. El saldo por medio de pago pasó a v1.0 (Dashboard).
 - Pendientes ampliados: vista consolidada de por cobrar y por pagar, y tareas de la comisión.
 - Cierre del evento y rendición: el evento pasa a solo lectura y se exporta el informe de rendición (resumen, libro de movimientos, respaldos y saldo a traspasar) en planilla y PDF.
-- **Formulario de inscripción:** enlace que el administrador comparte; el jinete o su apoderado completa sus datos, los del caballo y las pruebas. Lo enviado queda como **inscripción por revisar**, y el formulario no muestra ningún dato del portal. Un ayudante o administrador la acepta (se crea la inscripción) o la rechaza.
+- **Formulario de inscripción:** enlace que el administrador comparte (uno por evento); el jinete, su apoderado u otra persona inscribe **un binomio por envío**: datos del jinete y del caballo, pruebas y, si ya transfirió, el comprobante. Lo enviado queda como **inscripción por revisar**. El formulario no muestra ni confirma registros de jinetes, apoderados, caballos, inscripciones ni pagos: muestra la configuración del evento (nombre, fechas, lugar, logo y nombre del club, pruebas y conceptos con sus tarifas e instrucciones de pago) y sugiere los nombres de los clubes activos al escribir el club, para evitar duplicados. Un ayudante o administrador la acepta (se crea la inscripción y, si trae comprobante, se registra el pago) o la rechaza. Detalle en `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md`.
 - **Importación desde Excel:** plantilla descargable para enviar a otras comisiones o clubes, y carga de esa plantilla o de cualquier planilla, con mapeo de columnas propuesto por IA (o manual) y confirmado por el administrador, vista previa y detección de duplicados. Pasa de v1.0 a v1.1 porque no hay inscritos que cargar antes del 2026-10-04 Detalle en `docs/inscripciones/inscripcion-binomios/importacion-excel.md`.
 - **Conciliación con cartola:** el administrador sube la cartola del banco (Excel o CSV), el sistema propone qué movimiento corresponde a cada línea (primero por monto, fecha y nombre; con IA para los casos dudosos) y el administrador confirma cada coincidencia. Nada se concilia sin confirmación humana. Las líneas sin movimiento quedan como alerta para registrarlas.
 
@@ -167,7 +167,8 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Concepto` | Cobro distinto de las pruebas (cuota por binomio, pensión, alojamiento), con tarifa por unidad. | Pertenece a un evento. Se cobra a binomio (automático) o a jinete o club (manual). |
 | `Cargo` | Cobro de un concepto a un binomio, a un jinete o a un club. | Se paga igual que una inscripción, mediante `Pago`. |
 | `Importacion` (v1.1) | Planilla subida para cargar binomios: archivo original, mapeo, estado y resumen. | Pertenece a un evento. Crea o vincula participantes, binomios e inscripciones; nunca pagos. Detalle en `docs/inscripciones/inscripcion-binomios/importacion-excel.md`. |
-| `SolicitudInscripcion` (v1.1) | Datos enviados por formulario, aún no aceptados. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones. |
+| `SolicitudInscripcion` (v1.1) | Datos enviados por formulario (un binomio), con comprobante opcional, por revisar, aceptados, rechazados o vencidos. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones y, si trae comprobante, el pago. Detalle en `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md`. |
+| `EnlaceFormulario` (v1.1) | Enlace público del formulario de inscripción: token, activo, cierre e instrucciones de pago. | Uno por evento. |
 | `Movimiento` | Ingreso o gasto del evento. | Pertenece a un evento; tiene categoría, contraparte opcional, respaldos y pagos de inscripción asociados. |
 | `Respaldo` | Archivo (foto o PDF) que respalda un movimiento o su pago. | Pertenece a un movimiento. Un movimiento puede tener varios. |
 | `Pago` | Asignación de un movimiento de ingreso a una inscripción o a un cargo. | Une `Movimiento` con `Inscripcion` o `Cargo` y un monto. Un movimiento puede cubrir varios ítems, incluso de distintos jinetes (por ejemplo, un club que paga por todos los suyos). |
@@ -395,6 +396,7 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 | Caballo | Nombre y club | No es dato personal (no se registra propietario). |
 | Auspiciador / Proveedor | Nombre, contacto, RUT opcional | Ejecución del acuerdo de auspicio o compra. |
 | Terceros en comprobantes | Nombre, banco y número de cuenta que aparezcan en un comprobante de transferencia | Necesarios para respaldar el movimiento; acceso restringido. |
+| Remitente del formulario (v1.1) | Nombre, teléfono o correo y relación con el jinete | Iniciativa del propio remitente para inscribir; solo para contactarlo por su solicitud. |
 
 ### 9.3 Minimización
 
@@ -410,12 +412,13 @@ Finalidad única: administrar y rendir la tesorería del evento. Los datos no se
 - Archivos de respaldo fuera de cualquier ruta pública, servidos solo tras verificar la membresía.
 - HTTPS en todo el tráfico (Railway).
 - Auditoría inmutable de accesos, cambios de rol y operaciones sobre datos.
-- El formulario de inscripción (v1.1) solo recibe datos: no muestra ni confirma la existencia de ningún registro, y tiene límite de envíos para evitar abuso.
+- El formulario de inscripción (v1.1) solo recibe datos: no muestra ni confirma la existencia de jinetes, apoderados, caballos, inscripciones ni pagos, y tiene límite de envíos para evitar abuso. Única excepción (decisión de Rod): sugiere los nombres de los clubes activos al escribir el club, sin datos de contacto ni conteos.
 - IA (v1.1): Google (API de Gemini, nivel de pago) actúa como encargado de tratamiento, con transferencia fuera de Chile declarada en el aviso de privacidad. En la conciliación se le envían solo los campos de 6.13. En la importación, los encabezados y hasta 20 filas completas de la planilla, incluidos datos de menores (decisión de Rod), sin el archivo ni datos del portal (Importación desde Excel §3.4 y §4). El contenido enviado no se guarda.
 
 ### 9.5 Conservación
 
 - Datos y respaldos se conservan hasta que el club aprueba la rendición (evento `rendido`) **más 1 año**.
+- Las solicitudes del formulario de inscripción rechazadas o vencidas pierden sus datos personales y su comprobante a los 30 días (Formulario de inscripción §4).
 - Al vencer ese plazo se eliminan los datos de contacto, RUT y fechas de nacimiento, los apoderados, los archivos de respaldo con datos de terceros y las cartolas; se conserva el libro de movimientos (montos, fechas, categorías y nombres) como historia del club.
 - La eliminación se implementa antes de que venza el primer plazo (versión futura, con fecha límite derivada del estado `rendido`).
 
@@ -542,3 +545,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 1.3 | §5 y §5.2: entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; `Inscripcion` en una prueba; `Pago` a inscripción o cargo. §6.4, §6.5 y §6.7: cargos, pagos por validar descuentan saldo, retiro con retenido, devolución de sobrante, por cobrar con cargos y por asignar precisado | Aprobación de Inscripción de binomios v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.4 | §4, §11, §12 y §13: la importación desde Excel pasa a v1.1. §5: entidad `Importacion`. §6.12: plantilla para terceros, cualquier formato con mapeo propuesto por IA, fechas y RUT no reconocidos como advertencia, lo ya inscrito se omite, montos y pagos de la planilla como listas. §3, §7 (principio 8), §8 y §9.4: la IA del proyecto pasa de la API de Claude a la API de Gemini de pago, para importación y conciliación, con Google como encargado | Aprobación de Importación desde Excel v1.0 (decisiones de Rod) |
 | 2026-09-27 | 1.5 | §2.2: fila de traspasos entre medios de pago (solo administrador). §4: el saldo por medio de pago pasa a v1.0 y los KPIs de v1.1 se precisan. §5 y §5.2: entidad `Traspaso`. §6.7: saldo por medio de pago y definiciones de los KPIs de v1.1. §11 y §13: se ajustan | Aprobación de Dashboard v1.0 (decisiones de Rod) |
+| 2026-09-27 | 1.6 | §4 y §9.4: el formulario de inscripción recibe un binomio por envío con comprobante opcional, muestra la configuración del evento y sugiere los clubes activos, sin mostrar otros registros. §5: entidad `EnlaceFormulario` y detalle de `SolicitudInscripcion`. §9.2: remitente del formulario. §9.5: solicitudes rechazadas o vencidas a los 30 días | Aprobación de Formulario de inscripción v1.0 |

@@ -1,6 +1,6 @@
 # Dashboard
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -157,6 +157,7 @@ Franjas arriba de los indicadores, cada una con su contador y enlace. Solo se mu
 | Aviso | Condición | Enlace | Dueño de la regla |
 |---|---|---|---|
 | "Hay N solicitudes de acceso por revisar" | Solicitudes pendientes | `/usuarios` | Acceso y roles §3.3 |
+| "Hay N inscripciones por formulario por revisar" (v1.1) | Solicitudes `por_revisar` del evento | `/inscripciones?pestana=por-revisar` | Formulario de inscripción §3.5 |
 | "Hay N movimientos por validar ($X)" | `por_validar` (no se cuentan los observados, que esperan al ayudante) | `/movimientos/validar` | Movimientos §3.4 |
 | "Hay $X recibidos sin asignar a inscripciones" | `totalPorAsignar` > 0 | `/inscripciones?pestana=por-asignar` | Inscripción de binomios §3.7 |
 | "Hay N ajustes de inscripción por revisar" | Ítems con `avisoPendiente` | `/movimientos/validar` (sección Ajustes de inscripción) | Inscripción de binomios §3.3 |
@@ -173,6 +174,7 @@ Bloque para el ayudante, debajo de los botones (decisión de Rod):
 - **Por validar:** N movimientos enviados por él por $X → `/movimientos?pestana=por-validar&mios=1`.
 - **Observados:** cada uno con monto, descripción y el comentario del administrador, y el botón **Corregir** → ficha del movimiento. Se destacan en naranja: son los que el ayudante debe resolver.
 - **Te deben:** reembolsos pendientes a su nombre por $X → `/movimientos?pestana=por-pagar&pagadoPor=yo`.
+- **Inscripciones por revisar** (v1.1): N solicitudes del formulario → `/inscripciones?pestana=por-revisar`. El ayudante también las revisa (marco §2.2).
 - Si todo está en cero: "No tienes nada pendiente".
 
 Los datos salen de `resumenPendientesDe` de Movimientos, pedida para el propio usuario (sección 6).
@@ -380,8 +382,8 @@ Todas reciben `ctx` y `eventoId`, son de solo lectura y se prueban con datos de 
 |---|---|---|
 | `indicadores(ctx, eventoId)` | `{ ingresosPercibidos, aporteInicial, gastosPagados, saldoCaja, porCobrar: { total, inscripciones, otros }, porPagar: { total, proveedores, comision }, resultadoProyectado, porValidar: { cantidad, monto }, porAsignar, especie: { total, comprometido } }` | `filtroSumable` (Movimientos §5.2), `porCobrarInscripciones` y `totalPorAsignar` (Inscripción de binomios §5.2). Consultas agregadas en SQL (`groupBy`/`$queryRaw` con `db(ctx)`), ejecutadas en paralelo. |
 | `saldoPorMedio(ctx, eventoId)` | `{ transferencia, efectivo, otro }` | Marco §6.7 (fila nueva). Traspasos no anulados. Invariante: la suma es igual a `saldoCaja`. |
-| `avisosAdministrador(ctx, eventoId)` | `{ solicitudes, porValidar: { cantidad, monto }, porAsignar, ajustesPorVer, jinetesConAlertaMenor }` | Contador de solicitudes (Acceso y roles), movimientos `por_validar`, `totalPorAsignar`, ítems con `avisoPendiente`, `alertasJinete` sobre jinetes con binomio vigente en el evento. |
-| `loMio(ctx, eventoId)` | `{ porValidar: { cantidad, monto }, observados: [{ id, montoClp, descripcion, comentario }], reembolsosPendientes }` | `resumenPendientesDe(ctx.usuarioId)` más el detalle de observados. |
+| `avisosAdministrador(ctx, eventoId)` | `{ solicitudes, solicitudesInscripcion, porValidar: { cantidad, monto }, porAsignar, ajustesPorVer, jinetesConAlertaMenor }` | Contador de solicitudes (Acceso y roles), `contadorPorRevisar` del Formulario de inscripción (v1.1), movimientos `por_validar`, `totalPorAsignar`, ítems con `avisoPendiente`, `alertasJinete` sobre jinetes con binomio vigente en el evento. |
+| `loMio(ctx, eventoId)` | `{ porValidar: { cantidad, monto }, observados: [{ id, montoClp, descripcion, comentario }], reembolsosPendientes, solicitudesInscripcion }` | `resumenPendientesDe(ctx.usuarioId)` más el detalle de observados y `contadorPorRevisar` del Formulario de inscripción (v1.1). |
 | `textoResumen(ctx, eventoId, ahora)` | `string` | Formato de 3.7, desde `indicadores` y `saldoPorMedio`. |
 | `porcentajePagado(ctx, eventoId)` (v1.1) | `{ monto: { pagado, total, porValidar }, cantidad: { pagadas, total, porValidar } }` | `estadoItem` (3.9.1). |
 | `porCategoria(ctx, eventoId)` (v1.1) | `{ ingresos: Fila[], gastos: Fila[], porValidar }` | 3.9.2. |
@@ -517,3 +519,4 @@ Con `registrarAuditoria` (marco §6.8). Entidad `Traspaso`, acciones `crear` y `
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 1.0 | Documento aprobado sin borrador previo, por pedido de Rod | Sesión con Rod: el documento cubre v1.0 y v1.1; el Dashboard es el inicio para todos, con botones de registro para administrador y ayudante; el saldo por medio de pago pasa a v1.0, con traspasos entre banco y efectivo solo por el administrador; cada indicador abre su lista filtrada; línea "de lo cual, aporte inicial"; bloque "Lo mío" del ayudante; avisos de por asignar, ajustes por ver y alertas de menores para el administrador; "Copiar resumen" para administrador y observador; % pagadas por monto y por cantidad; ingresos y gastos por categoría; evolución de ingresos y gastos con horizonte configurable (por defecto, desde la creación del evento hasta su cierre) y agrupación automática; estado de conciliación para el administrador |
+| 2026-09-27 | 1.1 | §3.5 y §3.6: aviso "inscripciones por formulario por revisar" para administrador y ayudante (v1.1); §5: contador en `avisosAdministrador` y `loMio` | Aprobación de Formulario de inscripción v1.0 |

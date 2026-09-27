@@ -1,6 +1,6 @@
 # Formulario de inscripción
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -49,7 +49,7 @@ Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejec
 - Correos o mensajes automáticos al remitente (decisión de Rod): la confirmación es la pantalla final; si se rechaza o falta algo, la comisión lo contacta por el teléfono o correo que dejó.
 - Consultar el estado de una solicitud o de una inscripción desde el formulario: el formulario solo recibe (marco §9.4).
 - Cargos manuales (pensión, alojamiento): se agregan después desde la ficha (Inscripción de binomios §3.4).
-- Mostrar al público cualquier registro del portal (clubes, jinetes, caballos, inscritos): el club y el caballo se escriben como texto libre.
+- Mostrar al público cualquier registro del portal distinto de los nombres de clubes activos del autocompletado (3.2): jinetes, caballos, apoderados e inscritos nunca se muestran; el caballo se escribe como texto libre.
 - Guardar un borrador en el teléfono del remitente: si cierra la página antes de enviar, pierde lo escrito.
 - IA: este componente no la usa.
 
@@ -92,10 +92,10 @@ Pantalla **Configuración → Formulario de inscripción** (`/configuracion/form
 Una sola página, una columna, pensada para el celular, con secciones que se despliegan en orden. Arriba: nombre del club, logo, nombre del evento, fechas y lugar (datos de configuración, no registros) y el mensaje inicial.
 
 1. **Quién inscribe.** "Soy el jinete / Soy el apoderado del jinete / Inscribo en nombre de otro (club, comisión)". Nombre (obligatorio) y **teléfono o correo** (al menos uno, decisión de Rod). Si elige "apoderado", sus datos prellenan el apoderado del paso 3.
-2. **Jinete.** Nombre (obligatorio), club que representa (texto libre, obligatorio), fecha de nacimiento (**opcional**, decisión de Rod), contacto y RUT (opcionales, plegados). Con la fecha, se muestra la edad a la fecha de referencia del evento ("12 años al 21-11-2026"). Sin fecha, la nota "Sin fecha no podemos confirmar las pruebas por edad".
-3. **Apoderado** (solo si la fecha indica menor de 18). Nombre, teléfono y relación (madre, padre, tutor legal, otro familiar, otro), **obligatorios** en el formulario (ver nota). Se puede agregar un segundo apoderado.
+2. **Jinete.** Nombre (obligatorio), club que representa (obligatorio, con autocompletado: ver nota),  fecha de nacimiento (**opcional**, decisión de Rod), contacto y RUT (opcionales, plegados). Con la fecha, se muestra la edad a la fecha de referencia del evento ("12 años al 21-11-2026"). Sin fecha, la nota "Sin fecha no podemos confirmar las pruebas por edad".
+3. **Apoderado** (solo si la fecha indica menor de 18). Nombre, teléfono y relación (madre, padre, tutor legal, otro familiar, otro). **No bloquea el envío** (decisión de Rod): si se deja vacío, el formulario avisa "Falta el apoderado: la comisión te lo pedirá" y la solicitud llega marcada **Falta apoderado** (ver nota). Si se escribe, los tres campos van completos. Se puede agregar un segundo apoderado.
 4. **Autorización** (solo si la fecha indica menor de 14). Casilla obligatoria para enviar: "Soy el apoderado de este jinete y autorizo a la comisión organizadora a tratar sus datos para inscribirlo y administrar la tesorería del concurso" (marco §9.3). Si quien llena no es el apoderado, el texto pide que lo haga el apoderado.
-5. **Caballo.** Nombre (obligatorio) y club del caballo (texto libre; por defecto, el del jinete).
+5. **Caballo.** Nombre (obligatorio) y club del caballo (mismo autocompletado; por defecto, el del jinete).
 6. **Pruebas.** Casillas con nombre y tarifa de las pruebas activas del evento, en el orden configurado. Si la fecha indica que el jinete no cumple la edad de una prueba, la casilla muestra "Según la fecha de nacimiento, esta prueba no corresponde a su edad"; **no bloquea**, igual que en el portal (Inscripción de binomios §3.2), y quien revisa lo ve. Al menos una prueba.
 7. **Total estimado.** Pruebas marcadas + conceptos activos que se cobran por binomio (la cuota, Inscripción de binomios §3.4) = total. Leyenda: "Total estimado. La comisión confirma el monto al aceptar tu inscripción". Debajo, las instrucciones de pago, si están configuradas.
 8. **Pago.** "¿Ya transferiste?" No / Sí. Si es Sí: monto transferido (obligatorio), fecha de la transferencia (obligatoria, no futura) y **comprobante** (foto o PDF, obligatorio), con la misma compresión en el teléfono que Movimientos §3.1 (máximo 10 MB después de comprimir; JPEG, PNG o PDF).
@@ -103,7 +103,9 @@ Una sola página, una columna, pensada para el celular, con secciones que se des
 10. **Privacidad.** Texto breve (4) con enlace al aviso completo y casilla obligatoria "Leí el aviso de privacidad".
 11. **Enviar.** Un solo envío con datos y archivo, con reintento que conserva lo escrito y no duplica (5.3).
 
-**Nota sobre el apoderado obligatorio:** en el portal, un menor sin apoderado se guarda con alerta (Participantes §3.4). En el formulario, si la fecha indica menor de 18, se pide el apoderado para poder enviar, porque es el único momento en que la comisión tiene al alcance a la familia y el marco §6.11 dice que se exige. Sin fecha, no se pide nada y, al aceptar, el jinete queda con la alerta "Sin fecha de nacimiento" (decisión de Rod).
+**Nota sobre el apoderado:** igual que en el portal (Participantes §3.4), se pide y se alerta sin bloquear (decisión de Rod). Una solicitud de un menor de 18 sin apoderado se envía igual y queda marcada **Falta apoderado** en la bandeja (3.5). Quien revisa puede agregarlo al corregir (3.6), después de contactar al remitente; si la acepta sin apoderado, el jinete queda con la alerta "Menor sin apoderado". Sin fecha de nacimiento no se pide nada y, al aceptar, el jinete queda con la alerta "Sin fecha de nacimiento" (decisión de Rod). La casilla de autorización del paso 4 sí es obligatoria para enviar cuando la fecha indica menor de 14 (marco §9.3).
+
+**Nota sobre el club** (decisión de Rod): para no crear clubes duplicados, al escribir el club el campo sugiere los **clubes activos** de la organización cuyo nombre se parece a lo escrito (desde la tercera letra, con `normalizarNombre`, hasta 8 sugerencias). Al elegir uno, la solicitud guarda su id y, al revisar, se vincula directo. Si no está, se escribe libre ("Otro: …") y se resuelve al revisar (3.6). Solo se muestran nombres de clubes: nunca jinetes, caballos, apoderados ni inscripciones, y la sugerencia no dice si el club tiene inscritos. Es una excepción declarada al "solo envío" del marco §9.4 (sección 6), aceptable porque el club es una organización, no una persona, y su nombre ya es público en el concurso.
 
 **Validación:** Zod compartido entre el navegador y el servidor. Nombres de 2 a 80 caracteres, teléfono con `normalizarTelefono` (Participantes), correo con formato válido, RUT con `validarRut` si viene (un RUT inválido se rechaza en el formulario con "Revisa el RUT o déjalo en blanco"), montos enteros de 1 a 999.999.999.
 
@@ -111,7 +113,7 @@ Una sola página, una columna, pensada para el celular, con secciones que se des
 
 "Recibimos tu solicitud **N° 12**". Resumen de lo enviado (jinete, caballo, pruebas, total estimado y, si informó pago, el monto), las instrucciones de pago y el texto "La comisión revisará tu inscripción y te contactará si falta algo". Botón **Copiar resumen** (texto plano para guardarlo o reenviarlo). Sin correos (decisión de Rod). El número es correlativo por evento y no permite consultar nada.
 
-**Qué no dice nunca** (marco §9.4): si el jinete, el caballo o el club ya existen, si ya estaba inscrito, si hay otras solicitudes o cuántas. La respuesta es la misma para cualquier envío válido.
+**Qué no dice nunca** (marco §9.4): si el jinete o el caballo ya existen, si el club tiene inscritos, si ya estaba inscrito, si hay otras solicitudes o cuántas. La respuesta es la misma para cualquier envío válido.
 
 ### 3.4 Enlace inválido, inactivo o cerrado (público)
 
@@ -132,6 +134,7 @@ Cada tarjeta muestra folio, fecha de envío, jinete, caballo, pruebas, total est
 - **Posible repetida:** otra solicitud por revisar o aceptada del evento con el mismo jinete y caballo (nombres normalizados), o un binomio vigente con ese par. Enlace a la otra.
 - **Menor:** edad y, si corresponde, "Autorización marcada".
 - **Fuera de edad:** alguna prueba no corresponde a la edad.
+- **Falta apoderado:** la fecha indica menor de 18 y no trae apoderado (3.2).
 
 El observador no ve esta pestaña ni las solicitudes (marco §2.2: no revisa formularios y no ve datos personales).
 
@@ -142,6 +145,7 @@ Al abrir una solicitud (`/inscripciones/solicitudes/[id]`) se ve, en una columna
 1. **Lo enviado**, con opción **Ver original** (lo que escribió el remitente, siempre conservado).
 2. **Remitente** con botones **Llamar**, **WhatsApp** (`wa.me` con el teléfono) o **Correo**, según lo que dejó.
 3. **Quién es quién.** Para el club del jinete, el jinete, cada apoderado, el caballo y el club del caballo, la propuesta con las reglas de Importación desde Excel §3.6 (decisión de Rod):
+   - **Club elegido en el autocompletado:** se vincula a ese club (si sigue activo; si se desactivó, se trata como desactivado).
    - **Coincidencia exacta:** se muestra "Vincular a <registro existente>" ya elegido.
    - **Parecido:** "¿Es alguno de estos?" con hasta tres opciones (Participantes §3.5) y **Crear nuevo**. Hay que decidir para poder aceptar.
    - **Sin coincidencias:** "Se creará nuevo".
@@ -206,7 +210,9 @@ Botón **Rechazar** con motivo obligatorio (hasta 200 caracteres): "Solicitud re
 | Transferencia informada que después aparece en la cartola | La conciliación (v1.1) la cruza con el movimiento creado al aceptar, como cualquier otro. |
 | Menor de 14 sin casilla porque no puso fecha | Se acepta y el jinete queda con las alertas "Sin fecha de nacimiento" (y, cuando se complete la fecha, "Falta autorización del apoderado"). |
 | Remitente escribe datos de salud en observaciones | La leyenda lo desaconseja. Quien revisa puede **Borrar observaciones** antes de aceptar; se borran de lo enviado y de lo corregido, con auditoría sin copiar el texto. |
-| Club escrito distinto ("Club Parronal", "Parronal", "CEP") | La propuesta de parecidos lo muestra; quien revisa elige. |
+| Club escrito distinto ("Club Parronal", "Parronal", "CEP") | El autocompletado sugiere el existente al escribir; si igual se escribe libre, la propuesta de parecidos lo muestra y quien revisa elige. |
+| Menor sin apoderado en la solicitud | Se envía igual, marcada "Falta apoderado"; se agrega al revisar o queda la alerta del jinete al aceptar. |
+| Alguien usa el autocompletado para listar los clubes | Solo ve nombres de clubes activos, que no son datos personales; el límite de consultas (5.3) evita barridos. |
 | Prueba desactivada después del envío | Se muestra "Prueba no disponible" y queda fuera; quien revisa puede cambiarla por otra. |
 | Tarifa cambiada después del envío | Se usa la vigente y se muestra la diferencia (3.6). |
 | Dos personas revisan la misma solicitud a la vez | `version` en la solicitud: la segunda en guardar o aceptar recibe "La solicitud cambió". |
@@ -240,7 +246,7 @@ Aplica: el componente recibe **sin login** datos personales de jinetes, incluido
 
 **Medidas de protección** (además del marco §9.4):
 
-- **Solo envío:** la ruta pública no lee ningún registro de participantes, inscripciones ni movimientos. Solo lee la configuración del enlace, del evento, de las pruebas y conceptos activos, y el nombre y logo de la organización. Una prueba automática lo verifica (5.9).
+- **Solo envío:** la ruta pública no lee ningún registro de jinetes, apoderados, caballos, inscripciones ni movimientos. Solo lee la configuración del enlace, del evento, de las pruebas y conceptos activos, el nombre y logo de la organización y, para el autocompletado, **id y nombre de los clubes activos** (decisión de Rod; excepción declarada, 3.2). Una prueba automática lo verifica (5.10).
 - **Respuesta uniforme:** mismo mensaje y mismo tiempo aproximado de respuesta para todo envío válido (3.3).
 - **Límites:** campo trampa, tiempo mínimo de llenado y límites de envíos (5.3).
 - **Archivos:** tipo verificado por contenido, máximo 10 MB, guardado fuera de rutas públicas, servido solo con `revisar_formulario` (5.2).
@@ -312,6 +318,7 @@ model SolicitudInscripcion {
   comprobanteBytes        Int?
   ipHuella                String?         // hmac de la IP; se borra a las 24 h
   enviadoEn               DateTime        @default(now())
+  faltaApoderado          Boolean         @default(false)
   posibleRepetidaDeId     String?
   revisadoPorId           String?         // último que guardó la revisión
   resueltoPorId           String?         // quien aceptó, rechazó o dejó vencida
@@ -353,15 +360,16 @@ Ambos modelos llevan `organizacionId` y pasan por `db(ctx)` en todo lo interno. 
 - **Límites** (contados en la base, sin memoria ni servicios externos): por huella de IP, 5 solicitudes por hora y 20 por día; por enlace, 200 por día. La huella es `HMAC-SHA256(AUTH_SECRET, ip)`, tomando la IP del encabezado que entrega Railway. Superado el límite, mensaje de 3.4 y nada se guarda.
 - **Transacción del envío:** valida con Zod (`esquemaSolicitudPublica`), verifica que el enlace esté activo, antes del cierre y con el evento `abierto`, que cada `pruebaId` sea una prueba activa del evento, calcula `totalEstimadoClp` con las tarifas vigentes y la cuota, guarda el archivo, bloquea el enlace, asigna folio, calcula `posibleRepetidaDeId` y crea la solicitud. Si falla después de guardar el archivo, lo borra.
 - **Tamaño:** cuerpo máximo de 11 MB en esta ruta.
+- **Autocompletado de clubes:** acción pública `sugerirClubes(token, texto)`: exige enlace válido y abierto y al menos 3 caracteres, devuelve hasta 8 `{ id, nombre }` de clubes activos parecidos (`normalizarNombre`, mismo criterio de parecido de Organización y evento §3.5) y cuenta en un límite propio de 60 consultas por minuto por huella de IP. No devuelve contacto, RUT ni conteos. Al enviar, un `clubId` recibido se verifica contra la organización del enlace y que siga activo; si no, se ignora y queda el texto.
 
 ### 5.4 Funciones de dominio (con pruebas)
 
 ```ts
 type DatosSolicitud = {
   remitente: { rol: RemitenteRol; nombre: string; telefono?: string; correo?: string };
-  jinete: { nombre: string; club: string; fechaNacimiento?: string; contacto?: string; rut?: string };
+  jinete: { nombre: string; club: string; clubId?: string; fechaNacimiento?: string; contacto?: string; rut?: string }; // clubId si se eligió en el autocompletado
   apoderados: { nombre: string; telefono: string; relacion: RelacionApoderado }[]; // 0 a 2
-  caballo: { nombre: string; club: string };
+  caballo: { nombre: string; club: string; clubId?: string };
   pruebas: { pruebaId: string; montoClp?: number; motivo?: string }[]; // monto y motivo solo en corregido
   observaciones?: string;
 };
@@ -371,7 +379,8 @@ type Decisiones = Record<"clubJinete" | "jinete" | "caballo" | "clubCaballo" | `
 ```
 
 - `resolverEnlacePublico(token)` → `{ enlace, evento: { nombre, fechas, lugar, fechaReferenciaEdad }, organizacion: { nombre, logo }, pruebas: [{ id, nombre, tarifaClp, edadMinima, edadMaxima }], conceptosBinomio: [{ nombre, tarifaClp }] } | null`. Nada más.
-- `esquemaSolicitudPublica(evento)`: Zod de 3.2, incluidas las reglas condicionales por edad (apoderado si menor de 18 con fecha; casilla si menor de 14 con fecha; al menos teléfono o correo; comprobante obligatorio si informa pago).
+- `esquemaSolicitudPublica(evento)`: Zod de 3.2, incluidas las reglas condicionales por edad (apoderado opcional, pero completo si viene; casilla obligatoria si menor de 14 con fecha; al menos teléfono o correo; comprobante obligatorio si informa pago).
+- `faltaApoderado(datos, evento)`: menor de 18 por fecha y sin apoderados. Se guarda en `faltaApoderado` al enviar y se recalcula con `corregido`.
 - `coincidenciaParticipante(listas, entidad, datos)`: la regla por entidad de Importación desde Excel §3.6 (exacta, parecidos, desactivado, RUT). Se extrae del código de Importación (`resolverFilas` la usa) para que ambas vías compartan una sola implementación. Usa `buscarParecidos` (Participantes §5).
 - `proponerSolicitud(ctx, solicitud)` → `{ propuesta: Decisiones, parecidos, advertencias, pruebas: [{ pruebaId, tarifaVigente, tarifaVista, yaInscrito, disponible, avisoEdad }], cuota, total }`. Carga una vez las listas de la organización y resuelve en memoria.
 - `firmarPropuesta(propuesta)` → `sha256` canónico de ids resueltos, pruebas y omitidas, para detectar cambios entre la revisión y la aceptación (igual que Importación §5.4).
@@ -432,9 +441,9 @@ Celular primero (marco §7, principio 6): una columna, botones de al menos 44 px
 
 ### 5.10 Pruebas (Vitest)
 
-- **Solo envío:** `resolverEnlacePublico` y `enviarSolicitud` no leen ninguna tabla de participantes, inscripciones ni movimientos (se verifica con un cliente espía); la respuesta para un jinete existente y uno nuevo es idéntica.
+- **Solo envío:** `resolverEnlacePublico`, `sugerirClubes` y `enviarSolicitud` no leen tablas de jinetes, apoderados, caballos, inscripciones ni movimientos, y de `Club` solo leen `id` y `nombre` de activos (se verifica con un cliente espía); la respuesta para un jinete existente y uno nuevo es idéntica; `sugerirClubes` no devuelve clubes desactivados ni de otra organización y respeta su límite.
 - **Enlace:** token inválido, regenerado, inactivo, cerrado por hora y evento no abierto responden según 3.4; el token no se guarda en claro.
-- **Validación:** apoderado obligatorio con fecha de menor de 18; casilla obligatoria con fecha de menor de 14; sin fecha no pide apoderado; teléfono o correo; comprobante obligatorio si informa pago; prueba de otro evento o inactiva rechazada.
+- **Validación:** menor de 18 sin apoderado se envía y queda con `faltaApoderado`; apoderado incompleto rechazado; casilla obligatoria con fecha de menor de 14; sin fecha no pide apoderado; teléfono o correo; comprobante obligatorio si informa pago; prueba de otro evento o inactiva rechazada.
 - **Abuso:** campo trampa y tiempo mínimo no guardan nada y responden igual; límites por IP y por enlace; idempotencia por `claveCliente`.
 - **Folio:** correlativo sin repetirse con envíos concurrentes.
 - **Resolución:** exacta vincula, parecido exige decisión, desactivado solo lo reactiva el administrador, RUT repetido vincula; misma función que Importación.
@@ -448,7 +457,7 @@ Celular primero (marco §7, principio 6): una columna, botones de al menos 44 px
 
 **Marco general, desviaciones declaradas.** Al aprobarse este documento, el marco sube a **v1.6**:
 
-- **§4 (v1.1) y §9.4:** "el formulario no muestra ningún dato del portal" se precisa como "no muestra ni confirma ningún registro (participantes, inscripciones, pagos); muestra solo la configuración del evento (nombre, fechas, lugar, logo y nombre del club, pruebas y conceptos con sus tarifas e instrucciones de pago)". Se agrega "un binomio por envío, con comprobante opcional que se registra como pago al aceptar".
+- **§4 (v1.1) y §9.4:** "el formulario no muestra ningún dato del portal" se precisa como "no muestra ni confirma registros de jinetes, apoderados, caballos, inscripciones ni pagos; muestra la configuración del evento (nombre, fechas, lugar, logo y nombre del club, pruebas y conceptos con sus tarifas e instrucciones de pago) y sugiere los nombres de los clubes activos al escribir el club, para evitar duplicados". Se agrega "un binomio por envío, con comprobante opcional que se registra como pago al aceptar".
 - **§5:** entidad `EnlaceFormulario` (enlace público del formulario, uno por evento). `SolicitudInscripcion` ya existe.
 - **§9.2:** fila "Remitente del formulario: nombre, teléfono o correo y relación con el jinete; base: iniciativa del propio remitente para inscribir".
 - **§9.5:** solicitudes rechazadas o vencidas: sus datos se eliminan a los 30 días (4).
@@ -503,9 +512,11 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | Enlace compartido fuera del público previsto | Operativo | Revisión humana antes de crear nada (marco §9.4); regenerar enlace. |
 | Comprobante falso o que no corresponde | Operativo | Quien acepta lo compara; el pago del ayudante queda por validar; la conciliación con cartola (v1.1) lo cruza con el banco. |
 | El comprobante se registra y además alguien registra el mismo pago a mano | Operativo | Aviso de posible duplicado de Movimientos (marco §6.9); el ítem ya aparece pagado. |
+| Menor sin apoderado | Normativo / operativo | Marca "Falta apoderado" en la bandeja, alerta del jinete al aceptar (Participantes §3.4). |
 | Menor de 14 inscrito sin fecha y sin autorización | Normativo | Alerta "Sin fecha de nacimiento" en el portal hasta que se complete; la comisión pide la autorización por la vía de t-012. |
 | Datos de salud en observaciones | Normativo | Leyenda en el campo, "Borrar observaciones" y eliminación a los 30 días si no se acepta. |
 | Solicitudes que nadie revisa | Operativo | Contador en `/inscripciones` y aviso en el Dashboard para administrador y ayudante. |
+| Duplicados de clubes | Operativo | Autocompletado con los clubes activos (3.2). |
 | Duplicados de jinetes o caballos | Operativo | Misma resolución que Importación; decisión humana en los parecidos; fusión después (Participantes §3.7). |
 | Tarifa cambiada entre el envío y la aceptación | Experiencia | Se muestra la diferencia; ajuste con motivo si la comisión quiere respetar lo que vio el remitente. |
 | El componente no cabe antes del concurso | Plazo | Es v1.1; recortables en 7. Mientras no esté, se inscribe a mano o por Excel. |
@@ -518,3 +529,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: un binomio por envío; enlace único por evento con activar, fecha de cierre y regenerar; el formulario muestra tarifas, total estimado e instrucciones de pago y permite adjuntar comprobante; el pago se registra en la misma aceptación; revisión con vínculo a lo existente usando las reglas de Importación; fecha de nacimiento opcional y, sin ella, solo la alerta; contacto por teléfono o correo; tarifa vigente al aceptar; quien revisa puede corregir datos y pruebas; pantalla con folio sin correos; campo trampa y límites sin terceros |
+| 2026-09-27 | 1.0 | Aprobado por Rod con dos cambios: el apoderado de un menor ya no bloquea el envío y la solicitud llega marcada "Falta apoderado" (campo `faltaApoderado`); el club del jinete y del caballo se autocompleta con los clubes activos (`sugerirClubes`, excepción declarada al solo envío del marco §9.4) | Revisión de Rod |
