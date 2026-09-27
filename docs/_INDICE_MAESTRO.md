@@ -551,3 +551,5 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.18 | Formulario de inscripción aprobado (v1.0) con dos cambios de Rod: el apoderado no bloquea el envío (marca "Falta apoderado") y el club se autocompleta con los clubes activos. Marco general a v1.6, Inscripción de binomios, Movimientos y Acceso y roles a v1.3, Importación desde Excel y Dashboard a v1.1 | Aprobación de Formulario de inscripción |
 | 2026-09-27 | 1.19 | UX/UI pasa a revisión (v0.1); nuevo dominio y carpeta `interfaz/`. Al aprobarse, el marco general sube a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 (sección 6 del borrador) | Borrador de UX/UI pedido por Rod |
 | 2026-09-27 | 1.20 | UX/UI aprobado (v1.0) sin cambios. Marco general a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 | Aprobación de UX/UI |
+| 2026-09-27 | 1.21 | Fase 1 y Fase 2 de implementación técnica completadas, verificadas con tests y desplegadas en Railway según PLAN_IMPLEMENTACION.md | Hito de desarrollo técnico |
+

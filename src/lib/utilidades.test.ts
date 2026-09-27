@@ -4,6 +4,7 @@ import {
   normalizarTelefono,
   validarRut,
   fechaReferenciaEdadEfectiva,
+  sonNombresParecidos,
 } from "./utilidades";
 
 describe("normalizarNombre", () => {
@@ -77,5 +78,29 @@ describe("fechaReferenciaEdadEfectiva", () => {
       fechaReferenciaEdad: null,
     };
     expect(fechaReferenciaEdadEfectiva(evento)).toEqual(new Date("2026-11-21"));
+  });
+});
+
+describe("sonNombresParecidos", () => {
+  it("detecta nombres idénticos tras normalización", () => {
+    expect(sonNombresParecidos("Ferretería Angol", "ferreteria angol")).toBe(true);
+    expect(sonNombresParecidos("Agrosuper S.A.", "Agrosuper SA")).toBe(true);
+  });
+
+  it("detecta cuando uno contiene al otro con >= 4 caracteres", () => {
+    expect(sonNombresParecidos("Ferretería Angol", "Angol")).toBe(true);
+    expect(sonNombresParecidos("Transportes Don Juan", "Don Juan")).toBe(true);
+    expect(sonNombresParecidos("Club Parronal", "Club")).toBe(true);
+  });
+
+  it("detecta diferencia de 2 letras o menos para nombres de >= 6 caracteres", () => {
+    expect(sonNombresParecidos("Equitación", "Equitacion")).toBe(true); // 0 dif
+    expect(sonNombresParecidos("Ferreteria", "Ferreterio")).toBe(true); // 1 dif
+    expect(sonNombresParecidos("Veterinaria", "Veterinario")).toBe(true); // 1 dif
+  });
+
+  it("no confunde nombres completamente distintos", () => {
+    expect(sonNombresParecidos("Ferretería Angol", "Supermercado Líder")).toBe(false);
+    expect(sonNombresParecidos("Agro", "Auto")).toBe(false);
   });
 });
