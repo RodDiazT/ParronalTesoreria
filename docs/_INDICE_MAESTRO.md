@@ -16,6 +16,7 @@ docs/
 │   └── dashboard.md
 ├── inscripciones/
 │   ├── inscripcion-binomios/
+│   │   ├── formulario-inscripcion.md
 │   │   └── importacion-excel.md
 │   ├── inscripcion-binomios.md
 │   └── participantes.md
@@ -39,7 +40,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.2) | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla para terceros, cualquier planilla con mapeo asistido por IA, vista previa, duplicados y carga de binomios | Aprobado (v1.0) | v1.1 | Inscripción de binomios |
 | Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores del marco §6.7, saldo por medio de pago y traspasos, avisos, "Lo mío" y resumen copiable en v1.0; % pagadas, por categoría, evolución y conciliación en v1.1 | Aprobado (v1.0) | v1.0 | Marco general |
-| Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, solicitudes por revisar y autorización del apoderado | Pendiente | v1.1 | Inscripción de binomios |
+| Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, un binomio por solicitud con comprobante opcional, revisión con vínculo a lo existente, aceptación con pago y autorización del apoderado | En revisión (v0.1) | v1.1 | Inscripción de binomios |
 | Registro sin señal | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local en el teléfono y cola de envío al volver la conexión | Pendiente | v1.1 | Movimientos |
 | Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce por monto, fecha y nombre, sugerencias con IA y confirmación | Pendiente | v1.1 | Marco general |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | Pendiente | v1.1 | Marco general |
@@ -75,6 +76,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | t-012 | Acordar con el club cómo la comisión pide y guarda la autorización del apoderado para menores de 14 años (mensaje o papel firmado) | Participantes | Pendiente |
 | t-013 | Acordar con el club la política de devolución por retiro: hasta cuándo se devuelve y cuánto se retiene | Inscripción de binomios | Pendiente |
 | t-014 | Definir con el club cómo recibirán las inscripciones las otras comisiones o clubes y enviarles la plantilla | Importación desde Excel | Pendiente |
+| t-016 | Definir con el club los datos de la cuenta para transferir que muestra el formulario de inscripción y hasta cuándo se reciben inscripciones por ese medio | Formulario de inscripción | Pendiente |
 
 ## Datos estructurados
 
@@ -251,14 +253,16 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "ruta": "docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md",
       "padre": "inscripcion-binomios",
       "dominio": "inscripciones",
-      "descripcion": "Enlace de solo envío, solicitudes por revisar y autorización del apoderado",
-      "estado": "pendiente",
+      "descripcion": "Enlace de solo envío, un binomio por solicitud con comprobante opcional, revisión con vínculo a lo existente, aceptación con pago y autorización del apoderado",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.1",
       "dependencias": [
-        "participantes"
+        "participantes",
+        "importacion-excel",
+        "movimientos"
       ],
-      "version": "0.0",
+      "version": "0.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -480,6 +484,16 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "estado": "pendiente",
       "creada": "2026-09-27",
       "cerrada": null
+    },
+    {
+      "id": "t-016",
+      "descripcion": "Definir con el club los datos de la cuenta para transferir que muestra el formulario de inscripción y hasta cuándo se reciben inscripciones por ese medio",
+      "categoria": "club",
+      "responsable": "Rod",
+      "origen": "formulario-inscripcion",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
     }
   ]
 }
@@ -507,3 +521,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.14 | Inscripción de binomios aprobado (v1.0). Marco general a v1.3 y Movimientos a v1.1. Quedan desbloqueados Importación desde Excel, Dashboard, Formulario de inscripción, Pendientes y Cierre y rendición | Aprobación de Inscripción de binomios |
 | 2026-09-27 | 1.15 | Importación desde Excel aprobado (v1.0), fase v1.1; se crea la carpeta `inscripciones/inscripcion-binomios/`. Marco general a v1.4 (importación a v1.1, entidad `Importacion`, IA con Gemini de pago), Acceso y roles a v1.1 (aviso de privacidad con encargado de IA) e Inscripción de binomios a v1.1 (`importacionId`, `inscribir` con transacción externa). Tareas t-014 (club) y t-015 (desarrollo). El núcleo v1.0 queda con Dashboard como único documento pendiente | Aprobación de Importación desde Excel |
 | 2026-09-27 | 1.16 | Dashboard aprobado (v1.0) sin borrador previo, por pedido de Rod; se crea la carpeta `dashboard/`; dependencias de Dashboard: se agregan Participantes, Acceso y roles y Organización y evento. Marco general a v1.5 (entidad `Traspaso`, saldo por medio de pago en v1.0, KPIs de v1.1 en §6.7), Movimientos a v1.2 (filtros en la URL, `resumenPendientesDe` propio), Inscripción de binomios a v1.2 (pestaña en la URL) y Acceso y roles a v1.2 (acción `registrar_traspaso`). Todo el núcleo v1.0 queda documentado | Aprobación de Dashboard |
+| 2026-09-27 | 1.17 | Formulario de inscripción pasa a revisión (v0.1); dependencias: se agregan Importación desde Excel y Movimientos; tarea t-016 (club). Al aprobarse, el marco general sube a v1.6, Inscripción de binomios, Movimientos y Acceso y roles a v1.3, e Importación desde Excel y Dashboard a v1.1 (sección 6 del borrador) | Borrador de Formulario de inscripción |
