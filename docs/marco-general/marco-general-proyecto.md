@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: En revisión · Versión 0.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -516,3 +516,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Inicio del proyecto |
 | 2026-09-27 | 0.2 | Jinete, caballo, apoderado y club como entidades separadas; binomio como par jinete + caballo; fecha de nacimiento y apoderado obligatorio para menores; importación desde Excel (v1.0); formulario de inscripción y conciliación con cartola asistida por IA (v1.1); pagos en línea fuera de alcance; se explicita que el administrador también registra | Revisión de Rod |
 | 2026-09-27 | 0.3 | Plazo de rendición al club: 30 días después del evento | Decisión de Rod |
+| 2026-09-27 | 1.0 | Aprobado por Rod; se confirma que el observador no ve respaldos ni datos personales | Aprobación |
