@@ -12,6 +12,8 @@ docs/
 │   └── marco-general-proyecto.md
 ├── acceso/
 │   └── acceso-roles.md
+├── inscripciones/
+│   └── participantes.md
 ├── movimientos/
 │   └── movimientos.md
 └── organizacion/
@@ -28,7 +30,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.2) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.0) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.0) | v1.0 | Marco general |
-| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Pendiente | v1.0 | Marco general |
+| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | En revisión (v0.1) | v1.0 | Marco general |
 | Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, tarifas, descuentos, pagos, asignación y devoluciones | Pendiente | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla, vista previa, duplicados y carga de binomios | Pendiente | v1.0 | Inscripción de binomios |
 | Dashboard | `docs/dashboard/dashboard.md` | Indicadores de la sección 6.7 del marco en v1.0; KPIs ampliados en v1.1 | Pendiente | v1.0 | Marco general |
@@ -64,6 +66,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | t-008 | Validar con el club el plazo de rendición de 30 días (hasta el 2026-12-21) | Cierre y rendición | Pendiente |
 | t-009 | Confirmar con el club si entregará un aporte inicial (fondos o saldo previo) a la comisión | Organización y evento | Pendiente |
 | t-010 | Conseguir el logo del club en PNG, JPEG o WebP (máx. 1 MB) | Organización y evento | Pendiente |
+| t-012 | Acordar con el club cómo la comisión pide y guarda la autorización del apoderado para menores de 14 años (mensaje o papel firmado) | Participantes | Pendiente |
 
 ## Datos estructurados
 
@@ -168,13 +171,13 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "padre": "marco-general",
       "dominio": "inscripciones",
       "descripcion": "Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados",
-      "estado": "pendiente",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [
         "organizacion-evento"
       ],
-      "version": "0.0",
+      "version": "0.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -426,6 +429,16 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "estado": "pendiente",
       "creada": "2026-09-27",
       "cerrada": null
+    },
+    {
+      "id": "t-012",
+      "descripcion": "Acordar con el club cómo la comisión pide y guarda la autorización del apoderado para menores de 14 años (mensaje o papel firmado)",
+      "categoria": "club",
+      "responsable": "Rod",
+      "origen": "participantes",
+      "estado": "pendiente",
+      "creada": "2026-09-27",
+      "cerrada": null
     }
   ]
 }
@@ -447,3 +460,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.8 | Acceso y roles aprobado (v1.0). Movimientos queda desbloqueado (depende de Acceso y roles y de Organización y evento) | Aprobación de Acceso y roles |
 | 2026-09-27 | 1.9 | Movimientos pasa a revisión (v0.1); se crea la carpeta `movimientos/`. Al aprobarse, Organización y evento sube a v1.2 (marca `exigeContraparte` en `Categoria`) | Borrador de Movimientos |
 | 2026-09-27 | 1.10 | Movimientos aprobado (v1.0); Organización y evento a v1.2 (marca `exigeContraparte` en `Categoria`). Quedan desbloqueados Participantes (ya lo estaba), Registro sin señal y Conciliación con cartola; Inscripción de binomios espera Participantes | Aprobación de Movimientos |
+| 2026-09-27 | 1.11 | Participantes pasa a revisión (v0.1); se crea la carpeta `inscripciones/`; tarea t-012. Al aprobarse, el marco general sube a v1.2 (club obligatorio para jinete y caballo, menor sin apoderado como alerta, autorización de menores de 14 con fecha) | Borrador de Participantes |
