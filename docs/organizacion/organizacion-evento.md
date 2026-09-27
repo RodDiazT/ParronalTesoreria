@@ -1,6 +1,6 @@
 # Organización y evento
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: En revisión · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -29,10 +29,10 @@ Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor
 
 | Documento | Relación |
 |---|---|
-| Acceso y roles (`docs/acceso/acceso-roles.md`) | Depende de este. Define el login, las solicitudes, el ciclo de la `Membresia` y la aplicación de la matriz de permisos. Este documento solo **lee** la membresía activa para armar el contexto. |
-| Movimientos (`docs/movimientos/movimientos.md`) | Usa el evento vigente, los selectores de categoría y contraparte y la fusión de contrapartes definida aquí. |
+| Acceso y roles (`docs/acceso/acceso-roles.md`) | Depende de este. Define el login, las solicitudes, el ciclo de la `Membresia` y la aplicación de la matriz de permisos. Este documento solo **lee** la membresía activa para armar el contexto. Quedan para ese documento: cómo el primer ingreso con Google se vincula con el `Usuario` precargado por el script (3.1), y cómo se concilian los modelos que exige Auth.js (`User`, `Account`, `Session`) con la entidad oficial `Usuario`. |
+| Movimientos (`docs/movimientos/movimientos.md`) | Usa el evento vigente, los selectores de categoría y contraparte y la fusión de contrapartes definida aquí. Quedan para ese documento: si la contraparte es obligatoria en alguna categoría (por ejemplo, Auspicios) y la validación de la fecha del movimiento (sugerencia: bloquear fechas futuras en movimientos pagados). |
 | Participantes (`docs/inscripciones/participantes.md`) | Usa la fecha de referencia para la edad del evento (§6.11 del marco). La vista previa de cambio de fechas (3.2) se activa cuando existen jinetes. |
-| Inscripción de binomios | Usa las categorías de sistema "Inscripciones" y "Devoluciones" (§6.4 del marco). |
+| Inscripción de binomios | Usa las categorías de sistema "Inscripciones" y "Devoluciones" (§6.4 del marco), que solo se registran desde sus flujos (3.4). Queda para ese documento el efecto de un cambio de fechas del evento en alojamiento y pensión por noches. |
 | Cierre y rendición (v1.1) | Cambia el estado del evento a `cerrado` y `rendido`; usa el nombre y el logo de la organización y la categoría de sistema "Aporte inicial". |
 
 **Fuera de alcance.**
@@ -68,7 +68,7 @@ e. **¿Se resuelve con algo existente?** No. Es el primer componente y no hay c�
    - el `Evento` en estado `abierto`;
    - los dos `Usuario` administradores por correo, cada uno con una `Membresia` `activa` de rol `administrador`;
    - las categorías iniciales de 3.4.
-3. Queda un `RegistroAuditoria` por entidad creada, con usuario "sistema" (nulo) y acción `crear`.
+3. Queda un `RegistroAuditoria` por entidad creada, con usuario "sistema" y acción `crear`. Por eso el usuario de `RegistroAuditoria` es opcional en el modelo; solo el script de carga lo deja vacío.
 4. El script no escribe nada si ya existe una organización con el mismo nombre normalizado: termina con un mensaje y sin cambios. Se puede correr de nuevo sin duplicar.
 
 Cómo se vincula el primer login con Google de cada administrador con el `Usuario` precargado lo define Acceso y roles (sugerencia: por correo verificado de Google).
@@ -85,6 +85,10 @@ Pantalla **Configuración → Evento**, solo para administradores.
 | Fecha de referencia para la edad | Opcional. Si está vacía se usa la fecha de inicio (marco §6.11). Texto de ayuda: "Fecha a la que se calcula la edad de los jinetes según el reglamento". |
 | Lugar | Opcional, hasta 200 caracteres. |
 | Estado | Solo lectura en v1.0 (`abierto`). |
+
+**Las fechas del evento son los días del concurso y son informativas.** No limitan la fecha de los movimientos: los gastos previos (pintura, premios) y los cobros posteriores se registran con su fecha real. La validación de la fecha de cada movimiento la define Movimientos.
+
+**Solo con el evento abierto.** La configuración del evento se edita solo mientras está `abierto`. Con el evento `cerrado` o `rendido`, la pantalla queda en solo lectura (marco §6.10).
 
 **Cambio de fechas con jinetes ya inscritos (caso: se posterga el concurso).** Si cambia la fecha de inicio o la de referencia para la edad y ya hay binomios en el evento, antes de guardar se muestra una vista previa:
 
@@ -132,8 +136,8 @@ Pantalla **Configuración → Categorías**, con dos listas: ingresos y gastos. 
 
 | Acción | Regla |
 |---|---|
-| Crear | Nombre y tipo. El nombre no puede repetirse dentro del mismo tipo (comparación sin mayúsculas, tildes ni espacios dobles). |
-| Renombrar | Cualquier categoría, incluidas las de sistema. El nombre nuevo se ve en todos los movimientos, también en los antiguos; el nombre anterior queda en auditoría. |
+| Crear | Nombre y tipo. El nombre no puede repetirse dentro del mismo tipo (comparación sin mayúsculas, tildes ni espacios dobles), tampoco con una categoría desactivada: en ese caso se muestra "Existe «Premios» desactivada" con el botón para reactivarla. La categoría nueva queda al final de su lista. |
+| Renombrar | Cualquier categoría, incluidas las de sistema, con la misma regla de nombre repetido. El nombre nuevo se ve en todos los movimientos, también en los antiguos; el nombre anterior queda en auditoría. |
 | Cambiar tipo | Solo si ningún movimiento la usa. Las de sistema nunca cambian de tipo. |
 | Desactivar | Deja de aparecer al registrar un movimiento nuevo. Los movimientos existentes la conservan y se siguen mostrando y sumando con ella. Las de sistema no se desactivan. |
 | Reactivar | Vuelve a aparecer en el selector. |
@@ -144,7 +148,7 @@ Siempre queda al menos una categoría activa de cada tipo, porque las de sistema
 
 El ayudante y el observador ven las categorías solo como opciones del selector y en los listados; no ven la pantalla de configuración.
 
-**Selector de categoría** (lo usa Movimientos): muestra solo las activas del tipo del movimiento, en el orden configurado, con botones grandes para una mano. La categoría "Inscripciones" no se ofrece para ingresos sueltos: esos ingresos se registran desde el flujo de pago de inscripción (marco §6.4), lo que define Inscripción de binomios.
+**Selector de categoría** (lo usa Movimientos): muestra solo las activas del tipo del movimiento, en el orden configurado, con botones grandes para una mano. Las categorías de sistema "Inscripciones" y "Devoluciones" **no se ofrecen** en el selector: un pago de inscripción se registra desde el flujo de pago y una devolución desde la inscripción del binomio que se retira, siempre vinculadas a la inscripción (marco §6.4). Esos flujos los define Inscripción de binomios. "Aporte inicial" sí se ofrece entre los ingresos.
 
 ### 3.5 Contrapartes (administrador y ayudante)
 
@@ -174,7 +178,7 @@ No se piden domicilio, cuenta bancaria ni otros datos (marco §9.3), aunque faci
 
 1. Desde la ficha de una contraparte, "Fusionar con…" y se elige la otra.
 2. Se muestran las dos lado a lado con la cantidad de movimientos de cada una, y el administrador elige cuál se conserva.
-3. Al confirmar, en una transacción: los movimientos del duplicado pasan a la conservada; los campos vacíos de la conservada (contacto, RUT, marcas) se completan con los del duplicado; el duplicado queda desactivado con referencia a la conservada.
+3. Al confirmar, en una transacción: los movimientos del duplicado pasan a la conservada y suben su `version` (quien los esté editando recibe el aviso de marco §6.9); los campos vacíos de la conservada (contacto, RUT, marcas) se completan con los del duplicado; el duplicado queda desactivado con referencia a la conservada.
 4. Queda **un** `RegistroAuditoria` con acción `fusionar`, los identificadores de ambas y la lista de movimientos reasignados. No cambia el estado de validación de esos movimientos: solo se corrige a quién corresponden.
 5. La fusión no se deshace desde la interfaz. Si fue un error, el administrador reactiva el duplicado y reasigna los movimientos a mano; la auditoría indica cuáles eran.
 
@@ -221,6 +225,10 @@ El encabezado de todas las pantallas muestra logo y nombre de la organización y
 | Dos administradores editan lo mismo | Control por `version` (marco §6.9). |
 | Movimientos después del cierre | Fuera de este documento (Cierre y rendición, v1.1); el contexto ya entrega el evento cerrado en solo lectura. |
 | Se corre dos veces el script de carga | No duplica; termina sin cambios (3.1). |
+| Gasto de pintura tres semanas antes del concurso | Se registra con su fecha real; las fechas del evento no la restringen (3.2). |
+| Devolución a un binomio que se retira | No se elige "Devoluciones" en el selector: se registra desde la inscripción (3.4). |
+| Se crea "Premios" y ya existe desactivada | Se ofrece reactivarla (3.4). |
+| Un formulario manipulado envía el id de una categoría o contraparte de otra organización | Se rechaza: toda referencia se valida contra la organización del contexto (5.2). |
 | Uso en la cancha con mala señal | Configuración es de escritorio o de oficina. En la cancha solo se usan los selectores, que cargan las listas activas con la pantalla (menos de unos cientos de filas) y filtran en el teléfono sin nuevas consultas. |
 
 ---
@@ -336,6 +344,7 @@ Reglas de código:
 - `obtenerContexto()`: implementa 3.6. Se llama en cada server action, route handler y página protegida. Devuelve `{ usuario, organizacionId, rol, evento }` o redirige.
 - `exigirRol(ctx, ...roles)`: corta con 403 si el rol no está en la lista. Acceso y roles la usa para aplicar la matriz completa.
 - `db(ctx)`: cliente Prisma extendido (`$extends` de consultas) que **agrega `organizacionId`** al `where` de toda lectura, actualización y conteo, y al `data` de toda creación, en los modelos con ese campo. El cliente Prisma sin extender solo lo importan `src/lib/auth`, `src/lib/contexto` y el script de carga; una regla de ESLint (`no-restricted-imports`) lo prohíbe en el resto.
+- **Referencias entre entidades:** el filtro de `db(ctx)` protege las consultas, pero no impide guardar el id de un registro de otra organización (por ejemplo, un `categoriaId` o `contraparteId` manipulado en el formulario). Antes de crear o modificar, toda referencia a otra entidad de negocio se valida con `exigirDeLaOrganizacion(ctx, modelo, id)`, que busca el registro con `db(ctx)` y corta con error si no existe en la organización. La usan este componente (fusión) y todos los que guardan referencias.
 - `ocultarDatosPersonales(ctx, contraparte)`: quita `contacto` y `rut` si el rol es observador. Se aplica en el servidor antes de devolver datos, nunca solo en la interfaz.
 - Auditoría: se usa la función transversal `registrarAuditoria(ctx, { entidad, entidadId, accion, antes, despues })` del esqueleto. Acciones nuevas usadas aquí: `desactivar`, `reactivar`, `fusionar`, `suprimir_datos`.
 
@@ -377,10 +386,12 @@ Logo: validar tipo por contenido (bytes iniciales), no por extensión; guardar e
 
 - Aislamiento: con dos organizaciones de prueba, un usuario de una no puede leer, contar, actualizar ni crear en la otra, para `Evento`, `Categoria` y `Contraparte` (se amplía en cada componente).
 - Contexto: sin membresía activa no hay acceso; evento vigente según 3.6; la base rechaza un segundo evento abierto.
+- Referencias: `exigirDeLaOrganizacion` rechaza ids de otra organización (se prueba con la fusión y se reutiliza en cada componente).
 - Observador: `contacto` y `rut` nunca llegan en la respuesta.
 - Categorías: nombre repetido por tipo rechazado; las de sistema no se desactivan ni cambian de tipo; cambio de tipo rechazado si hay movimientos.
 - Contrapartes: parecidos detectados según 3.5; RUT inválido rechazado; RUT repetido bloquea; fusión reasigna movimientos, completa campos vacíos, desactiva el duplicado y deja un solo registro de auditoría; el ayudante no puede editar, fusionar ni suprimir.
-- Evento: fecha de término anterior a la de inicio rechazada; `fechaReferenciaEdadEfectiva` usa la de inicio cuando está vacía.
+- Evento: fecha de término anterior a la de inicio rechazada; `fechaReferenciaEdadEfectiva` usa la de inicio cuando está vacía; con el evento cerrado o rendido la edición se rechaza.
+- Categorías: crear o renombrar con el nombre de una desactivada se rechaza con la opción de reactivar; "Inscripciones" y "Devoluciones" no aparecen en el selector.
 - Script: segunda ejecución no crea nada; crea las 13 categorías con sus claves de sistema.
 
 ---
@@ -419,6 +430,7 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | Riesgo | Tipo | Mitigación |
 |---|---|---|
 | Una consulta olvida el filtro por organización | Normativo / técnico | `db(ctx)` lo agrega siempre; ESLint prohíbe el cliente sin extender; prueba de aislamiento en cada componente. |
+| Un registro apunta a una categoría o contraparte de otra organización | Normativo / técnico | `exigirDeLaOrganizacion` antes de cada escritura con referencias, con prueba (5.2). |
 | Contrapartes duplicadas por carga en terreno | Operativo | Aviso de parecido, bloqueo por RUT y fusión con auditoría. |
 | Fusión equivocada | Operativo | Vista lado a lado antes de confirmar; la auditoría guarda los movimientos reasignados para revertir a mano. |
 | Renombrar una categoría cambia cómo se ven movimientos antiguos | Experiencia | Es el comportamiento buscado para la rendición; el nombre anterior queda en auditoría. El código usa `claveSistema`, así que renombrar una de sistema no rompe reglas. |
@@ -438,3 +450,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión de trabajo con Rod: carga por script con edición básica en pantalla; aporte inicial como categoría de sistema de uso opcional; evento con fechas de inicio, término, referencia para la edad y lugar; contrapartes creadas por administrador y ayudante, editadas y fusionadas solo por el administrador, con marcas no excluyentes de auspiciador y proveedor; categorías editables sin subcategorías; un evento abierto sin selector; cambio de fechas con aviso; nombre y logo de la organización editables |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; se registra la actualización del marco §10.2 | Aprobación |
+| 2026-09-27 | 1.1 | Revisión de puntos abiertos: las fechas del evento son informativas; configuración del evento solo con evento abierto; "Devoluciones" fuera del selector (solo desde la inscripción); aviso y reactivación ante nombre de categoría desactivada; categorías nuevas al final; la fusión sube la `version` de los movimientos; usuario opcional en auditoría para el script; validación de referencias entre organizaciones (`exigirDeLaOrganizacion`); se anotan los pendientes que pertenecen a Acceso y roles, Movimientos e Inscripción de binomios | Revisión pedida por Rod; decisiones de Rod sobre Devoluciones y fechas |

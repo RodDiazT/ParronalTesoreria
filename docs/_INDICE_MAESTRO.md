@@ -23,7 +23,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
 | Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.1) | v1.0 | — |
-| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.0) | v1.0 | Marco general |
+| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | En revisión (v1.1; v1.0 aprobada) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | En revisión (v0.2) | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Pendiente | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Pendiente | v1.0 | Marco general |
@@ -116,11 +116,11 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "padre": "marco-general",
       "dominio": "organizacion",
       "descripcion": "Aislamiento, carga inicial, configuración del evento, categorías y contrapartes",
-      "estado": "aprobado",
+      "estado": "revision",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.0",
+      "version": "1.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -440,3 +440,4 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.3 | Organización y evento aprobado (v1.0); marco general a v1.1 (§10.2 remite la lista de categorías a Organización y evento) | Aprobación de Organización y evento |
 | 2026-09-27 | 1.4 | Esquema 1.1: las tareas agregan el campo `categoria` (`desarrollo` o `club`); la tabla de tareas se separa por categoría | Pedido de Rod para distinguir lo que configura él de lo que debe definir con el club |
 | 2026-09-27 | 1.5 | Acceso y roles pasa a revisión (v0.2); se crea la carpeta `acceso/` | Borrador de Acceso y roles |
+| 2026-09-27 | 1.5 | Organización y evento v1.1 en revisión: cierra puntos abiertos (fechas informativas, Devoluciones fuera del selector, referencias entre organizaciones, evento cerrado en solo lectura) | Revisión pedida por Rod |
