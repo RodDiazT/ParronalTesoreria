@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -118,6 +118,7 @@ Al tocar **Guardar**:
 - `pagadoPor` solo en gastos. Si es una persona, el gasto nace **pendiente** (3.5).
 - Medio de pago solo si está pagado y es en dinero.
 - Las categorías de sistema "Inscripciones" y "Devoluciones" no se ofrecen en el formulario (Organización y evento §3.4). Sus movimientos se crean y se editan desde los flujos de Inscripción de binomios; en la ficha se ven con un enlace a la inscripción.
+- **Aviso de cobro de un inscrito:** si en un ingreso se elige una categoría que es la categoría de referencia de un concepto activo del evento (por ejemplo, "Pensión de caballos"; Inscripción de binomios §3.4), se muestra "¿Es de un jinete o club inscrito? Regístralo como pago desde su ficha", con un enlace. No bloquea.
 - Solo se registra en el evento vigente y con el evento `abierto` (Organización y evento §3.6). Con el evento cerrado, todo es de solo lectura en v1.0.
 - Toda referencia (categoría, contraparte, `pagadoPor`, movimiento de origen de un abono) se valida con `exigirDeLaOrganizacion` antes de guardar.
 
@@ -204,7 +205,8 @@ Reglas del abono:
 | Ayudante | Solo los que registró él y siguen `por_validar` sin haber sido validados nunca (marco §2.2). |
 
 - Motivo obligatorio (hasta 300 caracteres). El movimiento queda visible, tachado, con motivo, quién y cuándo, y deja de sumar en todo cálculo (marco §6.8).
-- **Con pagos de inscripción** (decisión de Rod): se listan las inscripciones que quedarían con saldo y, al confirmar, se anulan en la misma transacción el movimiento y sus `Pago`, cada uno en auditoría. El `Pago` y su anulación los define Inscripción de binomios; aquí se fija la cascada.
+- **Con pagos de inscripción** (decisión de Rod): se listan las inscripciones y cargos que quedarían con saldo y, al confirmar, se anulan en la misma transacción el movimiento y sus `Pago`, cada uno en auditoría. El `Pago` y su anulación los define Inscripción de binomios; aquí se fija la cascada.
+- **Gasto de "Devoluciones":** igual, se listan los retiros cuyo retenido sube o el ingreso cuyo sobrante vuelve a por asignar, y se anulan en la misma transacción sus `Devolucion` (Inscripción de binomios §3.8).
 - **Abono validado:** su monto vuelve al saldo del original, con auditoría en ambos. Si el original ya está pagado (se pagó el saldo final), primero un administrador lo devuelve a pendiente; hasta entonces la anulación del abono se rechaza con ese aviso.
 - **Original con abonos:** se avisa "Tiene N abonos que se mantienen". Anular el original solo anula el saldo pendiente; los abonos son dinero real y siguen vigentes hasta que se anulen uno por uno.
 - No se desanula. Si fue un error, se registra de nuevo.
@@ -278,7 +280,7 @@ Este componente es dueño de la pantalla de auditoría (Acceso y roles §2).
 | Auspicio en especie o canje | Ingreso en especie, puede quedar comprometido; nunca suma a caja (3.6). |
 | Gasto pagado por un ayudante (reembolso) | Pagado por "Yo", nace por pagar a esa persona; se marca pagado al devolverle (3.5). |
 | Gasto observado por el administrador | Vuelve a quien lo envió; lo corrige y reenvía, o el administrador lo corrige o anula (3.4). |
-| Pensión o alojamiento por varios días con tarifa distinta | Si se cobra en la inscripción, lo define Inscripción de binomios. Si es un ingreso suelto, un movimiento por pago con la descripción de las noches. |
+| Pensión o alojamiento por varios días con tarifa distinta | A un jinete o club inscrito, cargo por tramo en Inscripción de binomios (§3.4). A alguien no inscrito, un ingreso en su categoría con la descripción de las noches. |
 | Descuentos, becas o invitados | Se definen en la inscripción; no generan movimiento porque no hay dinero. |
 | Mismo gasto registrado por dos personas | Aviso de duplicado al guardar (3.1); si igual pasa, el administrador anula uno al validar. |
 | Reintento tras una respuesta perdida | `claveCliente` devuelve el ya creado (3.1). |
@@ -434,6 +436,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | Función | Permiso (Acceso y roles §5.4) | Efecto |
 |---|---|---|
 | `registrarMovimiento(datos, archivos)` | `registrar` | 3.1, 3.2, 3.3. Multipart. Devuelve el existente si la `claveCliente` ya se usó. |
+| `registrarMovimientoSistema(tx, ctx, { claveSistema, … }, archivos)` | Interna (la llaman los flujos de Inscripción de binomios con sus permisos) | Mismas reglas de 3.1 y 3.2 para las categorías de sistema `inscripciones` y `devoluciones`, sin pasar por el selector, dentro de la transacción del llamador. |
 | `buscarPosiblesDuplicados(datos)` | `registrar` | Marco §6.9, hasta 3 candidatos. |
 | `editarMovimiento(id, cambios, version)` | `editar_propio_no_validado` (con `esPropio` sobre `enviadoAValidarPorId`) o `editar_validado` | 3.11. Si el ayudante edita un observado, pasa a `por_validar`. |
 | `reenviarMovimiento(id, version)` | `editar_propio_no_validado` | `observado` → `por_validar`. |
@@ -441,7 +444,7 @@ Todas con Zod, `obtenerContexto`, `exigir(ctx, accion)`, `exigirDeLaOrganizacion
 | `observarMovimiento(id, comentario, version)` | `validar` + `exigirNoPropio` | 3.4. |
 | `clasificarMovimiento(id, categoriaId, contraparteId?, version)` | `validar` | 3.3. |
 | `marcarPagado(id, { montoClp, fechaPago, medioPago, archivo? }, version)` | `marcar_pendiente_pagado` | 3.5: total o abono. |
-| `anularMovimiento(id, motivo, version)` | `anular`, o `anular_propio_por_validar` con `esPropio` sobre `registradoPorId` y sin `validadoEn` | 3.7, con cascada a `Pago` cuando exista el modelo. |
+| `anularMovimiento(id, motivo, version)` | `anular`, o `anular_propio_por_validar` con `esPropio` sobre `registradoPorId` y sin `validadoEn` | 3.7, con cascada a `Pago` y `Devolucion` mediante `anularEnCascadaPorMovimiento` (Inscripción de binomios §5.3). |
 | `agregarRespaldo(movimientoId, archivo)` | `registrar` | 3.9. |
 | `anularRespaldo(respaldoId, motivo, reemplazo?)` | `anular`, o dueño en por validar u observado | 3.9. |
 | `marcarRespaldoVisto(respaldoId)` | `validar` | 3.4. |
@@ -475,7 +478,7 @@ Diseño celular primero (marco §7, principio 6): contraste alto para exterior, 
 
 ### 5.6 Auditoría
 
-Se usa `registrarAuditoria(ctx, …)` del esqueleto (marco §6.8) con `entidad = "Movimiento"` o `"Respaldo"`. Acciones: `crear` (con `autovalidado`), `modificar`, `validar`, `observar`, `reenviar`, `clasificar`, `marcar_pagado`, `registrar_abono`, `aplicar_abono`, `anular` (con la lista de `Pago` anulados en cascada), `agregar_respaldo`, `anular_respaldo`, `marcar_visto`. El detalle guarda antes y después de los campos cambiados, sin copiar el contenido de los archivos.
+Se usa `registrarAuditoria(ctx, …)` del esqueleto (marco §6.8) con `entidad = "Movimiento"` o `"Respaldo"`. Acciones: `crear` (con `autovalidado`), `modificar`, `validar`, `observar`, `reenviar`, `clasificar`, `marcar_pagado`, `registrar_abono`, `aplicar_abono`, `anular` (con la lista de `Pago` o `Devolucion` anulados en cascada), `agregar_respaldo`, `anular_respaldo`, `marcar_visto`. El detalle guarda antes y después de los campos cambiados, sin copiar el contenido de los archivos.
 
 ### 5.7 Pruebas (Vitest)
 
@@ -489,7 +492,7 @@ Se usa `registrarAuditoria(ctx, …)` del esqueleto (marco §6.8) con `entidad =
 - **Idempotencia:** dos envíos con la misma `claveCliente` crean un solo movimiento y un solo juego de archivos.
 - **Duplicados:** el aviso aparece con igual tipo, monto, fecha ±1 día y categoría o contraparte, y no aparece con anulados.
 - **Concurrencia:** `version` desactualizada se rechaza; dos "marcar pagado" simultáneos sobre el mismo original: uno se rechaza.
-- **Anulación:** motivo obligatorio; el anulado no suma; cascada a pagos (se completa al existir `Pago`).
+- **Anulación:** motivo obligatorio; el anulado no suma; cascada a pagos y devoluciones (se completa al existir esos modelos).
 - **Respaldos:** tipo falso rechazado; anular el único respaldo exige reemplazo u observación; respaldo agregado por ayudante a un validado queda `esNuevo`.
 - **`resumenPendientesDe`:** devuelve los conteos correctos.
 
@@ -561,3 +564,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: contraparte obligatoria en pendientes (salvo reembolsos) y en categorías marcadas; guardado con foto en un solo envío con reintento; marcar pagado por un ayudante vuelve a por validar; abonos enlazados que se descuentan al validarse; fechas de hecho y de pago; validación de a uno; especie comprometida o recibida; respaldos agregables en cualquier estado; auditoría por movimiento y general; listado con pestañas; nombre de origen obligatorio en transferencias; el administrador corrige observados; ingreso sin identificar; anulación en cascada; descripción corta; observador sin nombre de origen ni observaciones |
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; Organización y evento pasa a v1.2 con la marca `exigeContraparte` | Aprobación |
+| 2026-09-27 | 1.1 | Cascada de anulación a `Devolucion`; aviso en categorías de referencia de conceptos; función interna `registrarMovimientoSistema`; fila de pensión y alojamiento remite a los cargos | Aprobación de Inscripción de binomios v1.0 |

@@ -1,6 +1,6 @@
 # Inscripción de binomios
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -36,7 +36,7 @@ Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejec
 |---|---|
 | Marco general | Dueño de las reglas §6.4, §6.5 y §6.7. Este documento las aplica y agrega los cargos, la cuota por binomio y el detalle de devoluciones. Declara desviaciones en la sección 6: el marco sube a v1.3. |
 | Participantes | Usa `<SelectorJinete>`, `<SelectorCaballo>`, `<SelectorClub>`, `<AlertasJinete>` y `edadEnEvento`. Resuelve lo que Participantes le dejó: el `clubId` propio del binomio (3.10) y la reasignación de binomios al fusionar, con rechazo si quedan dos iguales (3.13). |
-| Movimientos | Usa el registro de ingresos y gastos con respaldo, `claveCliente`, validación, aviso de duplicado, anulación y la clasificación de ingresos sin identificar. Es dueño del `Pago`, de los flujos con las categorías de sistema "Inscripciones" y "Devoluciones" y de lo por asignar (Movimientos §2). Movimientos se marca para revisión por dos detalles (sección 6). |
+| Movimientos | Usa el registro de ingresos y gastos con respaldo, `claveCliente`, validación, aviso de duplicado, anulación y la clasificación de ingresos sin identificar. Es dueño del `Pago`, de los flujos con las categorías de sistema "Inscripciones" y "Devoluciones" y de lo por asignar (Movimientos §2). Al aprobarse este documento, Movimientos pasa a v1.1 con los detalles de la sección 6. |
 | Organización y evento | Usa el evento vigente y las categorías de sistema `inscripciones` y `devoluciones`. Llena el espacio que dejó reservado en la vista previa del cambio de fechas (3.13). Responde su pendiente sobre alojamiento y pensión por noches: la cantidad se ingresa a mano, así que un cambio de fechas no la modifica (3.4). |
 | Acceso y roles | Aplica la matriz con `exigir(ctx, accion)` y agrega acciones a la tabla única (5.4). |
 | Importación desde Excel (hijo, v1.0) | Crea binomios e inscripciones con las funciones de 5.2 y 5.3, sin pagos (marco §6.12). La cuota automática se carga igual que al inscribir a mano. |
@@ -678,7 +678,7 @@ Con `registrarAuditoria` (marco §6.8). Entidades `Prueba`, `Concepto`, `Binomio
 - **§6.4:** se agregan los cargos (pagados con el mismo flujo, con el mismo estado calculado); el retiro con devolución total, parcial o ninguna, y el retenido; la devolución de un sobrante; y que los pagos de un movimiento por validar ya descuentan el saldo del ítem.
 - **§6.5 y §6.7:** "saldo de inscripciones no pagadas" pasa a "saldo de inscripciones y cargos no anulados". "Por asignar" se precisa como el monto de los ingresos de "Inscripciones" no asignado a ítems ni devuelto como sobrante.
 
-**Movimientos, marcado para revisión** (sube a v1.1 en el mismo commit de aprobación de este documento):
+**Movimientos, documento dueño actualizado** (pasa a v1.1 en el mismo commit de aprobación de este documento):
 
 - §3.7 y §5.3: la anulación en cascada cubre también las `Devolucion` de un gasto de "Devoluciones" (5.6).
 - §3.1: aviso en el formulario de ingreso cuando la categoría es la de referencia de un concepto activo (3.4).
@@ -753,3 +753,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: cobro por prueba con lista configurable; cuota fija por binomio automática; pensión y alojamiento como cargos a jinete o club; inscripción sin validación (se valida el dinero); ayudante ajusta con aviso "Visto"; pago por validar descuenta el saldo al registrarse y se muestra "Pagado · por validar"; retiro con devolución total o parcial solo por el administrador; alertas de edad sin bloquear; tarifa fija al inscribir; cambios de prueba o caballo conservan el pago; devoluciones solo por el administrador; "Copiar estado de cuenta" para cobrar; categorías libres de pensión y alojamiento solo para no inscritos |
+| 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido. El marco general pasa a v1.3 y Movimientos a v1.1 con los cambios de la sección 6 | Aprobación |

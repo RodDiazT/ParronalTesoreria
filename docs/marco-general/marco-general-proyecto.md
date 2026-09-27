@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -161,11 +161,15 @@ Nombres oficiales, iguales en documentos y código (sin tildes en el código). N
 | `Apoderado` | Adulto responsable y contacto de emergencia de un jinete. | Vinculado a uno o varios jinetes (un apoderado puede tener varios hijos inscritos). |
 | `Caballo` | El caballo. | Pertenece a la organización (reutilizable entre eventos). Nombre y club obligatorio (Participantes). |
 | `Binomio` | Par jinete + caballo en un evento. | Une `Jinete` y `Caballo` en un `Evento`. Un caballo puede formar binomio con varios jinetes y un jinete con varios caballos; el par se repite una sola vez por evento. |
-| `Inscripcion` | Inscripción de un binomio en una prueba o categoría, con su monto a pagar. | Pertenece a un binomio. El detalle (pruebas, tarifas, descuentos, reglas por edad) lo define su documento. |
+| `Prueba` | Prueba del concurso, con tarifa y límites de edad opcionales. | Pertenece a un evento. Detalle en `docs/inscripciones/inscripcion-binomios.md`. |
+| `Inscripcion` | Inscripción de un binomio en una `Prueba`, con su monto a pagar. | Pertenece a un binomio y a una prueba. El detalle (tarifas, ajustes, reglas por edad) lo define su documento. |
+| `Concepto` | Cobro distinto de las pruebas (cuota por binomio, pensión, alojamiento), con tarifa por unidad. | Pertenece a un evento. Se cobra a binomio (automático) o a jinete o club (manual). |
+| `Cargo` | Cobro de un concepto a un binomio, a un jinete o a un club. | Se paga igual que una inscripción, mediante `Pago`. |
 | `SolicitudInscripcion` (v1.1) | Datos enviados por formulario, aún no aceptados. | Al aceptarla se crean o se vinculan jinete, apoderado, caballo, club, binomio e inscripciones. |
 | `Movimiento` | Ingreso o gasto del evento. | Pertenece a un evento; tiene categoría, contraparte opcional, respaldos y pagos de inscripción asociados. |
 | `Respaldo` | Archivo (foto o PDF) que respalda un movimiento o su pago. | Pertenece a un movimiento. Un movimiento puede tener varios. |
-| `Pago` | Asignación de un movimiento de ingreso a una inscripción. | Une `Movimiento` e `Inscripcion` con un monto. Un movimiento puede cubrir varias inscripciones, incluso de distintos jinetes (por ejemplo, un club que paga por todos los suyos). |
+| `Pago` | Asignación de un movimiento de ingreso a una inscripción o a un cargo. | Une `Movimiento` con `Inscripcion` o `Cargo` y un monto. Un movimiento puede cubrir varios ítems, incluso de distintos jinetes (por ejemplo, un club que paga por todos los suyos). |
+| `Devolucion` | Asignación de un movimiento de gasto de devolución a una inscripción o cargo retirado, o al sobrante de un ingreso. | Une `Movimiento` (gasto, "Devoluciones") con `Inscripcion`, `Cargo` o el movimiento de ingreso, y un monto. |
 | `Cartola` y `LineaCartola` (v1.1) | Cartola bancaria subida y cada una de sus líneas. | Cada línea se concilia con cero o un movimiento, previa confirmación del administrador. |
 | `Pendiente` | Tarea de la comisión (v1.1). | No representa dinero: lo por cobrar y por pagar se deriva de movimientos e inscripciones. |
 | `RegistroAuditoria` | Evento de auditoría inmutable. | Referencia a la entidad afectada, al usuario y a la organización. |
@@ -199,9 +203,13 @@ Organizacion ─┬─ Membresia ── Usuario
               ├─ Club ─┬─ Jinete ── Apoderado (varios a varios)
               │        └─ Caballo
               └─ Evento ─┬─ Movimiento ─┬─ Respaldo
-                         │              ├─ Pago ─────────────┐
-                         │              └─ LineaCartola (v1.1)│
-                         ├─ Binomio (Jinete + Caballo) ── Inscripcion
+                         │              ├─ Pago ──────── Inscripcion o Cargo
+                         │              ├─ Devolucion ── Inscripcion, Cargo o ingreso
+                         │              └─ LineaCartola (v1.1)
+                         ├─ Prueba, Concepto
+                         ├─ Binomio (Jinete + Caballo) ─┬─ Inscripcion (Prueba)
+                         │                              └─ Cargo (cuota)
+                         ├─ Cargo (Jinete o Club)
                          ├─ SolicitudInscripcion (v1.1)
                          └─ Cartola (v1.1)
 RegistroAuditoria → (cualquier entidad), siempre con organizacionId
@@ -240,15 +248,16 @@ Todas las tablas con datos de negocio llevan `organizacionId`, incluso cuando po
 - Un pago de inscripción se registra como **un movimiento de ingreso** (categoría de sistema "Inscripciones") y uno o más `Pago` que lo asignan a inscripciones. El dinero se cuenta una sola vez.
 - Una transferencia que cubre varios binomios se registra una vez y se reparte en varios `Pago`. La suma de los `Pago` no puede superar el monto del movimiento.
 - Una transferencia recibida sin saber a quién corresponde se registra igual y queda **por asignar** hasta que se asocie.
-- El estado de pago de la inscripción (`pendiente`, `parcial`, `pagado`, `anulado`) se calcula a partir de sus pagos; no se escribe a mano.
-- Una devolución a un binomio que se retira es un movimiento de gasto (categoría de sistema "Devoluciones") vinculado a la inscripción.
+- Los **cargos** (cuota por binomio, pensión, alojamiento) se pagan igual que las inscripciones: con `Pago` desde un movimiento de "Inscripciones".
+- El estado de pago de la inscripción o cargo (`pendiente`, `parcial`, `pagado`, `anulado`) se calcula a partir de sus pagos; no se escribe a mano. Los pagos de un movimiento por validar u observado ya descuentan el saldo y se marcan "por validar".
+- Una devolución a un binomio que se retira es un movimiento de gasto (categoría de sistema "Devoluciones") vinculado a las inscripciones o cargos retirados. Puede ser total, parcial o ninguna; lo no devuelto queda como retenido. Un sobrante por asignar también se puede devolver. Detalle en `docs/inscripciones/inscripcion-binomios.md`.
 
 ### 6.5 Por cobrar, por pagar y reembolsos
 
 - Un gasto pagado por un ayudante de su bolsillo se registra como gasto con `pagadoPor` = ese usuario y nace `pendiente`: es una cuenta por pagar a esa persona. Cuando la caja le devuelve el dinero, se marca `pagado` con la fecha, el medio y, si existe, el comprobante del reembolso.
 - Un proveedor que cobrará después se registra como gasto `pendiente` (por pagar).
 - Un auspicio comprometido pero no recibido se registra como ingreso `pendiente` (por cobrar).
-- Lo por cobrar de inscripciones se calcula como el monto de cada inscripción menos sus pagos.
+- Lo por cobrar de inscripciones se calcula como el monto de cada inscripción o cargo no anulado menos sus pagos vigentes.
 
 ### 6.6 Auspicios en especie
 
@@ -264,11 +273,11 @@ Solo se consideran movimientos no anulados de `naturaleza` = `dinero`.
 | Ingresos percibidos | Ingresos `pagado` y `validado` |
 | Gastos pagados | Gastos `pagado` y `validado` |
 | **Saldo de caja** | Ingresos percibidos − gastos pagados |
-| Por cobrar | Ingresos `pendiente` validados + saldo de inscripciones no pagadas |
+| Por cobrar | Ingresos `pendiente` validados + saldo de inscripciones y cargos no anulados |
 | Por pagar | Gastos `pendiente` validados (incluye reembolsos) |
 | Resultado proyectado | Saldo de caja + por cobrar − por pagar |
 | Por validar | Monto y cantidad de movimientos `por_validar` u `observado`, mostrados **aparte** |
-| Por asignar | Ingresos de inscripciones aún no asignados a una inscripción |
+| Por asignar | Monto de los ingresos de "Inscripciones" no asignado a inscripciones o cargos ni devuelto como sobrante |
 | En especie | Suma de valores estimados, mostrada aparte |
 
 Cualquier documento que muestre estos indicadores los referencia desde aquí; no los redefine.
@@ -519,3 +528,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 1.0 | Aprobado por Rod; se confirma que el observador no ve respaldos ni datos personales | Aprobación |
 | 2026-09-27 | 1.1 | §10.2: la lista de categorías iniciales pasa a Organización y evento §3.4, que agrega la categoría de sistema "Aporte inicial" | Aprobación de Organización y evento v1.0 (dueño único de la lista) |
 | 2026-09-27 | 1.2 | §5, §6.11, §6.12, §9.2 y §9.3: club obligatorio para jinete y caballo; caballo sin número de registro ni propietario; fecha de nacimiento y contacto del jinete opcionales; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha registrada | Aprobación de Participantes v1.0 (decisiones de Rod) |
+| 2026-09-27 | 1.3 | §5 y §5.2: entidades `Prueba`, `Concepto`, `Cargo` y `Devolucion`; `Inscripcion` en una prueba; `Pago` a inscripción o cargo. §6.4, §6.5 y §6.7: cargos, pagos por validar descuentan saldo, retiro con retenido, devolución de sobrante, por cobrar con cargos y por asignar precisado | Aprobación de Inscripción de binomios v1.0 (decisiones de Rod) |
