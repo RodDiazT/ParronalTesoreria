@@ -1,6 +1,6 @@
 # Organización y evento
 
-Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -30,7 +30,7 @@ Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor
 | Documento | Relación |
 |---|---|
 | Acceso y roles (`docs/acceso/acceso-roles.md`) | Depende de este. Define el login, las solicitudes, el ciclo de la `Membresia` y la aplicación de la matriz de permisos. Este documento solo **lee** la membresía activa para armar el contexto. Quedan para ese documento: cómo el primer ingreso con Google se vincula con el `Usuario` precargado por el script (3.1), y cómo se concilian los modelos que exige Auth.js (`User`, `Account`, `Session`) con la entidad oficial `Usuario`. |
-| Movimientos (`docs/movimientos/movimientos.md`) | Usa el evento vigente, los selectores de categoría y contraparte y la fusión de contrapartes definida aquí. Quedan para ese documento: si la contraparte es obligatoria en alguna categoría (por ejemplo, Auspicios) y la validación de la fecha del movimiento (sugerencia: bloquear fechas futuras en movimientos pagados). |
+| Movimientos (`docs/movimientos/movimientos.md`) | Usa el evento vigente, los selectores de categoría y contraparte, la fusión de contrapartes y la marca "Exige contraparte" de las categorías definidas aquí. Ese documento define cuándo la contraparte es obligatoria y la validación de las fechas del movimiento (Movimientos §3.2). |
 | Participantes (`docs/inscripciones/participantes.md`) | Usa la fecha de referencia para la edad del evento (§6.11 del marco). La vista previa de cambio de fechas (3.2) se activa cuando existen jinetes. |
 | Inscripción de binomios | Usa las categorías de sistema "Inscripciones" y "Devoluciones" (§6.4 del marco), que solo se registran desde sus flujos (3.4). Queda para ese documento el efecto de un cambio de fechas del evento en alojamiento y pensión por noches. |
 | Cierre y rendición (v1.1) | Cambia el estado del evento a `cerrado` y `rendido`; usa el nombre y el logo de la organización y la categoría de sistema "Aporte inicial". |
@@ -116,7 +116,7 @@ Pantalla **Configuración → Categorías**, con dos listas: ingresos y gastos. 
 
 | Tipo | Categoría | De sistema |
 |---|---|---|
-| Ingreso | Auspicios | |
+| Ingreso | Auspicios (con "Exige contraparte") | |
 | Ingreso | Inscripciones | Sí (`inscripciones`) |
 | Ingreso | Alojamiento | |
 | Ingreso | Pensión de caballos | |
@@ -142,6 +142,7 @@ Pantalla **Configuración → Categorías**, con dos listas: ingresos y gastos. 
 | Desactivar | Deja de aparecer al registrar un movimiento nuevo. Los movimientos existentes la conservan y se siguen mostrando y sumando con ella. Las de sistema no se desactivan. |
 | Reactivar | Vuelve a aparecer en el selector. |
 | Ordenar | Subir o bajar, para que las más usadas queden arriba en el celular. |
+| Exige contraparte | Marca sí/no por categoría. Si está activa, todo movimiento de esa categoría exige contraparte (regla de uso en Movimientos §3.2). El script la deja activa solo en "Auspicios". Queda en auditoría. |
 | Eliminar | No existe (marco §7 principio 3). |
 
 Siempre queda al menos una categoría activa de cada tipo, porque las de sistema no se desactivan.
@@ -299,6 +300,7 @@ model Categoria {
   nombreNormalizado String
   tipo              TipoCategoria
   claveSistema      String?       // "inscripciones" | "devoluciones" | "aporte_inicial"
+  exigeContraparte  Boolean       @default(false) // Movimientos §3.2; true en "Auspicios" al cargar
   activa            Boolean       @default(true)
   orden             Int
   version           Int           @default(1)
@@ -392,7 +394,7 @@ Logo: validar tipo por contenido (bytes iniciales), no por extensión; guardar e
 - Contrapartes: parecidos detectados según 3.5; RUT inválido rechazado; RUT repetido bloquea; fusión reasigna movimientos, completa campos vacíos, desactiva el duplicado y deja un solo registro de auditoría; el ayudante no puede editar, fusionar ni suprimir.
 - Evento: fecha de término anterior a la de inicio rechazada; `fechaReferenciaEdadEfectiva` usa la de inicio cuando está vacía; con el evento cerrado o rendido la edición se rechaza.
 - Categorías: crear o renombrar con el nombre de una desactivada se rechaza con la opción de reactivar; "Inscripciones" y "Devoluciones" no aparecen en el selector.
-- Script: segunda ejecución no crea nada; crea las 13 categorías con sus claves de sistema.
+- Script: segunda ejecución no crea nada; crea las 13 categorías con sus claves de sistema y "Auspicios" con `exigeContraparte`.
 
 ---
 
@@ -452,3 +454,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; se registra la actualización del marco §10.2 | Aprobación |
 | 2026-09-27 | 1.1 | Revisión de puntos abiertos: las fechas del evento son informativas; configuración del evento solo con evento abierto; "Devoluciones" fuera del selector (solo desde la inscripción); aviso y reactivación ante nombre de categoría desactivada; categorías nuevas al final; la fusión sube la `version` de los movimientos; usuario opcional en auditoría para el script; validación de referencias entre organizaciones (`exigirDeLaOrganizacion`); se anotan los pendientes que pertenecen a Acceso y roles, Movimientos e Inscripción de binomios | Revisión pedida por Rod; decisiones de Rod sobre Devoluciones y fechas |
 | 2026-09-27 | 1.1 | Aprobado por Rod | Aprobación |
+| 2026-09-27 | 1.2 | Marca "Exige contraparte" en `Categoria` (3.4, 5.1, 5.5), activa en "Auspicios" al cargar; se remiten a Movimientos §3.2 la contraparte obligatoria y la validación de fechas | Aprobación de Movimientos v1.0 |

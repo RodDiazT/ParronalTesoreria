@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -31,7 +31,7 @@ Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejec
 | Documento | Relación |
 |---|---|
 | Marco general | Dueño de los atributos principales del movimiento (§5.1), las reglas §6.2 a §6.9 y los cálculos del dashboard (§6.7). Este documento los aplica y precisa (ver 6, precisiones). |
-| Organización y evento | Entrega el evento vigente, `<SelectorCategoria>`, `<SelectorContraparte>` y la fusión de contrapartes. Este documento resuelve lo que le dejó pendiente: contraparte obligatoria (3.2) y validación de fechas (3.2). **Requiere una actualización menor** de ese documento: la marca "Exige contraparte" en `Categoria` (6). |
+| Organización y evento | Entrega el evento vigente, `<SelectorCategoria>`, `<SelectorContraparte>` y la fusión de contrapartes. Este documento resuelve lo que le dejó pendiente: contraparte obligatoria (3.2) y validación de fechas (3.2). Agrega a ese documento la marca "Exige contraparte" en `Categoria` (Organización y evento v1.2). |
 | Acceso y roles | Entrega la matriz de permisos y las funciones auxiliares. Este documento implementa `resumenPendientesDe` (advertencia al revocar un ayudante) y es dueño de la pantalla de auditoría, donde también se ven las acciones de acceso. |
 | Inscripción de binomios | Dueño del `Pago`, de los flujos de pago de inscripción (categoría de sistema "Inscripciones") y de devolución ("Devoluciones"), y de lo "por asignar" de inscripciones. Usa de aquí el registro de ingresos, los respaldos, la validación, la anulación en cascada (3.7) y la clasificación de ingresos sin identificar (3.3). |
 | Dashboard | Calcula los indicadores del marco §6.7 sobre los movimientos definidos aquí. No los redefine. |
@@ -396,7 +396,7 @@ model Respaldo {
 }
 ```
 
-**Cambio en `Categoria`** (dueño: Organización y evento, que se actualiza a v1.2 al aprobar este documento): `exigeContraparte Boolean @default(false)`; el script de carga la deja en `true` para "Auspicios"; editable por el administrador en Configuración → Categorías.
+**Cambio en `Categoria`** (dueño: Organización y evento v1.2, §3.4 y §5.1): `exigeContraparte Boolean @default(false)`; el script de carga la deja en `true` para "Auspicios"; editable por el administrador en Configuración → Categorías.
 
 **Restricciones por migración SQL** (`CHECK`):
 
@@ -499,7 +499,7 @@ Se usa `registrarAuditoria(ctx, …)` del esqueleto (marco §6.8) con `entidad =
 
 - **Planillas de gastos, boletas guardadas en sobres y avisos de gastos por mensajería:** reemplazados por el registro con respaldo y la validación.
 - **Organización y evento §2, pendientes para Movimientos** (contraparte obligatoria y validación de la fecha): quedan resueltos en 3.2.
-- **Organización y evento §5.1, modelo `Categoria`:** se le agrega `exigeContraparte` (y el script la activa en "Auspicios"). **Documento dueño a actualizar:** Organización y evento pasa a v1.2 en el mismo commit de aprobación de este documento, y queda marcado para revisión en el índice hasta entonces.
+- **Organización y evento §5.1, modelo `Categoria`:** se le agrega `exigeContraparte` (y el script la activa en "Auspicios"). **Documento dueño actualizado:** Organización y evento pasa a v1.2 en el mismo commit de aprobación de este documento.
 - **Acceso y roles §5.3, `resumenPendientesDe` "devuelve ceros mientras Movimientos no exista":** queda implementada aquí (5.3). No cambia ese documento.
 - Código: ninguno, revisado: el repositorio solo tiene documentación.
 
@@ -560,3 +560,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión con Rod: contraparte obligatoria en pendientes (salvo reembolsos) y en categorías marcadas; guardado con foto en un solo envío con reintento; marcar pagado por un ayudante vuelve a por validar; abonos enlazados que se descuentan al validarse; fechas de hecho y de pago; validación de a uno; especie comprometida o recibida; respaldos agregables en cualquier estado; auditoría por movimiento y general; listado con pestañas; nombre de origen obligatorio en transferencias; el administrador corrige observados; ingreso sin identificar; anulación en cascada; descripción corta; observador sin nombre de origen ni observaciones |
+| 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; Organización y evento pasa a v1.2 con la marca `exigeContraparte` | Aprobación |
