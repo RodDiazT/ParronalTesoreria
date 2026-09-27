@@ -20,8 +20,8 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 
 | Documento | Ruta | Descripción | Estado | Fase | Padre |
 |---|---|---|---|---|---|
-| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado | v1.0 | — |
-| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | En revisión (v0.1) | v1.0 | Marco general |
+| Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.1) | v1.0 | — |
+| Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.0) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Pendiente | v1.0 | Marco general |
 | Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Pendiente | v1.0 | Marco general |
 | Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Pendiente | v1.0 | Marco general |
@@ -94,7 +94,7 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "1.0",
+      "version": "1.1",
       "actualizado": "2026-09-27"
     },
     {
@@ -105,11 +105,11 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
       "padre": "marco-general",
       "dominio": "organizacion",
       "descripcion": "Aislamiento, carga inicial, configuración del evento, categorías y contrapartes",
-      "estado": "revision",
+      "estado": "aprobado",
       "reemplazado_por": null,
       "fase": "v1.0",
       "dependencias": [],
-      "version": "0.1",
+      "version": "1.0",
       "actualizado": "2026-09-27"
     },
     {
@@ -415,3 +415,4 @@ Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + 
 | 2026-09-27 | 1.0 | Creación del índice con los componentes identificados y las tareas iniciales | Inicio del proyecto |
 | 2026-09-27 | 1.1 | Marco general aprobado (v1.0). Se agregan Participantes, Importación desde Excel, Formulario de inscripción, Registro sin señal y Conciliación con cartola; "Exportación para rendición" pasa a "Cierre y rendición"; se agrega la columna Fase; tareas t-005 a t-008 y se precisan t-002 y t-003 | Aprobación del marco general |
 | 2026-09-27 | 1.2 | Organización y evento pasa a revisión (v0.1); se crea la carpeta `organizacion/`; tareas t-009 a t-011 | Borrador de Organización y evento |
+| 2026-09-27 | 1.3 | Organización y evento aprobado (v1.0); marco general a v1.1 (§10.2 remite la lista de categorías a Organización y evento) | Aprobación de Organización y evento |

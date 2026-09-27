@@ -1,6 +1,6 @@
 # Marco General — Tesorería Parronal
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## Índice
 
@@ -441,7 +441,7 @@ docs/                           documentación
 
 Regla de aislamiento en código: toda consulta a datos de negocio pasa por una única función de contexto que obtiene la membresía activa del usuario y aplica `organizacionId`. Existe una prueba automática que verifica que un usuario de una organización no puede leer ni modificar datos de otra.
 
-Datos iniciales: la organización, el evento y los administradores se crean con un script de carga que recibe los datos como parámetros (nunca escritos en el código). Las categorías iniciales sugeridas son: ingresos — Auspicios, Inscripciones (sistema), Alojamiento, Pensión de caballos, Venta de comida, Otros ingresos; gastos — Pintura, Insumos, Equipamiento de equitación, Premios, Devoluciones (sistema), Otros gastos.
+Datos iniciales: la organización, el evento y los administradores se crean con un script de carga que recibe los datos como parámetros (nunca escritos en el código). La lista de categorías iniciales y sus categorías de sistema (Inscripciones, Devoluciones y Aporte inicial) la define `docs/organizacion/organizacion-evento.md` §3.4.
 
 ---
 
@@ -517,3 +517,4 @@ Cambios respecto del índice inicial: se agregan "Participantes" (v1.0), "Import
 | 2026-09-27 | 0.2 | Jinete, caballo, apoderado y club como entidades separadas; binomio como par jinete + caballo; fecha de nacimiento y apoderado obligatorio para menores; importación desde Excel (v1.0); formulario de inscripción y conciliación con cartola asistida por IA (v1.1); pagos en línea fuera de alcance; se explicita que el administrador también registra | Revisión de Rod |
 | 2026-09-27 | 0.3 | Plazo de rendición al club: 30 días después del evento | Decisión de Rod |
 | 2026-09-27 | 1.0 | Aprobado por Rod; se confirma que el observador no ve respaldos ni datos personales | Aprobación |
+| 2026-09-27 | 1.1 | §10.2: la lista de categorías iniciales pasa a Organización y evento §3.4, que agrega la categoría de sistema "Aporte inicial" | Aprobación de Organización y evento v1.0 (dueño único de la lista) |

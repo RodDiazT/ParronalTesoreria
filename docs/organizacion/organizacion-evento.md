@@ -1,6 +1,6 @@
 # Organización y evento
 
-Estado: En revisión · Versión 0.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -387,7 +387,7 @@ Logo: validar tipo por contenido (bytes iniciales), no por extensión; guardar e
 
 ## 6. Elementos que quedan obsoletos
 
-- **Marco general §10.2, lista de categorías iniciales:** queda reemplazada por la tabla de 3.4, que agrega la categoría de sistema "Aporte inicial". **Desviación declarada:** al aprobar este documento se actualiza el marco §10.2 para referenciar esta lista (el marco queda como dueño de la regla "las categorías de sistema no se eliminan" y este documento como dueño de la lista).
+- **Marco general §10.2, lista de categorías iniciales:** queda reemplazada por la tabla de 3.4, que agrega la categoría de sistema "Aporte inicial". **Desviación declarada y resuelta:** el marco §10.2 se actualizó (v1.1) para referenciar esta lista. El marco sigue siendo dueño de la regla "las categorías de sistema no se eliminan" y este documento es dueño de la lista.
 - **Listas informales de auspiciadores y proveedores** en planillas sueltas: quedan redundantes una vez cargadas como contrapartes.
 - Código: ninguno, revisado: el repositorio solo tiene documentación.
 
@@ -437,3 +437,4 @@ Si el plazo del 2026-10-04 aprieta, los pasos 11 (logo) y 12 (descarga CSV) pasa
 | Fecha | Versión | Cambio | Motivo |
 |---|---|---|---|
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión de trabajo con Rod: carga por script con edición básica en pantalla; aporte inicial como categoría de sistema de uso opcional; evento con fechas de inicio, término, referencia para la edad y lugar; contrapartes creadas por administrador y ayudante, editadas y fusionadas solo por el administrador, con marcas no excluyentes de auspiciador y proveedor; categorías editables sin subcategorías; un evento abierto sin selector; cambio de fechas con aviso; nombre y logo de la organización editables |
+| 2026-09-27 | 1.0 | Aprobado por Rod sin cambios de contenido; se registra la actualización del marco §10.2 | Aprobación |
