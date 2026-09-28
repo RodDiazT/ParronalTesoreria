@@ -9,7 +9,7 @@ export default async function MovimientosPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    pestana?: "todos" | "por_validar" | "observados" | "por_cobrar" | "por_pagar" | "sin_respaldo" | "sin_identificar";
+    pestana?: string;
     tipo?: "ingreso" | "gasto";
     categoriaId?: string;
     contraparteId?: string;
@@ -18,14 +18,20 @@ export default async function MovimientosPage({
     fechaHasta?: string;
     mostrarAnulados?: string;
     soloMios?: string;
+    mios?: string;
+    pagadoPor?: string;
+    estadoPago?: "pagado" | "pendiente";
+    validacion?: "validado" | "por_validar" | "observado";
+    naturaleza?: "dinero" | "especie";
   }>;
 }) {
   const ctx = await obtenerContexto();
 
   const params = await searchParams;
-  const pestana = params.pestana || "todos";
+  const pestana = (params.pestana || "todos").replace(/-/g, "_") as any;
   const mostrarAnulados = params.mostrarAnulados === "true";
-  const soloMios = params.soloMios === "true";
+  const soloMios = params.soloMios === "true" || params.mios === "1";
+  const pagadoPorId = params.pagadoPor === "yo" ? ctx.usuario.id : undefined;
 
   const { movimientos, totales } = await listarMovimientos(ctx, {
     pestana,
@@ -37,6 +43,10 @@ export default async function MovimientosPage({
     fechaHasta: params.fechaHasta,
     mostrarAnulados,
     soloMios,
+    pagadoPorId,
+    estadoPago: params.estadoPago,
+    estadoValidacion: params.validacion,
+    naturaleza: params.naturaleza,
   });
 
   const [categorias, contrapartes] = await Promise.all([

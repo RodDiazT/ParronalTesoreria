@@ -89,6 +89,19 @@ export function construirRutaRelativaRespaldo(
 }
 
 /**
+ * Construye la ruta relativa de un comprobante de traspaso:
+ * traspasos/<organizacionId>/<traspasoId>.<ext>
+ * (docs/dashboard/dashboard.md §5.3)
+ */
+export function construirRutaRelativaTraspaso(
+  organizacionId: string,
+  traspasoId: string,
+  extension: string
+): string {
+  return path.join("traspasos", organizacionId, `${traspasoId}.${extension}`);
+}
+
+/**
  * Guarda un archivo en el disco persistente de forma atómica:
  * escribe primero un temporal y luego lo renombra.
  */

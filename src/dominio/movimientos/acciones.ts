@@ -1358,7 +1358,7 @@ export async function resumenPendientesDe(ctx: Contexto, usuarioId: string) {
 export async function listarMovimientos(
   ctx: Contexto,
   filtros: {
-    pestana?: "todos" | "por_validar" | "observados" | "por_cobrar" | "por_pagar" | "sin_respaldo" | "sin_identificar";
+    pestana?: "todos" | "por_validar" | "observados" | "por_cobrar" | "por_pagar" | "sin_respaldo" | "sin_identificar" | string;
     tipo?: "ingreso" | "gasto";
     categoriaId?: string;
     contraparteId?: string;
@@ -1366,6 +1366,9 @@ export async function listarMovimientos(
     fechaDesde?: string;
     fechaHasta?: string;
     registradoPorId?: string;
+    pagadoPorId?: string;
+    estadoPago?: "pagado" | "pendiente";
+    estadoValidacion?: "validado" | "por_validar" | "observado";
     naturaleza?: "dinero" | "especie";
     mostrarAnulados?: boolean;
     soloMios?: boolean;
@@ -1379,9 +1382,9 @@ export async function listarMovimientos(
     where.anulado = false;
   }
 
-  // Pestañas
-  const p = filtros.pestana || "todos";
-  switch (p) {
+  // Pestañas (soportar tanto guiones bajos como guiones medios según dashboard.md §5.5)
+  const pestanaNormalizada = (filtros.pestana || "todos").replace(/-/g, "_");
+  switch (pestanaNormalizada) {
     case "por_validar":
       where.estadoValidacion = "por_validar";
       where.anulado = false;
@@ -1421,6 +1424,9 @@ export async function listarMovimientos(
   if (filtros.contraparteId) where.contraparteId = filtros.contraparteId;
   if (filtros.medioPago) where.medioPago = filtros.medioPago;
   if (filtros.registradoPorId) where.registradoPorId = filtros.registradoPorId;
+  if (filtros.pagadoPorId) where.pagadoPorId = filtros.pagadoPorId;
+  if (filtros.estadoPago) where.estadoPago = filtros.estadoPago;
+  if (filtros.estadoValidacion) where.estadoValidacion = filtros.estadoValidacion;
   if (filtros.naturaleza) where.naturaleza = filtros.naturaleza;
   if (filtros.soloMios) where.registradoPorId = ctx.usuario.id;
 

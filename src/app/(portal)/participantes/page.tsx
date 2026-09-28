@@ -11,10 +11,12 @@ export const metadata = {
 export default async function ParticipantesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pestana?: string; conAlertas?: string }>;
+  searchParams: Promise<{ pestana?: string; conAlertas?: string; alertas?: string }>;
 }) {
   const ctx = await obtenerContexto();
   const params = await searchParams;
+
+  const conAlertas = params.alertas === "1" || params.conAlertas === "true";
 
   // Consultar todas las listas para la vista inicial
   const datosJinetes = await ejecutarListarParticipantes(ctx, {
@@ -70,6 +72,7 @@ export default async function ParticipantesPage({
           contadorAlertasInicial={datosJinetes.contadorConAlertas}
           rol={ctx.rol}
           pestanaInicial={pestanaValida}
+          filtroConAlertasInicial={conAlertas}
         />
       </div>
     </>

@@ -81,15 +81,37 @@ export function formatearFecha(
     return new Intl.DateTimeFormat("es-CL", opcionesMesDia).format(fecha);
   }
 
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const anio = fecha.getFullYear();
-
   if (formato === "larga-hora") {
-    const horas = String(fecha.getHours()).padStart(2, "0");
-    const minutos = String(fecha.getMinutes()).padStart(2, "0");
-    return `${dia}-${mes}-${anio} ${horas}:${minutos}`;
+    return new Intl.DateTimeFormat("es-CL", {
+      timeZone: tz,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+      .format(fecha)
+      .replace(",", "");
   }
 
-  return `${dia}-${mes}-${anio}`;
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: tz,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(fecha);
+}
+
+/**
+ * Formatea la hora en formato HH:mm en zona horaria America/Santiago.
+ */
+export function formatearHora(instante: Date | string = new Date()): string {
+  const fecha = typeof instante === "string" ? new Date(instante) : instante;
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(fecha);
 }

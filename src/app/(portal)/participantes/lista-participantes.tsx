@@ -41,6 +41,7 @@ interface ListaParticipantesProps {
   contadorAlertasInicial: number;
   rol: Rol;
   pestanaInicial?: "jinetes" | "caballos" | "clubes" | "apoderados";
+  filtroConAlertasInicial?: boolean;
 }
 
 export function ListaParticipantes({
@@ -51,6 +52,7 @@ export function ListaParticipantes({
   contadorAlertasInicial,
   rol,
   pestanaInicial = "jinetes",
+  filtroConAlertasInicial = false,
 }: ListaParticipantesProps) {
   const router = useRouter();
   const [pestana, setPestana] = useState<"jinetes" | "caballos" | "clubes" | "apoderados">(
@@ -59,7 +61,7 @@ export function ListaParticipantes({
   const [busqueda, setBusqueda] = useState("");
   const [clubFiltroId, setClubFiltroId] = useState("");
   const [soloActivos, setSoloActivos] = useState(true);
-  const [filtroConAlertas, setFiltroConAlertas] = useState(false);
+  const [filtroConAlertas, setFiltroConAlertas] = useState(filtroConAlertasInicial);
 
   // Modales de creación rápida para Caballo, Club y Apoderado
   const [modalNuevoCaballo, setModalNuevoCaballo] = useState(false);

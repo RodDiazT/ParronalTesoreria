@@ -289,33 +289,59 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 ---
 
 ### Fase 7: Dashboard y Traspasos entre Medios de Pago
-**Documento base:** `docs/dashboard/dashboard.md`
+**Documento base:** `docs/dashboard/dashboard.md` (v1.2), `docs/interfaz/ux-ui.md` (§3.4, §3.6) y `docs/marco-general/marco-general-proyecto.md` (§6.7).
+**Estado:** [x] COMPLETADA (100% implementada y verificada).
 
-#### Paso 7.1: Consultas de Agregación y KPIs
+#### Paso 7.1: Consultas de Agregación y Motor de KPIs Dinámicos
 - **Archivos:** `src/dominio/dashboard/calculos.ts`.
-- **Qué hace:**
-  - Cálculos en SQL optimizados según marco §6.7:
-    - Ingresos percibidos (pagados y validados).
-    - Gastos pagados.
-    - **Saldo de caja** (Ingresos − Gastos).
-    - Saldo por medio de pago: Banco (`transferencia`) y `efectivo`.
-    - Por cobrar (ingresos pendientes + saldo de inscripciones no anuladas).
-    - Por pagar (gastos pendientes + reembolsos a la comisión).
-    - Resultado proyectado.
-    - Por validar y Por asignar (destacados aparte).
+- **Implementación y reglas verificadas:**
+  - `indicadores(ctx, eventoId)`: cálculo en tiempo real sin saldos estáticos desde movimientos válidos (`anulado: false`), excluyendo movimientos en especie de saldos en efectivo/banco. Desglosa:
+    - `ingresosPercibidos`: pagados y validados en dinero.
+    - `aporteInicial`: desglose específico de categoría de sistema `aporte_inicial`.
+    - `gastosPagados`: pagados y validados en dinero.
+    - **Saldo de caja:** invariante estricta `ingresosPercibidos - gastosPagados`.
+    - `porCobrar`: desglosado en `inscripciones` y `otros` ingresos pendientes validados.
+    - `porPagar`: desglosado en `proveedores` (`pagadoPorId === null`) y `comision` (reembolsos pendientes a miembros).
+    - **Resultado proyectado:** invariante estricta `saldoCaja + porCobrar - porPagar`.
+    - `porValidar`: cantidad y monto total de movimientos pendientes de revisión (`por_validar` y `observado`).
+    - `porAsignar`: monto total remanente de transferencias no asociadas a ítems.
+    - `especie`: total percibido y comprometido en canjes no dinerarios.
+  - `saldoPorMedio(ctx, eventoId)`: cálculo dinámico por medio (`transferencia`, `efectivo`, `otro`) considerando ingresos, gastos y traspasos netos vigentes, cumpliendo la invariante `transferencia + efectivo + otro === saldoCaja`.
+  - `avisosAdministrador(ctx, eventoId)`: solicitudes de membresía pendientes, movimientos por validar, monto por asignar, ajustes de inscripción no vistos y conteo de jinetes menores con alertas activas que compiten en el evento.
+  - `loMio(ctx, eventoId)`: pendientes propios del ayudante (por validar propios, observados con comentario administrativo de revisión y botón de corrección, y reembolsos pendientes que le adeuda la comisión).
+  - `textoResumen(ctx, eventoId, ahora)`: generador de texto limpio para WhatsApp al formato exacto de `docs/dashboard/dashboard.md` §3.7 sin datos personales sensibles.
 
-#### Paso 7.2: Traspasos entre Medios de Pago
-- **Archivos:** `src/app/traspasos/page.tsx`, `src/dominio/dashboard/traspasos.ts`.
-- **Qué hace:**
-  - Traspasos Banco ↔ Efectivo (depósito de recaudación en cancha o retiro de caja chica).
-  - Obligatoriedad de comprobante de depósito u observación detallada.
+#### Paso 7.2: Traspasos entre Medios de Pago y Endpoint Seguro
+- **Archivos:** `src/dominio/dashboard/traspasos.ts`, `src/dominio/dashboard/acciones.ts`, `src/app/api/traspasos/[id]/archivo/route.ts`, `src/app/(portal)/traspasos/page.tsx`, `src/app/(portal)/traspasos/lista-traspasos.tsx`, `src/app/(portal)/traspasos/nuevo/page.tsx`, `src/app/(portal)/traspasos/nuevo/formulario-traspaso.tsx`.
+- **Implementación y reglas verificadas:**
+  - Registro exclusivo para Administrador (`exigir(ctx, "registrar_traspaso")`).
+  - Validación de reglas puras (`desde !== hacia`, comprobante de depósito u observación obligatoria si no hay archivo).
+  - Manejo de concurrencia optimista por `version` e idempotencia de red por `claveCliente`.
+  - Marcado automático de `posteriorAlCierre` cuando el evento está cerrado o rendido.
+  - Almacenamiento seguro en disco persistente (`RUTA_RESPALDOS/traspasos/…`) con validación de magic bytes (JPEG, PNG, PDF; rechazo estricto de SVG/HTML/ejecutables).
+  - Endpoint seguro de descarga `/api/traspasos/[id]/archivo` protegido con `puedeVerRespaldos` y cabeceras `Cache-Control: private, no-store`.
+  - Anulación de traspasos con motivo obligatorio, restitución inmediata de saldos por medio y registro en la auditoría inmutable del sistema.
+  - Privacidad estricta: `ocultarDatosTraspaso` oculta la observación y el archivo al rol Observador.
+  - Interfaz móvil: listado `/traspasos` con chip de medios, filtro de anulados y sheet de anulación; formulario de alta rápida `/traspasos/nuevo` con teclado numérico y selector visual.
 
-#### Paso 7.3: Pantalla de Inicio `/` según Rol
-- **Archivos:** `src/app/page.tsx`, `src/components/app/inicio-administrador.tsx`, `src/components/app/inicio-ayudante.tsx`.
-- **Qué hace:**
-  - Administrador: bloque *Por revisar* (solicitudes, movimientos por validar, por asignar, alertas) + Saldo + Indicadores + Botón *Copiar resumen*.
-  - Ayudante: bloque *Lo mío* (mis movimientos por validar, observados con comentario del admin, reembolsos que me deben) + Saldo + Indicadores.
-  - Observador: Saldo + Indicadores + Botón *Copiar resumen*.
+#### Paso 7.3: Pantalla de Inicio `/` Multirrol y Componentes Visuales
+- **Archivos:** `src/app/(portal)/page.tsx`, `src/components/app/dashboard/` (`bloque-por-revisar.tsx`, `bloque-lo-mio.tsx`, `tarjeta-saldo.tsx`, `filas-resumen.tsx`, `detalle-dashboard.tsx`, `boton-copiar-resumen.tsx`).
+- **Implementación y reglas verificadas:**
+  - Administrador: visualiza `<BloquePorRevisar>` con enlaces directos contextuales (solicitudes `/usuarios`, por validar `/movimientos/validar`, por asignar `/movimientos?sinIdentificar=1`, alertas de menores `/participantes?alertas=1`) + saldo + indicadores + `<BotonCopiarResumen>`.
+  - Ayudante: visualiza `<BloqueLoMio>` con tarjetas de movimientos observados (mostrando el comentario del admin y acción "Corregir"), movimientos por validar propios y total de reembolsos adeudados.
+  - Observador: vista de solo lectura del saldo e indicadores; botón de copiar resumen habilitado; sin acceso a datos protegidos ni comprobantes.
+  - `<TarjetaSaldo>`: saldo total destacado en tipografía de 36px, desglose Banco/Efectivo, alerta contextual de saldo negativo (`¿Falta registrar un traspaso?`), botón de refresco y enlace directo a `/traspasos`.
+  - `<FilasResumen>`: filas táctiles de Por cobrar y Por pagar con bottom sheets de desglose interactivo, y fila de resultado proyectado con sheet informativo.
+  - `<DetalleDashboard>`: bloque plegable con persistencia en `localStorage` (`dashboard_detalle_abierto`) con ingresos percibidos, gastos pagados y sublista gris "Aparte" (por validar, por asignar, en especie).
+  - `<BotonCopiarResumen>`: copia al portapapeles en 1 toque y muestra modal de respaldo en caso de permisos denegados del portapapeles del navegador. Protegido en servidor: Ayudante recibe 403 (`ErrorPermiso`).
+  - Estado vacío inicial con mensaje de bienvenida cuando no existen movimientos.
+
+**Criterios de verificación de Fase 7:**
+- [x] 13 pruebas unitarias y de integración exhaustivas en `src/dominio/dashboard/dashboard.test.ts` pasando al 100%.
+- [x] 126 pruebas totales pasando al 100% en todo el proyecto (11 suites de Vitest).
+- [x] Compilación Next.js de producción limpia (`npm run build`, 21 rutas estáticas y dinámicas, 0 errores, 0 warnings).
+- [x] Aislamiento multi-tenant y entre eventos verificado con `db(ctx)`.
+- [x] Servidor Server Actions (`acciones.ts`) desacoplado de funciones de dominio puras para estricta compatibilidad con webpack y Next.js App Router.
 
 ---
 

@@ -554,4 +554,6 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.21 | Fase 1 y Fase 2 de implementación técnica completadas, verificadas con tests y desplegadas en Railway según PLAN_IMPLEMENTACION.md | Hito de desarrollo técnico |
 | 2026-09-27 | 1.22 | Fases 3 (UX/UI base y Configuración), 4 (Movimientos y Validación) y 5 (Participantes) completadas y verificadas con 113 tests al 100% y build limpio de Next.js | Hito de desarrollo técnico |
 | 2026-09-28 | 1.23 | Diagnóstico y revisión de implementación de Fase 6 (Inscripción de binomios, pruebas y pagos): se audita el estado del código fuente y se documentan componentes existentes vs pendientes en _ESTADO_PROYECTO.md, PLAN_IMPLEMENTACION.md e inscripcion-binomios.md | Revisión y diagnóstico de Fase 6 |
+| 2026-09-28 | 1.24 | Fase 7 de implementación técnica completada: Dashboard por rol (`/`), motor de KPIs dinámicos, módulo de Traspasos (`/traspasos`), endpoint seguro y suite de tests con 126 pruebas totales pasando al 100% y build de Next.js limpio | Hito de desarrollo técnico (Fase 7) |
+
 
