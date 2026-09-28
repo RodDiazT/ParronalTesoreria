@@ -60,10 +60,10 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 
 | Id | Tarea | Origen | Estado |
 |---|---|---|---|
-| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Completada (2026-09-27) |
-| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Completada (2026-09-27) |
+| t-003 | Crear el proyecto en la cuenta Railway existente (Postgres + volumen) | Marco general | Hecha (2026-09-27) |
+| t-004 | Crear proyecto en Google Cloud y credenciales OAuth para el login con Google | Acceso y roles | Hecha (2026-09-27) |
 | t-007 | Verificar si el plan de Railway incluye copias de seguridad de la base y del volumen | Marco general | Pendiente |
-| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Completada (2026-09-27) |
+| t-011 | Entregar los datos de la carga inicial: nombre del club y del evento, fechas, lugar y correos Google de los dos administradores | Organización y evento | Hecha (2026-09-27) |
 | t-015 | Activar la facturación de la API de Gemini en el proyecto de Google Cloud, crear la clave, configurar una alerta de presupuesto de USD 5 y entregar la clave a Claude Code fuera del repositorio | Importación desde Excel | Pendiente |
 
 ### Club
@@ -387,7 +387,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "marco-general",
-      "estado": "completada",
+      "estado": "hecha",
       "creada": "2026-09-27",
       "cerrada": "2026-09-27"
     },
@@ -397,7 +397,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "acceso-roles",
-      "estado": "completada",
+      "estado": "hecha",
       "creada": "2026-09-27",
       "cerrada": "2026-09-27"
     },
@@ -467,7 +467,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
       "categoria": "desarrollo",
       "responsable": "Rod",
       "origen": "organizacion-evento",
-      "estado": "completada",
+      "estado": "hecha",
       "creada": "2026-09-27",
       "cerrada": "2026-09-27"
     },
@@ -552,4 +552,5 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.19 | UX/UI pasa a revisión (v0.1); nuevo dominio y carpeta `interfaz/`. Al aprobarse, el marco general sube a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 (sección 6 del borrador) | Borrador de UX/UI pedido por Rod |
 | 2026-09-27 | 1.20 | UX/UI aprobado (v1.0) sin cambios. Marco general a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 | Aprobación de UX/UI |
 | 2026-09-27 | 1.21 | Fase 1 y Fase 2 de implementación técnica completadas, verificadas con tests y desplegadas en Railway según PLAN_IMPLEMENTACION.md | Hito de desarrollo técnico |
+| 2026-09-27 | 1.22 | Tareas t-003, t-004 y t-011 pasan del estado no válido `completada` a `hecha` (valores del esquema: pendiente, en_curso, hecha, descartada) | Revisión de coherencia al regenerar el tablero |
 
