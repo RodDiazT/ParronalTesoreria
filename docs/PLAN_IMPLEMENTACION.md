@@ -187,20 +187,42 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 
 ### Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)
 **Documento base:** `docs/inscripciones/participantes.md`
+**Estado:** [x] COMPLETADA (2026-09-27)
 
 #### Paso 5.1: Reglas de Edad, Alertas y Duplicados
-- **Archivos:** `src/dominio/inscripciones/participantes/reglas.ts`.
+- [x] **Archivos:** `src/dominio/inscripciones/participantes/reglas.ts`.
 - **Qué hace:**
-  - `edadEnEvento`: cálculo exacto de años cumplidos a la fecha de referencia del concurso.
-  - `alertasJinete`: menor sin apoderado, menor de 14 sin autorización registrada, jinete sin fecha de nacimiento.
-  - `buscarParecidos`: detección de similitudes fonéticas y ortográficas para evitar duplicados.
+  - `edadEnEvento`: cálculo exacto de años cumplidos a la fecha de referencia del concurso (`fechaReferenciaEdad` o `fechaInicio`), en zona horaria chilena (`America/Santiago`), considerando bisiestos (29 de febrero).
+  - `alertasJinete`: evaluación en memoria de alertas no bloqueantes (`sin_fecha_nacimiento`, `menor_sin_apoderado`, `falta_autorizacion`, `apoderado_sin_telefono`).
+  - `buscarParecidos`: detección de similitudes fonéticas y ortográficas (distancia Levenshtein normalizada) para clubes, caballos en cualquier club, apoderados (con normalización de teléfonos chilenos) y jinetes.
 
-#### Paso 5.2: Fichas y Creación de Participantes
-- **Archivos:**
-  - `src/app/participantes/page.tsx`: pestañas Jinetes, Caballos, Clubes, Apoderados (oculto a observador), filtro *Con alertas*.
-  - `src/app/participantes/jinetes/nuevo/page.tsx`, `src/app/participantes/jinetes/[id]/page.tsx`.
-  - Acciones: crear, vincular apoderado, registrar fecha de autorización, fusión de jinetes/caballos duplicados.
-  - Selectores reutilizables: `<SelectorClub>`, `<SelectorJinete>`, `<SelectorCaballo>`, `<SelectorApoderado>`.
+#### Paso 5.2: Fichas, Selectores y Operaciones de Participantes
+- [x] **Dominio y Consultas:**
+  - `src/dominio/inscripciones/participantes/acciones.ts`: esquemas Zod y server actions para crear, editar (con control de concurrencia optimista `version`), desactivar y reactivar clubes, jinetes, apoderados y caballos.
+  - Creación atómica de jinete con apoderado nuevo y autorización firmada en una sola transacción Prisma.
+  - Vinculación/desvinculación de apoderados y registro de autorizaciones por administradores y ayudantes.
+  - Fusiones transaccionales seguras (`ejecutarFusionarClubes`, `ejecutarFusionarJinetes`, `ejecutarFusionarCaballos`) con reasignación íntegra de dependencias hijas y desactivación del registro duplicado.
+  - Cumplimiento estricto de privacidad (Leyes 19.628 y 21.719): supresión de datos personales (`ejecutarSuprimirDatosClub`, `ejecutarSuprimirDatosJinete`, `ejecutarSuprimirDatosApoderado`) y descarga de datos en CSV (`ejecutarDescargarDatosParticipante`).
+  - `src/dominio/inscripciones/participantes/consultas.ts`: funciones de consulta con ocultamiento de datos privados (`ocultarDatosPersonales`) para el rol `observador` (no ve fechas de nacimiento, edad, contacto, RUT ni alertas; y recibe 403 en apoderados).
+- [x] **Componentes Visuales Reutilizables:**
+  - `<AlertasJinete>`: chips táctiles de colores con textos explicativos claros según la alerta.
+  - `<SelectorClub>`: selector táctil con autocompletado y botón de alta rápida inline.
+  - `<SelectorJinete>`: selector táctil con visualización de club y edad.
+  - `<SelectorCaballo>`: selector táctil filtrable con indicación de club de origen.
+  - `<SelectorApoderado>`: selector táctil con teléfono y búsqueda en vivo.
+- [x] **Páginas del Portal:**
+  - `src/app/(portal)/participantes/page.tsx` y `lista-participantes.tsx`: listado móvil con 4 pestañas (*Jinetes*, *Caballos*, *Clubes*, *Apoderados*), buscador en tiempo real, filtro por club y filtro táctil "Con alertas".
+  - `src/app/(portal)/participantes/jinetes/nuevo/page.tsx` y `formulario-jinete.tsx`: formulario móvil de alta rápida con cálculo de edad en vivo y secciones desplegables para vincular apoderado y registrar autorización.
+  - `src/app/(portal)/participantes/jinetes/[id]/page.tsx` y `ficha-jinete.tsx`: ficha detallada del jinete con alertas, historial de apoderados, edición, fusión, descarga CSV y supresión de datos.
+  - `src/app/(portal)/participantes/clubes/[id]/page.tsx` y `ficha-club.tsx`: ficha del club con listados de jinetes y caballos asociados, edición y fusión de clubes duplicados.
+  - `src/app/(portal)/participantes/caballos/[id]/page.tsx` y `ficha-caballo.tsx`: ficha del caballo con club de pertenencia, edición y fusión.
+  - `src/app/(portal)/participantes/apoderados/[id]/page.tsx` y `ficha-apoderado.tsx`: ficha del apoderado con llamada telefónica en un toque, jinetes a cargo y edición (oculta y con 403 a observadores).
+
+**Criterios de verificación de Fase 5:**
+- [x] 30 pruebas unitarias y de integración exhaustivas en `participantes.test.ts` pasando al 100%.
+- [x] 113 pruebas pasando al 100% en todo el proyecto (10 suites de Vitest).
+- [x] Compilación Next.js de producción limpia (`npm run build`, 22 rutas estáticas/dinámicas, 0 errores, 0 warnings).
+- [x] Aislamiento multi-tenant validado mediante cliente `db(ctx)`.
 
 ---
 

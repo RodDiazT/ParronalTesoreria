@@ -45,3 +45,5 @@ carga-inicial.local.json
 
 # archivos temporales de desarrollo
 /scratch/
+*.db
+*.db-journal
