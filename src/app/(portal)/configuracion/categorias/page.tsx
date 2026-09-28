@@ -19,6 +19,11 @@ export default async function CategoriasPage() {
   }
 
   const rawCategorias = await db(ctx).categoria.findMany({
+    include: {
+      _count: {
+        select: { movimientos: true },
+      },
+    },
     orderBy: { orden: "asc" },
   });
 
@@ -31,6 +36,7 @@ export default async function CategoriasPage() {
     activa: c.activa,
     orden: c.orden,
     version: c.version,
+    cantidadMovimientos: c._count.movimientos,
   }));
 
   return (

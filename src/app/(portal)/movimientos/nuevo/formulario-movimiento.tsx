@@ -25,6 +25,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CapturaRespaldo, ArchivoSeleccionado } from "@/components/app/captura-respaldo";
 import { SelectorCategoria, OpcionCategoria } from "@/components/app/selector-categoria";
 import { SelectorContraparte } from "@/components/app/selector-contraparte";
+import { SelectorCaballo } from "@/components/app/selector-caballo";
+import { SelectorJinete } from "@/components/app/selector-jinete";
+import { SelectorClub } from "@/components/app/selector-club";
 import {
   registrarMovimientoAction,
   buscarDuplicados,
@@ -89,6 +92,12 @@ export function FormularioMovimiento({
   const [observacion, setObservacion] = useState("");
   const [sinRespaldo, setSinRespaldo] = useState(false);
   const [archivos, setArchivos] = useState<ArchivoSeleccionado[]>([]);
+
+  // Asignación complementaria a participante o caballo
+  const [caballoId, setCaballoId] = useState<string>("");
+  const [jineteId, setJineteId] = useState<string>("");
+  const [clubId, setClubId] = useState<string>("");
+  const [mostrarAsignacion, setMostrarAsignacion] = useState(false);
 
   // Control de duplicados
   const [posiblesDuplicados, setPosiblesDuplicados] = useState<any[]>([]);
@@ -185,6 +194,9 @@ export function FormularioMovimiento({
       descripcion: descripcion.trim() || null,
       observacion: observacion.trim() || null,
       sinRespaldo,
+      caballoId: caballoId || null,
+      jineteId: jineteId || null,
+      clubId: clubId || null,
       claveCliente,
     };
 
@@ -729,6 +741,55 @@ export function FormularioMovimiento({
           )}
         </div>
       )}
+
+      {/* Asignación opcional a participante o caballo */}
+      <div className="border border-stone-200 rounded-lg p-3.5 bg-stone-50 space-y-3">
+        <button
+          type="button"
+          onClick={() => setMostrarAsignacion(!mostrarAsignacion)}
+          className="flex items-center justify-between w-full text-xs font-semibold text-stone-700 cursor-pointer"
+        >
+          <span>Asignar a participante o caballo (Opcional)</span>
+          {mostrarAsignacion ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {mostrarAsignacion && (
+          <div className="pt-2 space-y-3 border-t border-stone-200">
+            <div>
+              <SelectorCaballo
+                caballoSeleccionadoId={caballoId}
+                alSeleccionar={(c) => {
+                  setCaballoId(c.id);
+                  if (c.clubId && !clubId) setClubId(c.clubId);
+                }}
+                alLimpiar={() => setCaballoId("")}
+                label="Caballo relacionado"
+              />
+            </div>
+
+            <div>
+              <SelectorJinete
+                jineteSeleccionadoId={jineteId}
+                alSeleccionar={(j) => {
+                  setJineteId(j.id);
+                  if (j.clubId && !clubId) setClubId(j.clubId);
+                }}
+                alLimpiar={() => setJineteId("")}
+                label="Jinete relacionado"
+              />
+            </div>
+
+            <div>
+              <SelectorClub
+                clubSeleccionadoId={clubId}
+                alSeleccionar={(c) => setClubId(c.id)}
+                alLimpiar={() => setClubId("")}
+                label="Club relacionado"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Errores */}
       {errorEnvio && (

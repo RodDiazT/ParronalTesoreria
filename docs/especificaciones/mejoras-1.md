@@ -16,6 +16,7 @@ Este documento formaliza las definiciones de negocio, arquitectura de datos, ló
 3. **Inscripción Rápida Integrada de Jinete, Caballo y Club (`/inscripciones/nueva`):** Habilitar la creación inmediata in-situ de Club, Caballo y Jinete mediante hojas emergentes (Sheets/Modales) dentro del formulario de inscripción, permitiendo creación encadenada (crear club desde jinete/caballo) sin perder datos ni abandonar el formulario.
 4. **Edición de Perfil de Usuario (`/mi-cuenta`):** Permitir a los usuarios con membresía aprobada actualizar su nombre completo para mostrar y registrar opcionalmente su número de teléfono de contacto.
 5. **Eliminación y Reasignación de Categorías (`/configuracion/categorias`):** Permitir a administradores eliminar categorías no protegidas. Si tienen movimientos históricos de dinero asociados, se exige seleccionar una categoría sustituta del mismo tipo para reasignar los movimientos de forma atómica antes de eliminar la categoría.
+6. **Renombrado en Navegación Lateral a "Directorio" (`/participantes`):** Actualizar el rótulo en el menú principal lateral de "Participantes" a "Directorio" para representar con mayor precisión el acceso al directorio maestro de Jinetes, Caballos y Clubes.
 
 ---
 

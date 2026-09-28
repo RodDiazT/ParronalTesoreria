@@ -36,14 +36,12 @@ import {
   ajustarItem,
   anularItem,
   anularBinomio,
-  agregarCargo,
 } from "@/dominio/inscripciones/binomios/acciones";
 import { desasignarPago } from "@/dominio/inscripciones/binomios/pagos";
 
 interface FichaBinomioProps {
   binomio: any;
   pruebas: any[];
-  conceptos: any[];
   clubes: any[];
   jinetes: any[];
   caballos: any[];
@@ -55,7 +53,6 @@ interface FichaBinomioProps {
 export function FichaBinomio({
   binomio,
   pruebas,
-  conceptos,
   clubes,
   jinetes,
   caballos,
@@ -71,18 +68,12 @@ export function FichaBinomio({
   const [procesando, setProcesando] = useState(false);
 
   // Modales
-  const [modalCargo, setModalCargo] = useState(false);
-  const [conceptoIdCargo, setConceptoIdCargo] = useState("");
-  const [montoCargo, setMontoCargo] = useState(0);
-  const [cantidadCargo, setCantidadCargo] = useState(1);
-  const [observacionesCargo, setObservacionesCargo] = useState("");
-
   const [modalCambiarPrueba, setModalCambiarPrueba] = useState(false);
   const [itemParaCambiarPrueba, setItemParaCambiarPrueba] = useState<any>(null);
   const [nuevaPruebaId, setNuevaPruebaId] = useState("");
 
   const [modalAjustar, setModalAjustar] = useState(false);
-  const [itemParaAjustar, setItemParaAjustar] = useState<{ tipo: "inscripcion" | "cargo"; item: any } | null>(null);
+  const [itemParaAjustar, setItemParaAjustar] = useState<any>(null);
   const [nuevoMontoAjuste, setNuevoMontoAjuste] = useState(0);
   const [motivoAjuste, setMotivoAjuste] = useState("");
 
@@ -98,7 +89,7 @@ export function FichaBinomio({
   const [nuevoClubId, setNuevoClubId] = useState(binomio.club.id);
 
   const [modalAnularItem, setModalAnularItem] = useState(false);
-  const [itemParaAnular, setItemParaAnular] = useState<{ tipo: "inscripcion" | "cargo"; item: any } | null>(null);
+  const [itemParaAnular, setItemParaAnular] = useState<any>(null);
   const [motivoAnulacionItem, setMotivoAnulacionItem] = useState("");
 
   const [modalAnularBinomio, setModalAnularBinomio] = useState(false);
@@ -109,42 +100,15 @@ export function FichaBinomio({
   const [motivoDesasignar, setMotivoDesasignar] = useState("");
 
   // Totales
-  const totalMonto =
-    binomio.inscripciones.reduce((a: number, b: any) => a + (b.calculo?.monto ?? b.montoClp), 0) +
-    binomio.cargos.reduce((a: number, b: any) => a + (b.calculo?.monto ?? b.montoTotalClp), 0);
-  const totalPagado =
-    binomio.inscripciones.reduce((a: number, b: any) => a + (b.calculo?.pagado ?? 0), 0) +
-    binomio.cargos.reduce((a: number, b: any) => a + (b.calculo?.pagado ?? 0), 0);
+  const totalMonto = binomio.inscripciones.reduce(
+    (a: number, b: any) => a + (b.calculo?.monto ?? b.montoClp),
+    0
+  );
+  const totalPagado = binomio.inscripciones.reduce(
+    (a: number, b: any) => a + (b.calculo?.pagado ?? 0),
+    0
+  );
   const totalSaldo = Math.max(0, totalMonto - totalPagado);
-
-  // Manejador Agregar Cargo
-  const handleAgregarCargo = async () => {
-    if (!conceptoIdCargo) {
-      toast.error("Selecciona un concepto.");
-      return;
-    }
-    setProcesando(true);
-    try {
-      const res = await agregarCargo({
-        conceptoId: conceptoIdCargo,
-        precioUnitarioClp: montoCargo,
-        cantidad: cantidadCargo,
-        binomioId: binomio.id,
-        descripcion: observacionesCargo.trim() || undefined,
-      });
-      if (res.exito) {
-        toast.success("Cargo agregado con éxito.");
-        setModalCargo(false);
-        router.refresh();
-      } else {
-        toast.error(res.error || "No se pudo agregar el cargo.");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Error al agregar cargo.");
-    } finally {
-      setProcesando(false);
-    }
-  };
 
   // Manejador Cambiar Prueba
   const handleCambiarPrueba = async () => {
@@ -179,8 +143,8 @@ export function FichaBinomio({
     setProcesando(true);
     try {
       const res = await ajustarItem(
-        itemParaAjustar.tipo,
-        itemParaAjustar.item.id,
+        "inscripcion",
+        itemParaAjustar.id,
         nuevoMontoAjuste,
         motivoAjuste.trim()
       );
@@ -279,8 +243,8 @@ export function FichaBinomio({
     setProcesando(true);
     try {
       const res = await anularItem(
-        itemParaAnular.tipo,
-        itemParaAnular.item.id,
+        "inscripcion",
+        itemParaAnular.id,
         motivoAnulacionItem.trim()
       );
       if (res.exito) {
@@ -401,20 +365,6 @@ export function FichaBinomio({
                   <ArrowRight className="w-4 h-4 mr-1" />
                   Retirar
                 </Link>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (conceptos.length > 0) {
-                      setConceptoIdCargo(conceptos[0].id);
-                      setMontoCargo(conceptos[0].montoSugeridoClp || 0);
-                    }
-                    setModalCargo(true);
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Agregar cargo
-                </Button>
               </>
             )}
           </div>
@@ -428,7 +378,7 @@ export function FichaBinomio({
         {/* Resumen Financiero */}
         <div className="grid grid-cols-3 gap-3 pt-3 border-t border-borde">
           <div className="p-3 rounded-lg bg-fondo-subutil">
-            <span className="text-xs text-texto-suave">Total Cargos</span>
+            <span className="text-xs text-texto-suave">Total Inscripciones</span>
             <p className="text-lg font-bold text-texto">{formatearMonto(totalMonto)}</p>
           </div>
           <div className="p-3 rounded-lg bg-fondo-subutil">
@@ -543,7 +493,7 @@ export function FichaBinomio({
                       variant="outline"
                       className="h-8 text-xs"
                       onClick={() => {
-                        setItemParaAjustar({ tipo: "inscripcion", item: ins });
+                        setItemParaAjustar(ins);
                         setNuevoMontoAjuste(c.monto);
                         setMotivoAjuste("");
                         setModalAjustar(true);
@@ -569,7 +519,7 @@ export function FichaBinomio({
                         variant="ghost"
                         className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                         onClick={() => {
-                          setItemParaAnular({ tipo: "inscripcion", item: ins });
+                          setItemParaAnular(ins);
                           setMotivoAnulacionItem("");
                           setModalAnularItem(true);
                         }}
@@ -585,106 +535,40 @@ export function FichaBinomio({
         </div>
       </div>
 
-      {/* 3. Cargos Adicionales */}
-      <div className="rounded-xl border border-borde bg-fondo-tarjeta p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-texto">Cargos Adicionales</h3>
-          {puedeModificar && !binomio.anulado && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (conceptos.length > 0) {
-                  setConceptoIdCargo(conceptos[0].id);
-                  setMontoCargo(conceptos[0].montoSugeridoClp || 0);
-                }
-                setModalCargo(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Agregar cargo
-            </Button>
-          )}
-        </div>
-
-        {binomio.cargos.length === 0 ? (
-          <p className="text-xs text-texto-suave">No hay cargos adicionales asignados a este binomio.</p>
-        ) : (
+      {/* 3. Movimientos de Ingreso Asociados */}
+      {binomio.movimientos && binomio.movimientos.length > 0 && (
+        <div className="rounded-xl border border-borde bg-fondo-tarjeta p-5 shadow-sm space-y-4">
+          <h3 className="text-base font-bold text-texto">Movimientos de Ingreso Asociados</h3>
           <div className="space-y-3">
-            {binomio.cargos.map((cargo: any) => {
-              const c = cargo.calculo || {
-                monto: cargo.montoTotalClp,
-                pagado: 0,
-                saldo: cargo.montoTotalClp,
-                estado: "pendiente",
-              };
-              return (
-                <div
-                  key={cargo.id}
-                  className="p-3 rounded-lg border border-borde bg-fondo flex flex-col md:flex-row md:items-center justify-between gap-3"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-texto">{cargo.concepto.nombre}</span>
-                      {cargo.automatico && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                          Cuota automática
-                        </span>
-                      )}
-                      <EstadoItemBadge estado={c.estado} monto={c.monto} saldo={c.saldo} />
-                      {cargo.ajuste !== null && cargo.ajuste !== undefined && (
-                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                          Ajustado ({formatearMonto(cargo.ajuste)})
-                        </span>
-                      )}
-                    </div>
-                    {cargo.observaciones && (
-                      <p className="text-xs text-texto-suave">{cargo.observaciones}</p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-texto-suave">
-                      <span>Monto: {formatearMonto(c.monto)}</span>
-                      <span>Pagado: {formatearMonto(c.pagado)}</span>
-                      <span>Saldo: {formatearMonto(c.saldo)}</span>
-                    </div>
-                  </div>
-
-                  {puedeModificar && !cargo.anulado && !cargo.retirado && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
-                        onClick={() => {
-                          setItemParaAjustar({ tipo: "cargo", item: cargo });
-                          setNuevoMontoAjuste(c.monto);
-                          setMotivoAjuste("");
-                          setModalAjustar(true);
-                        }}
-                      >
-                        Ajustar
-                      </Button>
-                      {c.pagado === 0 && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => {
-                            setItemParaAnular({ tipo: "cargo", item: cargo });
-                            setMotivoAnulacionItem("");
-                            setModalAnularItem(true);
-                          }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+            {binomio.movimientos.map((mov: any) => (
+              <div
+                key={mov.id}
+                className="p-3 rounded-lg border border-borde bg-fondo flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+              >
+                <div>
+                  <span className="font-semibold text-sm text-texto block">
+                    {mov.descripcion || mov.categoria?.nombre || "Ingreso"}
+                  </span>
+                  <span className="text-texto-suave">
+                    {mov.categoria?.nombre} · {formatearFecha(mov.fecha)}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-emerald-600">
+                    +{formatearMonto(mov.montoClp)}
+                  </span>
+                  <Link
+                    href={`/movimientos/${mov.id}`}
+                    className="text-marca hover:underline text-xs"
+                  >
+                    Ver detalle
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 4. Historial de Pagos y Devoluciones */}
       <div className="rounded-xl border border-borde bg-fondo-tarjeta p-5 shadow-sm space-y-4">
@@ -696,13 +580,6 @@ export function FichaBinomio({
             for (const p of ins.pagos || []) {
               if (!p.anulado) {
                 todosLosPagos.push({ ...p, itemNombre: ins.prueba.nombre });
-              }
-            }
-          }
-          for (const car of binomio.cargos) {
-            for (const p of car.pagos || []) {
-              if (!p.anulado) {
-                todosLosPagos.push({ ...p, itemNombre: car.concepto.nombre });
               }
             }
           }
@@ -801,73 +678,6 @@ export function FichaBinomio({
         </div>
       )}
 
-      {/* MODAL: Agregar Cargo */}
-      {modalCargo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md bg-fondo-tarjeta rounded-xl border border-borde p-6 space-y-4 shadow-xl">
-            <h3 className="text-lg font-bold text-texto">Agregar Cargo al Binomio</h3>
-            <div className="space-y-3">
-              <div>
-                <Label>Concepto</Label>
-                <select
-                  value={conceptoIdCargo}
-                  onChange={(e) => {
-                    setConceptoIdCargo(e.target.value);
-                    const conc = conceptos.find((c) => c.id === e.target.value);
-                    if (conc) setMontoCargo(conc.montoSugeridoClp || 0);
-                  }}
-                  className="w-full h-10 px-3 rounded-md border border-borde bg-fondo text-sm text-texto"
-                >
-                  {conceptos.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre} ({formatearMonto(c.montoSugeridoClp || 0)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label>Monto unitario (CLP)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={montoCargo}
-                  onChange={(e) => setMontoCargo(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <Label>Cantidad</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={cantidadCargo}
-                  onChange={(e) => setCantidadCargo(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <Label>Observaciones (opcional)</Label>
-                <Input
-                  placeholder="Detalles adicionales..."
-                  value={observacionesCargo}
-                  onChange={(e) => setObservacionesCargo(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setModalCargo(false)}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-marca text-white hover:bg-marca/90"
-                onClick={handleAgregarCargo}
-                disabled={procesando}
-              >
-                {procesando ? "Guardando..." : "Agregar Cargo"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: Cambiar Prueba */}
       {modalCambiarPrueba && itemParaCambiarPrueba && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -914,7 +724,7 @@ export function FichaBinomio({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md bg-fondo-tarjeta rounded-xl border border-borde p-6 space-y-4 shadow-xl">
             <h3 className="text-lg font-bold text-texto">
-              Ajustar Monto de {itemParaAjustar.tipo === "inscripcion" ? "Inscripción" : "Cargo"}
+              Ajustar Monto de Inscripción
             </h3>
             <div className="space-y-3">
               <div>
@@ -1101,7 +911,7 @@ export function FichaBinomio({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md bg-fondo-tarjeta rounded-xl border border-borde p-6 space-y-4 shadow-xl">
             <h3 className="text-lg font-bold text-red-600">
-              Anular {itemParaAnular.tipo === "inscripcion" ? "Inscripción" : "Cargo"}
+              Anular Inscripción
             </h3>
             <p className="text-xs text-texto-suave">
               Esta acción anulará el ítem. Solo se puede realizar si no tiene pagos registrados.

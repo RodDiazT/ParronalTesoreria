@@ -351,7 +351,7 @@ export async function ejecutarFusionarClubes(
       data: { clubId: conservadoId, version: { increment: 1 } },
     });
 
-    // Reasignar binomios y cargos de club
+    // Reasignar binomios de club
     const reasig = await reasignarPorFusion(tx, ctx, "club", conservadoId, duplicadoId);
     const binomiosReasignados = { count: reasig.binomios };
 
@@ -980,10 +980,10 @@ export async function ejecutarFusionarJinetes(
       });
     }
 
-    // Reasignar binomios y cargos de jinete con validación de conflictos
+    // Reasignar binomios de jinete con validación de conflictos
     const reasig = await reasignarPorFusion(tx, ctx, "jinete", conservadoId, duplicadoId);
     const binomiosReasignados = { count: reasig.binomios };
-    const cargosReasignados = { count: reasig.cargos };
+    const cargosReasignados = { count: 0 };
 
     // Determinar fecha de nacimiento
     let fnFinal = conservado.fechaNacimiento;

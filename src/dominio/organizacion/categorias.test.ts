@@ -7,10 +7,12 @@ import {
   ejecutarReactivarCategoria,
   ejecutarReordenarCategoria,
   ejecutarObtenerCategoriasSelector,
+  ejecutarEliminarCategoria,
 } from "./categorias";
 import { prisma } from "@/lib/db";
 import { db } from "@/lib/contexto";
 import { Contexto } from "@/lib/permisos";
+import { ejecutarRegistrarMovimiento } from "@/dominio/movimientos/acciones";
 
 describe("Gestión de Categorías", () => {
   let ctxAdmin: Contexto;
@@ -22,11 +24,22 @@ describe("Gestión de Categorías", () => {
     orgId = org.id;
 
     const user = await prisma.usuario.findFirst();
+    const ev = await prisma.evento.findFirst({ where: { organizacionId: orgId, estado: "abierto" } });
     ctxAdmin = {
       usuario: { id: user?.id || "u-admin", correo: user?.correo || "admin@example.com", nombre: "Admin", imagen: null },
       organizacionId: orgId,
       rol: "administrador",
-      evento: null,
+      evento: ev
+        ? {
+            id: ev.id,
+            nombre: ev.nombre,
+            fechaInicio: ev.fechaInicio,
+            fechaTermino: ev.fechaTermino,
+            fechaReferenciaEdad: ev.fechaReferenciaEdad,
+            lugar: ev.lugar,
+            estado: ev.estado as any,
+          }
+        : null,
     };
   });
 
@@ -109,5 +122,154 @@ describe("Gestión de Categorías", () => {
 
     const selectorGasto = await ejecutarObtenerCategoriasSelector(ctxAdmin, "gasto");
     expect(selectorGasto.some((c) => c.claveSistema === "devoluciones")).toBe(false);
+  });
+
+  describe("Eliminación y Reasignación de Categorías", () => {
+    it("elimina categoría sin movimientos (éxito)", async () => {
+      const c = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Sin Movs ${Date.now()}`,
+        tipo: "gasto",
+      });
+      expect(c.exito).toBe(true);
+
+      const res = await ejecutarEliminarCategoria(ctxAdmin, c.categoria!.id);
+      expect(res.exito).toBe(true);
+
+      const enDb = await db(ctxAdmin).categoria.findUnique({ where: { id: c.categoria!.id } });
+      expect(enDb).toBeNull();
+    });
+
+    it("rechaza eliminación de categoría de sistema (claveSistema)", async () => {
+      const catSistema = await db(ctxAdmin).categoria.findFirst({
+        where: { claveSistema: "inscripciones" },
+      });
+      expect(catSistema).toBeDefined();
+
+      const res = await ejecutarEliminarCategoria(ctxAdmin, catSistema!.id);
+      expect(res.exito).toBe(false);
+      expect(res.error).toContain("sistema");
+    });
+
+    it("elimina categoría con movimientos y reasigna a categoría válida (éxito, transaccional)", async () => {
+      const sufijo = Date.now();
+      const catOrigen = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Origen ${sufijo}`,
+        tipo: "gasto",
+      });
+      const catDestino = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Destino ${sufijo}`,
+        tipo: "gasto",
+      });
+
+      const resMov = await ejecutarRegistrarMovimiento(
+        ctxAdmin,
+        {
+          tipo: "gasto",
+          naturaleza: "dinero",
+          montoClp: 15000,
+          fecha: new Date().toISOString().slice(0, 10),
+          fechaPago: new Date().toISOString().slice(0, 10),
+          medioPago: "transferencia",
+          estadoPago: "pagado",
+          categoriaId: catOrigen.categoria!.id,
+          sinRespaldo: true,
+          observacion: "Gasto de prueba para reasignar",
+          claveCliente: `mov-cat-test-${sufijo}`,
+          sinIdentificar: false,
+        },
+        []
+      );
+      expect(resMov.error).toBeUndefined();
+      expect(resMov.exito).toBe(true);
+      const mov = resMov.movimiento!;
+
+      // Si no se pasa reasignarAId, debe fallar indicando que tiene movimientos
+      const resSinDestino = await ejecutarEliminarCategoria(ctxAdmin, catOrigen.categoria!.id);
+      expect(resSinDestino.exito).toBe(false);
+      expect(resSinDestino.error).toContain("asociados");
+
+      // Con categoría de destino válida
+      const resConDestino = await ejecutarEliminarCategoria(
+        ctxAdmin,
+        catOrigen.categoria!.id,
+        catDestino.categoria!.id
+      );
+      expect(resConDestino.exito).toBe(true);
+
+      // Origen eliminada
+      const origenDb = await db(ctxAdmin).categoria.findUnique({ where: { id: catOrigen.categoria!.id } });
+      expect(origenDb).toBeNull();
+
+      // Movimiento ahora apunta a destino
+      const movActualizado = await prisma.movimiento.findUnique({ where: { id: mov.id } });
+      expect(movActualizado?.categoriaId).toBe(catDestino.categoria!.id);
+    });
+
+    it("rechaza reasignación hacia categoría de tipo opuesto o inactiva", async () => {
+      const sufijo = Date.now();
+      const catGasto = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Gasto Orig ${sufijo}`,
+        tipo: "gasto",
+      });
+      const catIngreso = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Ingreso Dest ${sufijo}`,
+        tipo: "ingreso",
+      });
+      const catInactiva = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Inactiva Dest ${sufijo}`,
+        tipo: "gasto",
+      });
+      await ejecutarDesactivarCategoria(ctxAdmin, catInactiva.categoria!.id, catInactiva.categoria!.version);
+
+      const resMov = await ejecutarRegistrarMovimiento(
+        ctxAdmin,
+        {
+          tipo: "gasto",
+          naturaleza: "dinero",
+          montoClp: 12000,
+          fecha: new Date().toISOString().slice(0, 10),
+          fechaPago: new Date().toISOString().slice(0, 10),
+          medioPago: "transferencia",
+          estadoPago: "pagado",
+          categoriaId: catGasto.categoria!.id,
+          sinRespaldo: true,
+          observacion: "Gasto de prueba inactiva",
+          claveCliente: `mov-tipo-opuesto-${sufijo}`,
+          sinIdentificar: false,
+        },
+        []
+      );
+      expect(resMov.exito).toBe(true);
+
+      // Intentar reasignar a ingreso
+      const resOpuesto = await ejecutarEliminarCategoria(
+        ctxAdmin,
+        catGasto.categoria!.id,
+        catIngreso.categoria!.id
+      );
+      expect(resOpuesto.exito).toBe(false);
+      expect(resOpuesto.error).toContain("mismo tipo");
+
+      // Intentar reasignar a inactiva
+      const resInactiva = await ejecutarEliminarCategoria(
+        ctxAdmin,
+        catGasto.categoria!.id,
+        catInactiva.categoria!.id
+      );
+      expect(resInactiva.exito).toBe(false);
+      expect(resInactiva.error).toContain("activa");
+    });
+
+    it("rechaza eliminación por roles no administradores", async () => {
+      const c = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Rol Check ${Date.now()}`,
+        tipo: "gasto",
+      });
+      const ctxAyudante: Contexto = { ...ctxAdmin, rol: "ayudante" };
+
+      await expect(
+        ejecutarEliminarCategoria(ctxAyudante, c.categoria!.id)
+      ).rejects.toThrow("Permiso denegado: rol administrador requerido");
+    });
   });
 });

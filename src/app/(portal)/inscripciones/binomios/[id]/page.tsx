@@ -30,14 +30,10 @@ export default async function FichaBinomioPage({
     notFound();
   }
 
-  const [pruebas, conceptos, clubes, jinetes, caballos, otrosBinomios, estadoCuentaDatos] =
+  const [pruebas, clubes, jinetes, caballos, otrosBinomios, estadoCuentaDatos] =
     await Promise.all([
       db(ctx).prueba.findMany({
         where: { organizacionId: ctx.organizacionId, eventoId: ctx.evento.id, activa: true },
-        orderBy: { orden: "asc" },
-      }),
-      db(ctx).concepto.findMany({
-        where: { organizacionId: ctx.organizacionId, activo: true },
         orderBy: { orden: "asc" },
       }),
       db(ctx).club.findMany({
@@ -80,7 +76,6 @@ export default async function FichaBinomioPage({
       <FichaBinomio
         binomio={binomio}
         pruebas={pruebas}
-        conceptos={conceptos}
         clubes={clubes}
         jinetes={jinetes}
         caballos={caballos}

@@ -43,6 +43,10 @@ interface ListaMovimientosProps {
     fechaHasta?: string;
     mostrarAnulados?: boolean;
     soloMios?: boolean;
+    caballoId?: string;
+    jineteId?: string;
+    clubId?: string;
+    binomioId?: string;
   };
   usuarioActual: {
     id: string;
@@ -473,6 +477,16 @@ export function ListaMovimientos({
                     <Fecha valor={mov.fecha} />
                     <span>·</span>
                     <span className="truncate">{subtitulo}</span>
+                    {mov.caballo && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                        {mov.caballo.nombre}
+                      </span>
+                    )}
+                    {mov.jinete && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                        {mov.jinete.nombre}
+                      </span>
+                    )}
                     {mov.sinRespaldo && (
                       <span className="text-amber-700 font-medium">· Sin respaldo</span>
                     )}

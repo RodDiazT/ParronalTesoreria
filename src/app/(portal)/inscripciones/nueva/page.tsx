@@ -38,7 +38,7 @@ export default async function NuevaInscripcionPage({
 
   const { jineteId, caballoId } = await searchParams;
 
-  const [jinetesRaw, caballos, clubes, pruebas, cuotas] = await Promise.all([
+  const [jinetesRaw, caballos, clubes, pruebas] = await Promise.all([
     db(ctx).jinete.findMany({
       where: { organizacionId: ctx.organizacionId, activo: true },
       include: {
@@ -60,15 +60,6 @@ export default async function NuevaInscripcionPage({
     }),
     db(ctx).prueba.findMany({
       where: { organizacionId: ctx.organizacionId, eventoId: ctx.evento.id, activa: true },
-      orderBy: { orden: "asc" },
-    }),
-    db(ctx).concepto.findMany({
-      where: {
-        organizacionId: ctx.organizacionId,
-        eventoId: ctx.evento.id,
-        aplicaA: "binomio",
-        activo: true,
-      },
       orderBy: { orden: "asc" },
     }),
   ]);
@@ -108,7 +99,6 @@ export default async function NuevaInscripcionPage({
           caballos={caballos}
           clubes={clubes}
           pruebas={pruebas}
-          cuotasBinomio={cuotas}
           evento={ctx.evento}
           preseleccionJineteId={jineteId}
           preseleccionCaballoId={caballoId}

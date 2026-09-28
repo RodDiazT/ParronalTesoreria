@@ -840,4 +840,68 @@ describe("Dominio de Movimientos de Tesorería (Fase 4)", () => {
       expect(resumen.montoReembolsosPendientes).toBeGreaterThanOrEqual(27000);
     });
   });
+
+  describe("Centralización de Ingresos Operativos y Filtro por Caballo", () => {
+    it("permite registrar ingreso con caballoId y categoriaId y verifica reportes filtrados", async () => {
+      const hoy = obtenerFechaHoyChile();
+      const sufijo = Date.now();
+      const club = await prisma.club.create({
+        data: {
+          organizacion: { connect: { id: orgId } },
+          creadoPor: { connect: { id: ctxAdmin1.usuario.id } },
+          nombre: `Club Mov Caballo ${sufijo}`,
+          nombreNormalizado: `club mov caballo ${sufijo}`,
+        },
+      });
+      const caballo = await prisma.caballo.create({
+        data: {
+          organizacion: { connect: { id: orgId } },
+          club: { connect: { id: club.id } },
+          creadoPor: { connect: { id: ctxAdmin1.usuario.id } },
+          nombre: `Caballo Pesebrera ${sufijo}`,
+          nombreNormalizado: `caballo pesebrera ${sufijo}`,
+        },
+      });
+
+      const res = await ejecutarRegistrarMovimiento(
+        ctxAdmin1,
+        {
+          tipo: "ingreso",
+          naturaleza: "dinero",
+          montoClp: 65000,
+          fecha: hoy,
+          fechaPago: hoy,
+          medioPago: "transferencia",
+          nombreOrigen: "Dueño de Caballo",
+          estadoPago: "pagado",
+          categoriaId: categoriaIngresoAuspicioId,
+          contraparteId,
+          caballoId: caballo.id,
+          sinRespaldo: true,
+          observacion: "Pesebrera concurso",
+          claveCliente: `ingreso-caballo-${sufijo}`,
+          sinIdentificar: false,
+        },
+        []
+      );
+
+      expect(res.exito).toBe(true);
+      expect(res.movimiento?.caballoId).toBe(caballo.id);
+
+      // Verificar que los reportes de ingresos filtran adecuadamente por caballo
+      const listado = await listarMovimientos(ctxAdmin1, {
+        tipo: "ingreso",
+        caballoId: caballo.id,
+      });
+
+      expect(listado.movimientos.length).toBeGreaterThan(0);
+      expect(listado.movimientos.every((m) => m.caballoId === caballo.id)).toBe(true);
+      expect(listado.movimientos.some((m) => m.id === res.movimiento?.id)).toBe(true);
+
+      // Limpieza
+      await prisma.movimiento.deleteMany({ where: { caballoId: caballo.id } });
+      await prisma.caballo.delete({ where: { id: caballo.id } });
+      await prisma.club.delete({ where: { id: club.id } });
+    });
+  });
 });

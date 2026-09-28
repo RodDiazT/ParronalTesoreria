@@ -13,6 +13,7 @@ import {
   ejecutarSuprimirDatosUsuario,
   ejecutarCerrarMisSesiones,
   ejecutarResumenPendientesDe,
+  ejecutarActualizarMiPerfil,
 } from "./acciones";
 import { AVISO_PRIVACIDAD_VERSION } from "@/lib/contexto";
 
@@ -489,6 +490,56 @@ describe("src/dominio/acceso/acciones.ts", () => {
         where: { usuarioId: ayudanteId },
       });
       expect(count).toBe(0);
+    });
+  });
+
+  describe("Actualización de Perfil de Usuario", () => {
+    it("actualiza perfil propio con membresía activa (éxito con nombre y teléfono)", async () => {
+      const nuevoNombre = "Nombre Actualizado";
+      const nuevoTelefono = "+56 9 1234 5678";
+      const res = await ejecutarActualizarMiPerfil(ayudanteId, {
+        nombre: nuevoNombre,
+        telefono: nuevoTelefono,
+      });
+
+      expect(res.exito).toBe(true);
+      expect(res.usuario?.nombre).toBe(nuevoNombre);
+      expect(res.usuario?.telefono).toBe(nuevoTelefono);
+
+      const enDb = await prisma.usuario.findUnique({ where: { id: ayudanteId } });
+      expect(enDb?.nombre).toBe(nuevoNombre);
+      expect(enDb?.telefono).toBe(nuevoTelefono);
+    });
+
+    it("rechaza actualización con nombre vacío o menor a 2 caracteres", async () => {
+      const res1 = await ejecutarActualizarMiPerfil(ayudanteId, {
+        nombre: "",
+      });
+      expect(res1.exito).toBe(false);
+      expect(res1.error).toContain("al menos 2 caracteres");
+
+      const res2 = await ejecutarActualizarMiPerfil(ayudanteId, {
+        nombre: "A",
+      });
+      expect(res2.exito).toBe(false);
+      expect(res2.error).toContain("al menos 2 caracteres");
+    });
+
+    it("rechaza actualización si el usuario no tiene membresía aprobada", async () => {
+      const usuarioSinMembresia = await prisma.usuario.create({
+        data: {
+          correo: `sin-membresia-${Date.now()}@club.cl`,
+          nombre: "Sin Membresía",
+        },
+      });
+
+      const res = await ejecutarActualizarMiPerfil(usuarioSinMembresia.id, {
+        nombre: "Nuevo Nombre",
+      });
+      expect(res.exito).toBe(false);
+      expect(res.error).toContain("membresía activa");
+
+      await prisma.usuario.delete({ where: { id: usuarioSinMembresia.id } });
     });
   });
 });

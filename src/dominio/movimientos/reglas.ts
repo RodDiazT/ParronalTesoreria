@@ -66,9 +66,14 @@ export const movimientoRegistroSchema = z.object({
   observacion: z.string().trim().max(500, "Máximo 500 caracteres.").optional().nullable(),
   sinRespaldo: z.boolean().default(false),
   claveCliente: z.string().min(5, "Clave de idempotencia requerida."),
+  binomioId: z.string().optional().nullable(),
+  jineteId: z.string().optional().nullable(),
+  caballoId: z.string().optional().nullable(),
+  clubId: z.string().optional().nullable(),
 });
 
-export type MovimientoRegistroInput = z.infer<typeof movimientoRegistroSchema>;
+export type MovimientoRegistroInput = z.input<typeof movimientoRegistroSchema>;
+export type MovimientoRegistroOutput = z.infer<typeof movimientoRegistroSchema>;
 
 /**
  * Valida integralmente las reglas de negocio del movimiento.
@@ -91,10 +96,10 @@ export function validarReglasMovimiento(
   }
 
   // Si un gasto es pagado por una persona, nace pendiente como reembolso
-  let estadoPago = datos.estadoPago;
-  if (datos.tipo === "gasto" && datos.pagadoPorId) {
-    estadoPago = "pendiente";
-  }
+  let estadoPago: "pagado" | "pendiente" =
+    datos.tipo === "gasto" && datos.pagadoPorId
+      ? "pendiente"
+      : datos.estadoPago ?? "pagado";
 
   // 3. Reglas de fechas
   if (estadoPago === "pagado") {
@@ -214,6 +219,10 @@ export const movimientoEdicionSchema = z.object({
   nombreOrigen: z.string().trim().max(100).optional().nullable(),
   descripcion: z.string().trim().max(140).optional().nullable(),
   observacion: z.string().trim().max(500).optional().nullable(),
+  binomioId: z.string().optional().nullable(),
+  jineteId: z.string().optional().nullable(),
+  caballoId: z.string().optional().nullable(),
+  clubId: z.string().optional().nullable(),
 });
 
 /**

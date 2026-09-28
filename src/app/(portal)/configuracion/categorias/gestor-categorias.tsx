@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ArrowUp, ArrowDown, Edit2, Shield, EyeOff, RotateCcw, ArrowRightLeft } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, Edit2, Shield, EyeOff, RotateCcw, ArrowRightLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
   desactivarCategoria,
   reactivarCategoria,
   reordenarCategoria,
+  eliminarCategoria,
 } from "@/dominio/organizacion/categorias";
 
 export interface CategoriaItem {
@@ -28,6 +29,7 @@ export interface CategoriaItem {
   activa: boolean;
   orden: number;
   version: number;
+  cantidadMovimientos?: number;
 }
 
 interface GestorCategoriasProps {
@@ -49,6 +51,11 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
   // Estados del formulario editar
   const [nombreEditado, setNombreEditado] = useState("");
   const [guardandoEditar, setGuardandoEditar] = useState(false);
+
+  // Estados modal eliminar
+  const [modalEliminar, setModalEliminar] = useState<CategoriaItem | null>(null);
+  const [categoriaDestinoId, setCategoriaDestinoId] = useState("");
+  const [eliminando, setEliminando] = useState(false);
 
   const categoriasFiltradas = categoriasIniciales
     .filter((c) => c.tipo === pestana)
@@ -183,6 +190,31 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
     }
     toast.success(`Categoría movida a ${nuevoTipo}s.`);
     router.refresh();
+  };
+
+  const handleEliminarCategoria = async () => {
+    if (!modalEliminar) return;
+    const cantMov = modalEliminar.cantidadMovimientos || 0;
+    if (cantMov > 0 && !categoriaDestinoId) {
+      toast.error("Debes seleccionar una categoría de destino para reasignar los movimientos.");
+      return;
+    }
+
+    try {
+      setEliminando(true);
+      const res = await eliminarCategoria(modalEliminar.id, categoriaDestinoId || undefined);
+      if (!res.exito) {
+        toast.error(res.error || "No se pudo eliminar la categoría.");
+        return;
+      }
+      toast.success("Categoría eliminada con éxito.");
+      setModalEliminar(null);
+      router.refresh();
+    } catch {
+      toast.error("Ocurrió un error al eliminar la categoría.");
+    } finally {
+      setEliminando(false);
+    }
   };
 
   return (
@@ -329,6 +361,18 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                       >
                         <EyeOff className="h-3.5 w-3.5" />
                       </button>
+
+                      <button
+                        onClick={() => {
+                          setModalEliminar(cat);
+                          setCategoriaDestinoId("");
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 cursor-pointer"
+                        title="Eliminar categoría"
+                        aria-label="Eliminar"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </>
                   )}
                 </div>
@@ -360,15 +404,32 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                   </p>
                 </div>
 
-                <Button
-                  onClick={() => handleReactivar(cat)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-xs"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  <span>Reactivar</span>
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    onClick={() => handleReactivar(cat)}
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>Reactivar</span>
+                  </Button>
+
+                  {!cat.claveSistema && (
+                    <Button
+                      onClick={() => {
+                        setModalEliminar(cat);
+                        setCategoriaDestinoId("");
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700"
+                      title="Eliminar categoría"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -480,6 +541,94 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
             </Button>
           </div>
         </form>
+      </Sheet>
+
+      {/* Modal / Sheet Eliminar Categoría */}
+      <Sheet
+        abierta={Boolean(modalEliminar)}
+        alCerrar={() => setModalEliminar(null)}
+        posicion="centro"
+        titulo="Eliminar categoría"
+        descripcion={modalEliminar?.nombre}
+      >
+        {modalEliminar && (
+          <div className="space-y-4">
+            {(modalEliminar.cantidadMovimientos || 0) === 0 ? (
+              <>
+                <p className="text-sm text-texto">
+                  ¿Estás seguro de eliminar la categoría <strong>«{modalEliminar.nombre}»</strong>? Esta acción no se puede deshacer.
+                </p>
+                <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalEliminar(null)}
+                    disabled={eliminando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleEliminarCategoria}
+                    disabled={eliminando}
+                  >
+                    {eliminando ? "Eliminando..." : "Eliminar"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg text-xs text-amber-800 dark:text-amber-300">
+                  Esta categoría tiene <strong>{modalEliminar.cantidadMovimientos}</strong> movimiento(s) asociado(s). Para eliminarla, selecciona la categoría a la cual deseas reasignarlos:
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="catDestino" className="text-xs font-medium text-texto">Categoría de destino *</Label>
+                  <select
+                    id="catDestino"
+                    value={categoriaDestinoId}
+                    onChange={(e) => setCategoriaDestinoId(e.target.value)}
+                    className="w-full text-sm rounded-md border border-borde bg-superficie px-3 py-2 text-texto focus:outline-none focus:ring-1 focus:ring-acento"
+                  >
+                    <option value="">-- Seleccionar categoría de destino --</option>
+                    {categoriasIniciales
+                      .filter(
+                        (c) =>
+                          c.id !== modalEliminar.id &&
+                          c.tipo === modalEliminar.tipo &&
+                          c.activa
+                      )
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} {c.claveSistema ? "(Sistema)" : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalEliminar(null)}
+                    disabled={eliminando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleEliminarCategoria}
+                    disabled={eliminando || !categoriaDestinoId}
+                  >
+                    {eliminando ? "Reasignando..." : "Reasignar y eliminar"}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </Sheet>
     </div>
   );

@@ -395,7 +395,6 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
         nuevoApoderado: {
           nombre: `Papá Ayudante ${sufijo}`,
           telefono: "+56 9 7766 5544",
-          confirmarAunqueParecido: true,
         },
         relacion: "padre",
       });
@@ -421,7 +420,10 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
 
     it("control de concurrencia optimista por version en editarClub", async () => {
       const sufijo = Date.now().toString().slice(-4);
-      const cRes = await ejecutarCrearClub(ctxAdmin, { nombre: `Club Version ${sufijo}` });
+      const cRes = await ejecutarCrearClub(ctxAdmin, {
+        nombre: `Club Version ${sufijo}`,
+        confirmarAunqueParecido: true,
+      });
       const clubId = cRes.club!.id;
 
       // Edición 1 exitosa (pasa de versión 1 a 2)
@@ -585,7 +587,7 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
 
       // 1. En Listado
       const listaObs = await ejecutarListarParticipantes(ctxObservador, { pestana: "jinetes" });
-      const jineteEnLista = listaObs.jinetes.find((j) => j.id === jRes.jinete!.id);
+      const jineteEnLista = listaObs.jinetes?.find((j) => j.id === jRes.jinete!.id);
       expect(jineteEnLista).toBeDefined();
       expect(jineteEnLista?.fechaNacimiento).toBeNull();
       expect(jineteEnLista?.edad).toBeNull();
@@ -731,7 +733,7 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
       });
 
       const listaPrincipal = await ejecutarListarParticipantes(ctxAdmin, { pestana: "clubes" });
-      const encontrado = listaPrincipal.clubes.some((c) => c.id === cRes.club!.id);
+      const encontrado = listaPrincipal.clubes?.some((c) => c.id === cRes.club!.id);
       expect(encontrado).toBe(false);
     });
   });

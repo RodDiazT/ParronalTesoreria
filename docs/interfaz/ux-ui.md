@@ -119,7 +119,7 @@ Celular                              Computador (≥ 1024 px)
 │ Inicio                    │
 │ Movimientos               │
 │ Inscripciones             │
-│ Participantes             │
+│ Directorio                │
 │── Por revisar ────────────│
 │ Validar                3  │
 │ Inscripciones por form. 2 │  (v1.1)
@@ -143,7 +143,7 @@ Reglas:
 
 | Grupo | Administrador | Ayudante | Observador |
 |---|---|---|---|
-| Principal | Inicio, Movimientos, Inscripciones, Participantes | Igual | Igual |
+| Principal | Inicio, Movimientos, Inscripciones, Directorio | Igual | Igual |
 | Por revisar | Validar · N; Inscripciones por formulario · N (v1.1) | Mis observados · N; Inscripciones por formulario · N (v1.1) | — |
 | Administración | Traspasos, Contrapartes, Importar (v1.1), Usuarios · N, Configuración, Auditoría; en v1.1 se suman Conciliación y Rendición con sus documentos | Traspasos, Contrapartes | Traspasos, Contrapartes |
 | Pie | Comisión, Mi cuenta, Salir | Igual | Igual |

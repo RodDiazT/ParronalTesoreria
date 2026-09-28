@@ -50,20 +50,6 @@ export default async function RetirarBinomioPage({
       }
     }
   }
-  if (!hayPagosPorValidar) {
-    for (const car of binomio.cargos) {
-      for (const p of car.pagos || []) {
-        if (
-          !p.anulado &&
-          (p.movimiento?.estadoValidacion === "por_validar" ||
-            p.movimiento?.estadoValidacion === "observado")
-        ) {
-          hayPagosPorValidar = true;
-          break;
-        }
-      }
-    }
-  }
 
   return (
     <>

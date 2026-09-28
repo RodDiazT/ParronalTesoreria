@@ -51,8 +51,8 @@ export default async function ConfiguracionPage() {
       disponible: true,
     },
     {
-      titulo: "Pruebas y conceptos",
-      descripcion: "Pruebas del concurso, tarifas, cuotas y conceptos adicionales de cobro",
+      titulo: "Pruebas del Concurso",
+      descripcion: "Pruebas del concurso y tarifas de inscripción",
       href: "/configuracion/pruebas",
       icono: Trophy,
       disponible: true,

@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { obtenerDatosMiCuenta } from "@/dominio/acceso/acciones";
 import { ConfigurarEstructura } from "@/components/app/estructura";
-import { ChipEstado } from "@/components/app/estado";
 import { formatearFecha } from "@/lib/presentacion/formato";
 import { AccionesCuenta } from "./acciones-cuenta";
+import { PerfilUsuario } from "./perfil-usuario";
 
 export const metadata = {
   title: "Mi Cuenta · Tesorería",
@@ -35,47 +35,11 @@ export default async function MiCuentaPage() {
       />
 
       <div className="space-y-6">
-        {/* Tarjeta de Perfil Google */}
-        <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-4 shadow-xs">
-          <div className="flex items-center gap-4">
-            {usuario.imagen ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={usuario.imagen}
-                alt=""
-                className="h-14 w-14 rounded-full border border-borde object-cover"
-              />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-acento text-sobre-acento font-bold text-lg">
-                {usuario.nombre?.[0] || usuario.correo[0].toUpperCase()}
-              </div>
-            )}
-            <div>
-              <h2 className="text-base font-bold text-texto">
-                {usuario.nombre || "Usuario"}
-              </h2>
-              <p className="text-xs text-texto-suave font-mono mt-0.5">
-                {usuario.correo}
-              </p>
-              <div className="mt-2">
-                {membresiaActiva ? (
-                  <ChipEstado
-                    tono={
-                      membresiaActiva.rol === "administrador"
-                        ? "listo"
-                        : membresiaActiva.rol === "ayudante"
-                        ? "falta"
-                        : "fuera"
-                    }
-                    texto={`Rol: ${membresiaActiva.rol}`}
-                  />
-                ) : (
-                  <ChipEstado tono="falta" texto="Sin membresía activa" />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Tarjeta de Perfil editable */}
+        <PerfilUsuario
+          usuario={usuario}
+          membresiaActiva={membresiaActiva}
+        />
 
         {/* Información de Cumplimiento y Privacidad */}
         <div className="rounded-2xl border border-borde bg-superficie p-5 space-y-3 shadow-xs">

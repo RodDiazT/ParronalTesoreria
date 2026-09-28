@@ -20,8 +20,8 @@ function revalidarRutasSeguras() {
 }
 
 export interface RepartoItemInput {
-  id: string; // inscripcionId o cargoId
-  tipo: "inscripcion" | "cargo";
+  id: string; // inscripcionId
+  tipo?: "inscripcion" | "cargo";
   montoClp: number;
 }
 
@@ -37,6 +37,22 @@ export interface RegistrarPagoInscripcionesInput {
   reparto: RepartoItemInput[];
 }
 
+export type ResultadoRegistrarPagoInscripciones =
+  | {
+      exito: true;
+      movimiento: any;
+      pagos: any[];
+      reintento: boolean;
+      error?: undefined;
+    }
+  | {
+      exito: false;
+      error: string;
+      movimiento?: undefined;
+      pagos?: undefined;
+      reintento?: undefined;
+    };
+
 /**
  * 3.6 y 5.3: Registra el pago de inscripción, crea el movimiento de ingreso
  * en la categoría de sistema 'inscripciones', valida los saldos de cada ítem
@@ -47,7 +63,7 @@ export async function ejecutarRegistrarPagoInscripciones(
   datos: RegistrarPagoInscripcionesInput,
   archivos: ArchivoEntrada[] = [],
   opciones?: { tx?: any; auditar?: boolean }
-) {
+): Promise<ResultadoRegistrarPagoInscripciones> {
   exigir(ctx, "inscripciones.inscribir");
 
   if (!ctx.evento || ctx.evento.estado !== "abierto") {
@@ -67,11 +83,7 @@ export async function ejecutarRegistrarPagoInscripciones(
   }
 
   for (const item of asignaciones) {
-    if (item.tipo === "inscripcion") {
-      await exigirDeLaOrganizacion(ctx, "inscripcion", item.id);
-    } else {
-      await exigirDeLaOrganizacion(ctx, "cargo", item.id);
-    }
+    await exigirDeLaOrganizacion(ctx, "inscripcion", item.id);
   }
 
   const operacion = async (tx: any) => {
@@ -106,63 +118,33 @@ export async function ejecutarRegistrarPagoInscripciones(
     const pagosCreados = [];
 
     for (const item of asignaciones) {
-      if (item.tipo === "inscripcion") {
-        const ins = await tx.inscripcion.findUnique({
-          where: { id: item.id },
-          include: { pagos: { where: { anulado: false } } },
-        });
+      const ins = await tx.inscripcion.findUnique({
+        where: { id: item.id },
+        include: { pagos: { where: { anulado: false } } },
+      });
 
-        if (!ins || ins.anulado) {
-          throw new Error(`La inscripción '${item.id}' no existe o está anulada.`);
-        }
-
-        const pagadoPreviamente = ins.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
-        const saldoDisponible = Math.max(0, ins.montoClp - pagadoPreviamente);
-
-        if (item.montoClp > saldoDisponible) {
-          throw new Error("El saldo cambió. Por favor recarga el formulario de reparto.");
-        }
-
-        const pago = await tx.pago.create({
-          data: {
-            organizacionId: ctx.organizacionId,
-            movimientoId: movimiento.id,
-            inscripcionId: item.id,
-            montoClp: item.montoClp,
-            creadoPorId: ctx.usuario.id,
-          },
-        });
-
-        pagosCreados.push(pago);
-      } else {
-        const cargo = await tx.cargo.findUnique({
-          where: { id: item.id },
-          include: { pagos: { where: { anulado: false } } },
-        });
-
-        if (!cargo || cargo.anulado) {
-          throw new Error(`El cargo '${item.id}' no existe o está anulado.`);
-        }
-
-        const pagadoPreviamente = cargo.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
-        const saldoDisponible = Math.max(0, cargo.montoClp - pagadoPreviamente);
-
-        if (item.montoClp > saldoDisponible) {
-          throw new Error("El saldo cambió. Por favor recarga el formulario de reparto.");
-        }
-
-        const pago = await tx.pago.create({
-          data: {
-            organizacionId: ctx.organizacionId,
-            movimientoId: movimiento.id,
-            cargoId: item.id,
-            montoClp: item.montoClp,
-            creadoPorId: ctx.usuario.id,
-          },
-        });
-
-        pagosCreados.push(pago);
+      if (!ins || ins.anulado) {
+        throw new Error(`La inscripción '${item.id}' no existe o está anulada.`);
       }
+
+      const pagadoPreviamente = ins.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
+      const saldoDisponible = Math.max(0, ins.montoClp - pagadoPreviamente);
+
+      if (item.montoClp > saldoDisponible) {
+        throw new Error("El saldo cambió. Por favor recarga el formulario de reparto.");
+      }
+
+      const pago = await tx.pago.create({
+        data: {
+          organizacionId: ctx.organizacionId,
+          movimientoId: movimiento.id,
+          inscripcionId: item.id,
+          montoClp: item.montoClp,
+          creadoPorId: ctx.usuario.id,
+        },
+      });
+
+      pagosCreados.push(pago);
     }
 
     if (opciones?.auditar !== false) {
@@ -299,51 +281,27 @@ export async function ejecutarAsignarPorAsignar(
 
       const pagos = [];
       for (const item of asignaciones) {
-        if (item.tipo === "inscripcion") {
-          const ins = await tx.inscripcion.findUnique({
-            where: { id: item.id },
-            include: { pagos: { where: { anulado: false } } },
-          });
-          if (!ins || ins.anulado) throw new Error("Inscripción no encontrada.");
-          const saldo = Math.max(
-            0,
-            ins.montoClp - ins.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
-          );
-          if (item.montoClp > saldo) throw new Error("El saldo de la inscripción cambió.");
+        const ins = await tx.inscripcion.findUnique({
+          where: { id: item.id },
+          include: { pagos: { where: { anulado: false } } },
+        });
+        if (!ins || ins.anulado) throw new Error("Inscripción no encontrada.");
+        const saldo = Math.max(
+          0,
+          ins.montoClp - ins.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
+        );
+        if (item.montoClp > saldo) throw new Error("El saldo de la inscripción cambió.");
 
-          const p = await tx.pago.create({
-            data: {
-              organizacionId: ctx.organizacionId,
-              movimientoId,
-              inscripcionId: item.id,
-              montoClp: item.montoClp,
-              creadoPorId: ctx.usuario.id,
-            },
-          });
-          pagos.push(p);
-        } else {
-          const cargo = await tx.cargo.findUnique({
-            where: { id: item.id },
-            include: { pagos: { where: { anulado: false } } },
-          });
-          if (!cargo || cargo.anulado) throw new Error("Cargo no encontrado.");
-          const saldo = Math.max(
-            0,
-            cargo.montoClp - cargo.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
-          );
-          if (item.montoClp > saldo) throw new Error("El saldo del cargo cambió.");
-
-          const p = await tx.pago.create({
-            data: {
-              organizacionId: ctx.organizacionId,
-              movimientoId,
-              cargoId: item.id,
-              montoClp: item.montoClp,
-              creadoPorId: ctx.usuario.id,
-            },
-          });
-          pagos.push(p);
-        }
+        const p = await tx.pago.create({
+          data: {
+            organizacionId: ctx.organizacionId,
+            movimientoId,
+            inscripcionId: item.id,
+            montoClp: item.montoClp,
+            creadoPorId: ctx.usuario.id,
+          },
+        });
+        pagos.push(p);
       }
 
       await tx.registroAuditoria.create({
@@ -435,51 +393,27 @@ export async function ejecutarCorregirReparto(
       // 2. Crear nuevos pagos
       const pagos = [];
       for (const item of asignaciones) {
-        if (item.tipo === "inscripcion") {
-          const ins = await tx.inscripcion.findUnique({
-            where: { id: item.id },
-            include: { pagos: { where: { anulado: false } } },
-          });
-          if (!ins || ins.anulado) throw new Error("Inscripción no encontrada.");
-          const saldo = Math.max(
-            0,
-            ins.montoClp - ins.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
-          );
-          if (item.montoClp > saldo) throw new Error("El saldo de la inscripción cambió.");
+        const ins = await tx.inscripcion.findUnique({
+          where: { id: item.id },
+          include: { pagos: { where: { anulado: false } } },
+        });
+        if (!ins || ins.anulado) throw new Error("Inscripción no encontrada.");
+        const saldo = Math.max(
+          0,
+          ins.montoClp - ins.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
+        );
+        if (item.montoClp > saldo) throw new Error("El saldo de la inscripción cambió.");
 
-          const p = await tx.pago.create({
-            data: {
-              organizacionId: ctx.organizacionId,
-              movimientoId,
-              inscripcionId: item.id,
-              montoClp: item.montoClp,
-              creadoPorId: ctx.usuario.id,
-            },
-          });
-          pagos.push(p);
-        } else {
-          const cargo = await tx.cargo.findUnique({
-            where: { id: item.id },
-            include: { pagos: { where: { anulado: false } } },
-          });
-          if (!cargo || cargo.anulado) throw new Error("Cargo no encontrado.");
-          const saldo = Math.max(
-            0,
-            cargo.montoClp - cargo.pagos.reduce((a: number, p: any) => a + p.montoClp, 0)
-          );
-          if (item.montoClp > saldo) throw new Error("El saldo del cargo cambió.");
-
-          const p = await tx.pago.create({
-            data: {
-              organizacionId: ctx.organizacionId,
-              movimientoId,
-              cargoId: item.id,
-              montoClp: item.montoClp,
-              creadoPorId: ctx.usuario.id,
-            },
-          });
-          pagos.push(p);
-        }
+        const p = await tx.pago.create({
+          data: {
+            organizacionId: ctx.organizacionId,
+            movimientoId,
+            inscripcionId: item.id,
+            montoClp: item.montoClp,
+            creadoPorId: ctx.usuario.id,
+          },
+        });
+        pagos.push(p);
       }
 
       await tx.registroAuditoria.create({

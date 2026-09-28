@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { db, exigirDeLaOrganizacion, obtenerContexto } from "@/lib/contexto";
-import { Contexto, exigir, puede } from "@/lib/permisos";
+import { Contexto, ErrorPermiso, exigir, puede } from "@/lib/permisos";
 import { normalizarNombre } from "@/lib/utilidades";
 import { revalidatePath } from "next/cache";
 import {
@@ -219,206 +219,143 @@ export async function editarPrueba(
 }
 
 // -------------------------------------------------------------
-// Paso 6.1: Configuración de Conceptos Adicionales
+// Paso 6.1b: Eliminación y Reasignación de Pruebas
 // -------------------------------------------------------------
 
-export interface CrearConceptoInput {
-  nombre: string;
-  aplicaA: "binomio" | "participante";
-  tarifaClp: number;
-  unidad?: string | null;
-  categoriaReferenciaId?: string | null;
-  orden?: number;
-}
-
-export async function ejecutarCrearConcepto(ctx: Contexto, datos: CrearConceptoInput) {
-  exigir(ctx, "configurar");
+export async function ejecutarEliminarPrueba(
+  ctx: Contexto,
+  id: string,
+  reasignarAId?: string
+) {
+  if (ctx.rol !== "administrador") {
+    throw new ErrorPermiso("Permiso denegado: rol administrador requerido");
+  }
 
   if (!ctx.evento || ctx.evento.estado !== "abierto") {
-    return { exito: false, error: "El evento debe estar abierto para configurar conceptos." };
+    return { exito: false, error: "El evento debe estar abierto para eliminar pruebas." };
   }
 
-  const nombreLimpio = datos.nombre.trim();
-  if (nombreLimpio.length < 2 || nombreLimpio.length > 80) {
-    return { exito: false, error: "El nombre del concepto debe tener entre 2 y 80 caracteres." };
-  }
+  await exigirDeLaOrganizacion(ctx, "prueba", id);
 
-  const tarifaVal = tarifaSchema.safeParse(datos.tarifaClp);
-  if (!tarifaVal.success) {
-    return { exito: false, error: "La tarifa debe ser un entero mayor o igual a 0." };
-  }
-
-  const nombreNormalizado = normalizarNombre(nombreLimpio);
-
-  const existente = await db(ctx).concepto.findUnique({
-    where: {
-      eventoId_nombreNormalizado: {
-        eventoId: ctx.evento.id,
-        nombreNormalizado,
+  const prueba = await db(ctx).prueba.findUnique({
+    where: { id },
+    include: {
+      inscripciones: {
+        where: { anulado: false },
+        include: {
+          binomio: {
+            include: {
+              jinete: true,
+              caballo: true,
+            },
+          },
+        },
       },
     },
   });
 
-  if (existente) {
-    return { exito: false, error: "Ya existe un concepto con este nombre en el evento." };
+  if (!prueba || prueba.eventoId !== ctx.evento.id) {
+    return { exito: false, error: "La prueba no existe o no pertenece al evento actual." };
   }
 
-  if (datos.categoriaReferenciaId) {
-    await exigirDeLaOrganizacion(ctx, "categoria", datos.categoriaReferenciaId);
-  }
+  const cantInscripciones = prueba.inscripciones.length;
 
-  let orden = datos.orden;
-  if (orden === undefined) {
-    const maxOrden = await db(ctx).concepto.aggregate({
-      where: { eventoId: ctx.evento.id },
-      _max: { orden: true },
-    });
-    orden = (maxOrden._max.orden ?? 0) + 1;
-  }
-
-  const nuevo = await db(ctx).$transaction(async (tx) => {
-    const c = await tx.concepto.create({
-      data: {
-        organizacionId: ctx.organizacionId,
-        eventoId: ctx.evento!.id,
-        nombre: nombreLimpio,
-        nombreNormalizado,
-        aplicaA: datos.aplicaA,
-        tarifaClp: datos.tarifaClp,
-        unidad: datos.unidad?.trim() || null,
-        categoriaReferenciaId: datos.categoriaReferenciaId || null,
-        orden,
-        creadoPorId: ctx.usuario.id,
-      },
+  if (cantInscripciones === 0) {
+    await db(ctx).$transaction(async (tx) => {
+      await tx.prueba.delete({ where: { id } });
+      await tx.registroAuditoria.create({
+        data: {
+          organizacionId: ctx.organizacionId,
+          usuarioId: ctx.usuario.id,
+          entidad: "Prueba",
+          entidadId: id,
+          accion: "eliminar",
+          antes: prueba as unknown as Prisma.InputJsonValue,
+        },
+      });
     });
 
-    await tx.registroAuditoria.create({
+    revalidarRutasSeguras();
+    return { exito: true };
+  }
+
+  // Caso B: >0 inscripciones asociadas
+  if (!reasignarAId) {
+    return {
+      exito: false,
+      error: `La prueba tiene ${cantInscripciones} inscripciones. Debes seleccionar una prueba de destino para reasignarlas.`,
+    };
+  }
+
+  if (reasignarAId === id) {
+    return {
+      exito: false,
+      error: "La prueba de destino debe ser distinta a la prueba a eliminar.",
+    };
+  }
+
+  const destino = await db(ctx).prueba.findUnique({
+    where: { id: reasignarAId },
+  });
+
+  if (!destino || destino.eventoId !== ctx.evento.id || destino.organizacionId !== ctx.organizacionId) {
+    return {
+      exito: false,
+      error: "La prueba de destino no existe o no pertenece al evento actual.",
+    };
+  }
+
+  // Regla Antiduplicidad:
+  const binomiosOrigen = prueba.inscripciones.map((i) => i.binomioId);
+  const duplicados = await db(ctx).inscripcion.findMany({
+    where: {
+      pruebaId: reasignarAId,
+      binomioId: { in: binomiosOrigen },
+      anulado: false,
+    },
+    include: { binomio: { include: { jinete: true, caballo: true } } },
+  });
+
+  if (duplicados.length > 0) {
+    const nombresDuplicados = duplicados.map(
+      (d) => `${d.binomio.jinete.nombre} / ${d.binomio.caballo.nombre}`
+    );
+    return {
+      exito: false,
+      error: `No se puede reasignar: los siguientes binomios ya están inscritos en la prueba de destino: ${nombresDuplicados.join(", ")}.`,
+    };
+  }
+
+  // Transacción atómica
+  await db(ctx).$transaction([
+    db(ctx).inscripcion.updateMany({
+      where: { pruebaId: id },
+      data: { pruebaId: reasignarAId },
+    }),
+    db(ctx).prueba.delete({ where: { id } }),
+    db(ctx).registroAuditoria.create({
       data: {
         organizacionId: ctx.organizacionId,
         usuarioId: ctx.usuario.id,
-        entidad: "Concepto",
-        entidadId: c.id,
-        accion: "crear",
-        despues: c as unknown as Prisma.InputJsonValue,
-      },
-    });
-
-    return c;
-  });
-
-  revalidarRutasSeguras();
-  return { exito: true, concepto: nuevo };
-}
-
-export async function crearConcepto(datos: CrearConceptoInput) {
-  const ctx = await obtenerContexto();
-  return ejecutarCrearConcepto(ctx, datos);
-}
-
-export async function ejecutarEditarConcepto(
-  ctx: Contexto,
-  id: string,
-  datos: Partial<CrearConceptoInput> & { activo?: boolean },
-  version: number
-) {
-  exigir(ctx, "configurar");
-  await exigirDeLaOrganizacion(ctx, "concepto", id);
-
-  if (!ctx.evento || ctx.evento.estado !== "abierto") {
-    return { exito: false, error: "El evento debe estar abierto para modificar conceptos." };
-  }
-
-  const actual = await db(ctx).concepto.findUnique({
-    where: { id },
-    include: { cargos: { where: { anulado: false } } },
-  });
-  if (!actual) return { exito: false, error: "El concepto no existe." };
-
-  if (actual.version !== version) {
-    return { exito: false, error: "El concepto fue modificado por otro usuario." };
-  }
-
-  // Si ya tiene cargos, no se puede cambiar 'aplicaA' (docs §3.1)
-  if (datos.aplicaA && datos.aplicaA !== actual.aplicaA && actual.cargos.length > 0) {
-    return { exito: false, error: "No se puede cambiar el tipo de cobro ('Se cobra a') de un concepto que ya tiene cargos." };
-  }
-
-  const dataUpdate: Prisma.ConceptoUpdateInput = {
-    version: actual.version + 1,
-  };
-
-  if (datos.nombre !== undefined) {
-    const nombreLimpio = datos.nombre.trim();
-    if (nombreLimpio.length < 2 || nombreLimpio.length > 80) {
-      return { exito: false, error: "El nombre debe tener entre 2 y 80 caracteres." };
-    }
-    const nombreNormalizado = normalizarNombre(nombreLimpio);
-    const existente = await db(ctx).concepto.findFirst({
-      where: {
-        eventoId: ctx.evento.id,
-        nombreNormalizado,
-        id: { not: id },
-      },
-    });
-    if (existente) {
-      return { exito: false, error: "Ya existe otro concepto con este nombre." };
-    }
-    dataUpdate.nombre = nombreLimpio;
-    dataUpdate.nombreNormalizado = nombreNormalizado;
-  }
-
-  if (datos.tarifaClp !== undefined) {
-    const tVal = tarifaSchema.safeParse(datos.tarifaClp);
-    if (!tVal.success) return { exito: false, error: "Tarifa no válida." };
-    dataUpdate.tarifaClp = datos.tarifaClp;
-  }
-
-  if (datos.aplicaA !== undefined) dataUpdate.aplicaA = datos.aplicaA;
-  if (datos.unidad !== undefined) dataUpdate.unidad = datos.unidad?.trim() || null;
-  if (datos.orden !== undefined) dataUpdate.orden = datos.orden;
-  if (datos.activo !== undefined) dataUpdate.activo = datos.activo;
-  if (datos.categoriaReferenciaId !== undefined) {
-    if (datos.categoriaReferenciaId) {
-      await exigirDeLaOrganizacion(ctx, "categoria", datos.categoriaReferenciaId);
-    }
-    dataUpdate.categoriaReferencia = datos.categoriaReferenciaId
-      ? { connect: { id: datos.categoriaReferenciaId } }
-      : { disconnect: true };
-  }
-
-  const actualizado = await db(ctx).$transaction(async (tx) => {
-    const c = await tx.concepto.update({
-      where: { id },
-      data: dataUpdate,
-    });
-
-    await tx.registroAuditoria.create({
-      data: {
-        organizacionId: ctx.organizacionId,
-        usuarioId: ctx.usuario.id,
-        entidad: "Concepto",
+        entidad: "Prueba",
         entidadId: id,
-        accion: "modificar",
-        antes: actual as unknown as Prisma.InputJsonValue,
-        despues: c as unknown as Prisma.InputJsonValue,
+        accion: "eliminar",
+        antes: prueba as unknown as Prisma.InputJsonValue,
+        despues: { reasignadoAId: reasignarAId } as unknown as Prisma.InputJsonValue,
       },
-    });
-
-    return c;
-  });
+    }),
+  ]);
 
   revalidarRutasSeguras();
-  return { exito: true, concepto: actualizado };
+  return { exito: true };
 }
 
-export async function editarConcepto(
-  id: string,
-  datos: Partial<CrearConceptoInput> & { activo?: boolean },
-  version: number
-) {
+export async function eliminarPrueba(id: string, reasignarAId?: string) {
   const ctx = await obtenerContexto();
-  return ejecutarEditarConcepto(ctx, id, datos, version);
+  return ejecutarEliminarPrueba(ctx, id, reasignarAId);
 }
+
+
 
 // -------------------------------------------------------------
 // Paso 6.2: Inscripción de Binomios en Terreno
@@ -439,11 +376,29 @@ export interface InscribirInput {
   importacionId?: string;
 }
 
+export type ResultadoInscribir =
+  | {
+      exito: true;
+      reintento: boolean;
+      binomioId: string;
+      binomio: any;
+      inscripciones: any[];
+      error?: undefined;
+    }
+  | {
+      exito: false;
+      error: string;
+      reintento?: undefined;
+      binomioId?: undefined;
+      binomio?: undefined;
+      inscripciones?: undefined;
+    };
+
 export async function ejecutarInscribir(
   ctx: Contexto,
   datos: InscribirInput,
   opciones?: { tx?: any; auditar?: boolean }
-) {
+): Promise<ResultadoInscribir> {
   exigir(ctx, "inscripciones.inscribir");
 
   if (!ctx.evento || ctx.evento.estado !== "abierto") {
@@ -550,60 +505,7 @@ export async function ejecutarInscribir(
       });
     }
 
-    // 3. Cuota por binomio automática (Conceptos con aplicaA === 'binomio')
-    const conceptosBinomio = await tx.concepto.findMany({
-      where: {
-        organizacionId: ctx.organizacionId,
-        eventoId: ctx.evento!.id,
-        aplicaA: "binomio",
-        activo: true,
-      },
-    });
-
-    for (const c of conceptosBinomio) {
-      const cargoExistente = await tx.cargo.findFirst({
-        where: {
-          organizacionId: ctx.organizacionId,
-          eventoId: ctx.evento!.id,
-          binomioId: binomio.id,
-          conceptoId: c.id,
-          anulado: false,
-        },
-      });
-
-      if (!cargoExistente) {
-        const nuevoCargo = await tx.cargo.create({
-          data: {
-            organizacionId: ctx.organizacionId,
-            eventoId: ctx.evento!.id,
-            conceptoId: c.id,
-            binomioId: binomio.id,
-            automatico: true,
-            cantidad: 1,
-            tarifaClp: c.tarifaClp,
-            precioUnitarioClp: c.tarifaClp,
-            montoClp: c.tarifaClp,
-            claveCliente: `${datos.claveCliente}_cuota_${c.id}`,
-            registradoPorId: ctx.usuario.id,
-          },
-        });
-
-        if (opciones?.auditar !== false) {
-          await tx.registroAuditoria.create({
-            data: {
-              organizacionId: ctx.organizacionId,
-              usuarioId: ctx.usuario.id,
-              entidad: "Cargo",
-              entidadId: nuevoCargo.id,
-              accion: "crear_automatico",
-              despues: nuevoCargo as unknown as Prisma.InputJsonValue,
-            },
-          });
-        }
-      }
-    }
-
-    // 4. Crear cada inscripción en prueba seleccionada
+    // 3. Crear cada inscripción en prueba seleccionada
     const inscripcionesCreadas = [];
 
     for (const item of datos.pruebas) {
@@ -701,143 +603,7 @@ export async function inscribir(datos: InscribirInput) {
   return ejecutarInscribir(ctx, datos);
 }
 
-// -------------------------------------------------------------
-// Paso 6.2: Cargos Adicionales a Jinete o Club (Servicios)
-// -------------------------------------------------------------
 
-export interface AgregarCargoInput {
-  conceptoId: string;
-  binomioId?: string;
-  jineteId?: string;
-  clubId?: string;
-  cantidad: number;
-  precioUnitarioClp?: number;
-  montoClp?: number;
-  descripcion?: string;
-  observaciones?: string;
-  motivoAjuste?: string;
-  claveCliente?: string;
-}
-
-export async function ejecutarAgregarCargo(ctx: Contexto, datos: AgregarCargoInput) {
-  exigir(ctx, "inscripciones.inscribir");
-
-  if (!ctx.evento || ctx.evento.estado !== "abierto") {
-    return { exito: false, error: "El evento debe estar abierto para registrar cobros." };
-  }
-
-  const cantidadVal = cantidadSchema.safeParse(datos.cantidad);
-  if (!cantidadVal.success) {
-    return { exito: false, error: "La cantidad debe ser un entero entre 1 y 999." };
-  }
-
-  // Exactamente uno de los tres destinatarios debe ser provisto
-  const destinatarios = [datos.binomioId, datos.jineteId, datos.clubId].filter(Boolean);
-  if (destinatarios.length !== 1) {
-    return { exito: false, error: "El cargo debe estar asignado exactamente a un binomio, jinete o club." };
-  }
-
-  await exigirDeLaOrganizacion(ctx, "concepto", datos.conceptoId);
-
-  const concepto = await db(ctx).concepto.findUnique({ where: { id: datos.conceptoId } });
-  if (!concepto || !concepto.activo) {
-    return { exito: false, error: "El concepto seleccionado no existe o está inactivo." };
-  }
-
-  if (datos.binomioId) await exigirDeLaOrganizacion(ctx, "binomio", datos.binomioId);
-  if (datos.jineteId) await exigirDeLaOrganizacion(ctx, "jinete", datos.jineteId);
-  if (datos.clubId) await exigirDeLaOrganizacion(ctx, "club", datos.clubId);
-
-  const tarifaClp = concepto.tarifaClp;
-  const precioUnitarioClp =
-    datos.precioUnitarioClp !== undefined
-      ? datos.precioUnitarioClp
-      : datos.montoClp !== undefined
-      ? Math.round(datos.montoClp / Math.max(1, datos.cantidad))
-      : tarifaClp;
-
-  const precioVal = tarifaSchema.safeParse(precioUnitarioClp);
-  if (!precioVal.success) {
-    return { exito: false, error: "Precio unitario no válido." };
-  }
-
-  const montoClp = datos.cantidad * precioUnitarioClp;
-  const huboAjuste = precioUnitarioClp !== tarifaClp;
-
-  if (huboAjuste && (!datos.motivoAjuste || datos.motivoAjuste.trim().length === 0)) {
-    return { exito: false, error: "El motivo de ajuste es obligatorio si cambia el precio unitario." };
-  }
-
-  const avisoPendiente = huboAjuste && !puede(ctx, "inscripciones.administrar");
-  const claveCliente =
-    datos.claveCliente ||
-    `cargo-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  const descripcion = (datos.descripcion || datos.observaciones)?.trim() || null;
-
-  try {
-    const nuevoCargo = await db(ctx).$transaction(async (tx) => {
-      // Idempotencia
-      const existente = await tx.cargo.findFirst({
-        where: {
-          organizacionId: ctx.organizacionId,
-          claveCliente,
-          conceptoId: datos.conceptoId,
-        },
-      });
-
-      if (existente) {
-        if (existente.registradoPorId === ctx.usuario.id) {
-          return existente;
-        }
-        throw new Error("La clave de cliente ya fue utilizada en otro cargo.");
-      }
-
-      const c = await tx.cargo.create({
-        data: {
-          organizacionId: ctx.organizacionId,
-          eventoId: ctx.evento!.id,
-          conceptoId: datos.conceptoId,
-          binomioId: datos.binomioId || null,
-          jineteId: datos.jineteId || null,
-          clubId: datos.clubId || null,
-          automatico: false,
-          cantidad: datos.cantidad,
-          tarifaClp,
-          precioUnitarioClp,
-          montoClp,
-          descripcion,
-          motivoAjuste: huboAjuste ? datos.motivoAjuste?.trim() || null : null,
-          avisoPendiente,
-          claveCliente,
-          registradoPorId: ctx.usuario.id,
-        },
-      });
-
-      await tx.registroAuditoria.create({
-        data: {
-          organizacionId: ctx.organizacionId,
-          usuarioId: ctx.usuario.id,
-          entidad: "Cargo",
-          entidadId: c.id,
-          accion: "crear",
-          despues: c as unknown as Prisma.InputJsonValue,
-        },
-      });
-
-      return c;
-    });
-
-    revalidarRutasSeguras();
-    return { exito: true, cargo: nuevoCargo };
-  } catch (error: any) {
-    return { exito: false, error: error?.message || "No se pudo registrar el cargo." };
-  }
-}
-
-export async function agregarCargo(datos: AgregarCargoInput) {
-  const ctx = await obtenerContexto();
-  return ejecutarAgregarCargo(ctx, datos);
-}
 
 // -------------------------------------------------------------
 // Paso 6.2 y 6.4: Ajustes, Avisos y Cambios Pre-concurso
@@ -931,52 +697,8 @@ export async function ejecutarAjustarItem(
         });
 
         return res;
-      } else {
-        const cargo = await tx.cargo.findUnique({
-          where: { id },
-          include: { pagos: { where: { anulado: false } } },
-        });
-        if (!cargo || cargo.anulado) throw new Error("El cargo no existe o está anulado.");
-        if (version !== undefined && cargo.version !== version) {
-          throw new Error("El cargo fue modificado por otro usuario.");
-        }
-
-        const pagado = cargo.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
-
-        const nuevaCantidad = datos.cantidad !== undefined ? datos.cantidad : cargo.cantidad;
-        const nuevoPrecio = datos.precioUnitarioClp !== undefined ? datos.precioUnitarioClp : cargo.precioUnitarioClp;
-        const nuevoMonto = nuevaCantidad * nuevoPrecio;
-
-        if (nuevoMonto < pagado) {
-          throw new Error(`El monto no puede quedar bajo lo ya pagado ($${pagado}).`);
-        }
-
-        const res = await tx.cargo.update({
-          where: { id },
-          data: {
-            cantidad: nuevaCantidad,
-            precioUnitarioClp: nuevoPrecio,
-            montoClp: nuevoMonto,
-            motivoAjuste: datos.motivo.trim(),
-            avisoPendiente: avisoPendiente || cargo.avisoPendiente,
-            version: cargo.version + 1,
-          },
-        });
-
-        await tx.registroAuditoria.create({
-          data: {
-            organizacionId: ctx.organizacionId,
-            usuarioId: ctx.usuario.id,
-            entidad: "Cargo",
-            entidadId: id,
-            accion: "ajustar_monto",
-            antes: { montoClp: cargo.montoClp, cantidad: cargo.cantidad, precioUnitarioClp: cargo.precioUnitarioClp },
-            despues: { montoClp: nuevoMonto, cantidad: nuevaCantidad, precioUnitarioClp: nuevoPrecio, motivo: datos.motivo.trim() },
-          },
-        });
-
-        return res;
       }
+      throw new Error("Tipo de ítem no válido.");
     });
 
     revalidarRutasSeguras();
@@ -1008,29 +730,22 @@ export async function ejecutarMarcarVisto(ctx: Contexto, tipo: "inscripcion" | "
   try {
     exigir(ctx, "inscripciones.administrar");
 
-    await (tipo === "inscripcion"
-      ? db(ctx).inscripcion.update({
-          where: { id, organizacionId: ctx.organizacionId },
-          data: {
-            avisoPendiente: false,
-            avisoVistoPorId: ctx.usuario.id,
-            avisoVistoEn: new Date(),
-          },
-        })
-      : db(ctx).cargo.update({
-          where: { id, organizacionId: ctx.organizacionId },
-          data: {
-            avisoPendiente: false,
-            avisoVistoPorId: ctx.usuario.id,
-            avisoVistoEn: new Date(),
-          },
-        }));
+    if (tipo === "inscripcion") {
+      await db(ctx).inscripcion.update({
+        where: { id, organizacionId: ctx.organizacionId },
+        data: {
+          avisoPendiente: false,
+          avisoVistoPorId: ctx.usuario.id,
+          avisoVistoEn: new Date(),
+        },
+      });
+    }
 
     await db(ctx).registroAuditoria.create({
       data: {
         organizacionId: ctx.organizacionId,
         usuarioId: ctx.usuario.id,
-        entidad: tipo === "inscripcion" ? "Inscripcion" : "Cargo",
+        entidad: "Inscripcion",
         entidadId: id,
         accion: "marcar_visto",
       },
@@ -1099,40 +814,13 @@ export async function ejecutarRevertirAjuste(
             version: ins.version + 1,
           },
         });
-      } else {
-        const cargo = await tx.cargo.findUnique({
-          where: { id, organizacionId: ctx.organizacionId },
-          include: { concepto: true, pagos: { where: { anulado: false } } },
-        });
-        if (!cargo) throw new Error("Cargo no encontrado.");
-        if (version !== undefined && cargo.version !== version) {
-          throw new Error("El cargo fue modificado por otro usuario.");
-        }
-        const nuevoMonto = cargo.cantidad * cargo.tarifaClp;
-        const pagado = cargo.pagos.reduce((a: number, p: any) => a + p.montoClp, 0);
-        if (nuevoMonto < pagado) {
-          throw new Error("No se puede revertir porque el monto pagado supera la tarifa original.");
-        }
-
-        await tx.cargo.update({
-          where: { id },
-          data: {
-            precioUnitarioClp: cargo.tarifaClp,
-            montoClp: nuevoMonto,
-            motivoAjuste: null,
-            avisoPendiente: false,
-            avisoVistoPorId: ctx.usuario.id,
-            avisoVistoEn: new Date(),
-            version: cargo.version + 1,
-          },
-        });
       }
 
       await tx.registroAuditoria.create({
         data: {
           organizacionId: ctx.organizacionId,
           usuarioId: ctx.usuario.id,
-          entidad: tipo === "inscripcion" ? "Inscripcion" : "Cargo",
+          entidad: "Inscripcion",
           entidadId: id,
           accion: "revertir_ajuste",
           despues: { motivo: motivo.trim() },
@@ -1517,93 +1205,11 @@ export async function ejecutarAnularItem(
           },
         });
 
-        // Regla 3.4: Si se anulan todas las pruebas del binomio y la cuota no tiene pagos,
-        // la cuota se anula sola en la misma transacción.
-        const otrasPruebasVigentes = await tx.inscripcion.count({
-          where: {
-            binomioId: ins.binomioId,
-            anulado: false,
-            id: { not: id },
-          },
-        });
-
-        if (otrasPruebasVigentes === 0) {
-          const cuotasSinPagos = await tx.cargo.findMany({
-            where: {
-              binomioId: ins.binomioId,
-              automatico: true,
-              anulado: false,
-            },
-            include: { pagos: { where: { anulado: false } } },
-          });
-
-          for (const c of cuotasSinPagos) {
-            if (c.pagos.length === 0) {
-              await tx.cargo.update({
-                where: { id: c.id },
-                data: {
-                  anulado: true,
-                  motivoAnulacion: "Anulación automática por quedar sin pruebas vigentes",
-                  anuladoPorId: ctx.usuario.id,
-                  anuladoEn: new Date(),
-                  version: c.version + 1,
-                },
-              });
-            }
-          }
-        }
-
         await tx.registroAuditoria.create({
           data: {
             organizacionId: ctx.organizacionId,
             usuarioId: ctx.usuario.id,
             entidad: "Inscripcion",
-            entidadId: id,
-            accion: "anular",
-            despues: { motivo: motivo.trim() },
-          },
-        });
-      } else {
-        await exigirDeLaOrganizacion(ctx, "cargo", id);
-        const cargo = await tx.cargo.findUnique({
-          where: { id },
-          include: { pagos: { where: { anulado: false } } },
-        });
-        if (!cargo || cargo.anulado) throw new Error("El cargo no existe o ya está anulado.");
-        if (version !== undefined && cargo.version !== version) {
-          throw new Error("El cargo fue modificado por otro usuario.");
-        }
-
-        if (ctx.rol === "administrador") {
-          exigir(ctx, "inscripciones.administrar");
-        } else {
-          exigir(ctx, "inscripciones.inscribir");
-          if (cargo.registradoPorId !== ctx.usuario.id) {
-            throw new Error("Solo puedes anular cargos que tú mismo registraste.");
-          }
-        }
-
-        const pagosVigentes = cargo.pagos.filter((p: any) => !p.anulado);
-        if (pagosVigentes.length > 0) {
-          throw new Error("No se puede anular un cargo con pagos vigentes.");
-        }
-
-        await tx.cargo.update({
-          where: { id },
-          data: {
-            anulado: true,
-            motivoAnulacion: motivo.trim(),
-            anuladoPorId: ctx.usuario.id,
-            anuladoEn: new Date(),
-            version: cargo.version + 1,
-          },
-        });
-
-        await tx.registroAuditoria.create({
-          data: {
-            organizacionId: ctx.organizacionId,
-            usuarioId: ctx.usuario.id,
-            entidad: "Cargo",
             entidadId: id,
             accion: "anular",
             despues: { motivo: motivo.trim() },
@@ -1648,7 +1254,6 @@ export async function ejecutarAnularBinomio(
         where: { id: binomioId },
         include: {
           inscripciones: { where: { anulado: false } },
-          cargos: { where: { anulado: false } },
         },
       });
 
@@ -1657,9 +1262,9 @@ export async function ejecutarAnularBinomio(
         throw new Error("El binomio fue modificado por otro usuario.");
       }
 
-      if (b.inscripciones.length > 0 || b.cargos.length > 0) {
+      if (b.inscripciones.length > 0) {
         throw new Error(
-          "Para anular un binomio, primero debes anular o retirar todas sus pruebas y cargos."
+          "Para anular un binomio, primero debes anular o retirar todas sus pruebas."
         );
       }
 
@@ -1756,12 +1361,7 @@ export async function reasignarPorFusion(
       data: { jineteId: conservadoId, version: { increment: 1 } },
     });
 
-    const cRes = await tx.cargo.updateMany({
-      where: { jineteId: duplicadoId },
-      data: { jineteId: conservadoId, version: { increment: 1 } },
-    });
-
-    return { binomios: bRes.count, cargos: cRes.count };
+    return { binomios: bRes.count, cargos: 0 };
   } else if (entidad === "caballo") {
     const binomiosDuplicado = await tx.binomio.findMany({
       where: {
@@ -1810,12 +1410,7 @@ export async function reasignarPorFusion(
       data: { clubId: conservadoId, version: { increment: 1 } },
     });
 
-    const cRes = await tx.cargo.updateMany({
-      where: { clubId: duplicadoId },
-      data: { clubId: conservadoId, version: { increment: 1 } },
-    });
-
-    return { binomios: bRes.count, cargos: cRes.count };
+    return { binomios: bRes.count, cargos: 0 };
   }
 
   return { binomios: 0, cargos: 0 };

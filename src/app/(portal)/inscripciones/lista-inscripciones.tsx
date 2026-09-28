@@ -24,7 +24,6 @@ import { formatearMonto, formatearFecha } from "@/lib/presentacion/formato";
 interface ListaInscripcionesProps {
   binomios: any[];
   resumenPruebas: any[];
-  cargos: any[];
   porCobrarData: {
     porClub: Array<{
       clubId: string;
@@ -44,7 +43,6 @@ interface ListaInscripcionesProps {
 export function ListaInscripciones({
   binomios,
   resumenPruebas,
-  cargos,
   porCobrarData,
   porAsignarMovimientos,
   retiros,
@@ -152,17 +150,6 @@ export function ListaInscripciones({
           }`}
         >
           Por prueba ({resumenPruebas.length})
-        </button>
-
-        <button
-          onClick={() => cambiarPestana("cargos")}
-          className={`px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-            pestanaActiva === "cargos"
-              ? "border-acento text-acento"
-              : "border-transparent text-texto-suave hover:text-texto"
-          }`}
-        >
-          Cargos ({cargos.length})
         </button>
 
         <button
@@ -347,51 +334,7 @@ export function ListaInscripciones({
         </div>
       )}
 
-      {/* 5. Contenido Pestaña Cargos */}
-      {pestanaActiva === "cargos" && (
-        <div className="divide-y divide-borde/40 border border-borde rounded-2xl bg-superficie/40 overflow-hidden">
-          {cargos.length === 0 ? (
-            <div className="p-8 text-center text-xs text-texto-suave">
-              No hay cargos adicionales registrados en este evento.
-            </div>
-          ) : (
-            cargos.map((c) => {
-              let sujeto = "";
-              if (c.binomio) sujeto = `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre}`;
-              else if (c.jinete) sujeto = c.jinete.nombre;
-              else if (c.club) sujeto = c.club.nombre;
-
-              return (
-                <div
-                  key={c.id}
-                  className="p-3.5 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="min-w-0">
-                    <span className="font-bold text-texto block truncate">
-                      {c.concepto.nombre} {c.cantidad > 1 ? `(x${c.cantidad})` : ""}
-                    </span>
-                    <span className="text-texto-suave truncate block">
-                      {sujeto} · Total: {formatearMonto(c.calculo.monto)}
-                    </span>
-                  </div>
-
-                  <div className="shrink-0 flex items-center gap-2">
-                    <EstadoItemBadge
-                      estado={c.calculo.estado}
-                      monto={c.calculo.monto}
-                      saldo={c.calculo.saldo}
-                      porValidar={c.calculo.porValidar}
-                      becado={c.calculo.becado}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {/* 6. Contenido Pestaña Por Cobrar */}
+      {/* 5. Contenido Pestaña Por Cobrar */}
       {pestanaActiva === "por-cobrar" && (
         <div className="space-y-4">
           {porCobrarData.porClub.length === 0 ? (

@@ -39,7 +39,7 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
 
   beforeAll(async () => {
     // 1. Obtener organización principal
-    let org = await prisma.organizacion.findFirst({
+    let org: any = await prisma.organizacion.findFirst({
       where: { nombre: "Club Ecuestre Parronal Las Marias" },
       include: {
         categorias: true,
@@ -50,12 +50,12 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
       org = await prisma.organizacion.create({
         data: {
           nombre: "Club Ecuestre Parronal Las Marias",
-          rut: "65.123.456-7",
+          nombreNormalizado: "club ecuestre parronal las marias",
           categorias: {
             create: [
-              { nombre: "Aporte inicial", tipo: "ingreso", claveSistema: "aporte_inicial", orden: 1 },
-              { nombre: "Auspicios", tipo: "ingreso", orden: 2 },
-              { nombre: "Alimentos", tipo: "gasto", orden: 3 },
+              { nombre: "Aporte inicial", nombreNormalizado: "aporte inicial", tipo: "ingreso", claveSistema: "aporte_inicial", orden: 1 },
+              { nombre: "Auspicios", nombreNormalizado: "auspicios", tipo: "ingreso", orden: 2 },
+              { nombre: "Alimentos", nombreNormalizado: "alimentos", tipo: "gasto", orden: 3 },
             ],
           },
         },
@@ -93,12 +93,13 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
     eventoOtroId = evOtro.id;
 
     // Categorías
-    let catAporte = org.categorias.find((c) => c.claveSistema === "aporte_inicial" || c.nombre === "Aporte inicial");
+    let catAporte = org.categorias.find((c: any) => c.claveSistema === "aporte_inicial" || c.nombre === "Aporte inicial");
     if (!catAporte) {
       catAporte = await prisma.categoria.create({
         data: {
           organizacionId: orgId,
           nombre: "Aporte inicial",
+          nombreNormalizado: "aporte inicial",
           tipo: "ingreso",
           claveSistema: "aporte_inicial",
           orden: 1,
@@ -107,12 +108,13 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
     }
     categoriaAporteInicialId = catAporte.id;
 
-    let catIngreso = org.categorias.find((c) => c.tipo === "ingreso" && c.claveSistema !== "aporte_inicial");
+    let catIngreso = org.categorias.find((c: any) => c.tipo === "ingreso" && c.claveSistema !== "aporte_inicial");
     if (!catIngreso) {
       catIngreso = await prisma.categoria.create({
         data: {
           organizacionId: orgId,
           nombre: "Auspicios Test",
+          nombreNormalizado: "auspicios test",
           tipo: "ingreso",
           orden: 2,
         },
@@ -120,12 +122,13 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
     }
     categoriaIngresoId = catIngreso.id;
 
-    let catGasto = org.categorias.find((c) => c.tipo === "gasto");
+    let catGasto = org.categorias.find((c: any) => c.tipo === "gasto");
     if (!catGasto) {
       catGasto = await prisma.categoria.create({
         data: {
           organizacionId: orgId,
           nombre: "Gastos Test",
+          nombreNormalizado: "gastos test",
           tipo: "gasto",
           orden: 3,
         },
@@ -223,7 +226,6 @@ describe("Fase 7: Dashboard por Rol y Traspasos entre Medios", () => {
     if (eventoId) {
       await prisma.pago.deleteMany({ where: { organizacionId: orgId, inscripcion: { eventoId } } });
       await prisma.inscripcion.deleteMany({ where: { organizacionId: orgId, eventoId } });
-      await prisma.cargo.deleteMany({ where: { organizacionId: orgId, eventoId } });
       await prisma.binomio.deleteMany({ where: { organizacionId: orgId, eventoId } });
       await prisma.traspaso.deleteMany({ where: { organizacionId: orgId, eventoId } });
       await prisma.movimiento.deleteMany({ where: { organizacionId: orgId, eventoId } });

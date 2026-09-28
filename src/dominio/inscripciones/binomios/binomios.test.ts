@@ -13,10 +13,8 @@ import {
 import {
   ejecutarCrearPrueba,
   ejecutarEditarPrueba,
-  ejecutarCrearConcepto,
-  ejecutarEditarConcepto,
+  ejecutarEliminarPrueba,
   ejecutarInscribir,
-  ejecutarAgregarCargo,
   ejecutarAjustarItem,
   ejecutarMarcarVisto,
   ejecutarRevertirAjuste,
@@ -179,14 +177,12 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       await prisma.devolucion.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.pago.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.movimiento.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.cargo.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.inscripcion.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.binomio.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.jinete.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.caballo.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.club.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.prueba.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.concepto.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.categoria.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.evento.deleteMany({ where: { organizacionId: orgBId } });
       await prisma.membresia.deleteMany({ where: { organizacionId: orgBId } });
@@ -452,24 +448,170 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       ).rejects.toThrow(ErrorPermiso);
     });
 
-    it("permite crear concepto de cobro con porBinomio", async () => {
+  });
+
+  // =============================================================
+  // 2.1 ELIMINACIÓN Y REASIGNACIÓN DE PRUEBAS
+  // =============================================================
+  describe("Eliminación y Reasignación de Pruebas", () => {
+    it("elimina prueba con 0 inscripciones (éxito)", async () => {
       const sufijo = Date.now();
-      const res = await ejecutarCrearConcepto(ctxAdmin, {
-        nombre: `Cuota Fija Test ${sufijo}`,
-        tarifaClp: 15000,
-        aplicaA: "binomio",
+      const pRes = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Vacia ${sufijo}`,
+        tarifaClp: 20000,
+      });
+      expect(pRes.exito).toBe(true);
+      const pruebaId = pRes.prueba!.id;
+
+      const resEliminar = await ejecutarEliminarPrueba(ctxAdmin, pruebaId);
+      expect(resEliminar.exito).toBe(true);
+
+      const pruebaDb = await prisma.prueba.findUnique({ where: { id: pruebaId } });
+      expect(pruebaDb).toBeNull();
+    });
+
+    it("elimina prueba con inscripciones sin especificar destino (error de validación)", async () => {
+      const sufijo = Date.now();
+      const club = await crearClubTest(ctxAdmin, `Club ElimP ${sufijo}`);
+      const jinete = await crearJineteTest(ctxAdmin, `Jinete ElimP ${sufijo}`, club.id);
+      const caballo = await crearCaballoTest(ctxAdmin, `Caballo ElimP ${sufijo}`, club.id);
+
+      const pRes = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Con Ins ${sufijo}`,
+        tarifaClp: 25000,
+      });
+      const pruebaId = pRes.prueba!.id;
+
+      await ejecutarInscribir(ctxAdmin, {
+        jineteId: jinete.id,
+        caballoId: caballo.id,
+        clubId: club.id,
+        pruebas: [{ pruebaId }],
+        claveCliente: `ins-elim-sin-dest-${sufijo}`,
       });
 
-      expect(res.exito).toBe(true);
-      expect(res.concepto?.aplicaA).toBe("binomio");
+      const res = await ejecutarEliminarPrueba(ctxAdmin, pruebaId);
+      expect(res.exito).toBe(false);
+      expect(res.error).toContain("reasignar");
+    });
+
+    it("elimina prueba con inscripciones y reasigna a prueba destino (éxito, transaccional, conserva tarifas y pagos)", async () => {
+      const sufijo = Date.now();
+      const club = await crearClubTest(ctxAdmin, `Club ReasigP ${sufijo}`);
+      const jinete = await crearJineteTest(ctxAdmin, `Jinete ReasigP ${sufijo}`, club.id);
+      const caballo = await crearCaballoTest(ctxAdmin, `Caballo ReasigP ${sufijo}`, club.id);
+
+      const pOrigen = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Origen ${sufijo}`,
+        tarifaClp: 30000,
+      });
+      const pDestino = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Destino ${sufijo}`,
+        tarifaClp: 45000,
+      });
+
+      const insRes = await ejecutarInscribir(ctxAdmin, {
+        jineteId: jinete.id,
+        caballoId: caballo.id,
+        clubId: club.id,
+        pruebas: [{ pruebaId: pOrigen.prueba!.id }],
+        claveCliente: `ins-reasig-p-${sufijo}`,
+      });
+      const inscripcionId = insRes.inscripciones![0].id;
+
+      // Registrar pago
+      await ejecutarRegistrarPagoInscripciones(ctxAdmin, {
+        montoClp: 30000,
+        fecha: "2026-11-20",
+        medioPago: "transferencia",
+        sinRespaldo: true,
+        observacion: "Pago inscripción a reasignar",
+        claveCliente: `pago-reasig-p-${sufijo}`,
+        reparto: [{ id: inscripcionId, tipo: "inscripcion", montoClp: 30000 }],
+      });
+
+      const resEliminar = await ejecutarEliminarPrueba(
+        ctxAdmin,
+        pOrigen.prueba!.id,
+        pDestino.prueba!.id
+      );
+      expect(resEliminar.exito).toBe(true);
+
+      // Origen eliminada
+      const origenDb = await prisma.prueba.findUnique({ where: { id: pOrigen.prueba!.id } });
+      expect(origenDb).toBeNull();
+
+      // Inscripción reasignada a destino conservando tarifaClp y pagos
+      const insDb = await prisma.inscripcion.findUnique({
+        where: { id: inscripcionId },
+        include: { pagos: true },
+      });
+      expect(insDb?.pruebaId).toBe(pDestino.prueba!.id);
+      expect(insDb?.tarifaClp).toBe(30000);
+      expect(insDb?.montoClp).toBe(30000);
+      expect(insDb?.pagos.length).toBe(1);
+      expect(insDb?.pagos[0].montoClp).toBe(30000);
+    });
+
+    it("bloquea por colisión si un binomio ya está inscrito en la prueba destino (error y rollback)", async () => {
+      const sufijo = Date.now();
+      const club = await crearClubTest(ctxAdmin, `Club Colision ${sufijo}`);
+      const jinete = await crearJineteTest(ctxAdmin, `Jinete Colision ${sufijo}`, club.id);
+      const caballo = await crearCaballoTest(ctxAdmin, `Caballo Colision ${sufijo}`, club.id);
+
+      const pOrigen = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Col Orig ${sufijo}`,
+        tarifaClp: 20000,
+      });
+      const pDestino = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Col Dest ${sufijo}`,
+        tarifaClp: 25000,
+      });
+
+      // Inscribir al mismo binomio en AMBAS pruebas
+      await ejecutarInscribir(ctxAdmin, {
+        jineteId: jinete.id,
+        caballoId: caballo.id,
+        clubId: club.id,
+        pruebas: [{ pruebaId: pOrigen.prueba!.id }, { pruebaId: pDestino.prueba!.id }],
+        claveCliente: `ins-colision-${sufijo}`,
+      });
+
+      const res = await ejecutarEliminarPrueba(
+        ctxAdmin,
+        pOrigen.prueba!.id,
+        pDestino.prueba!.id
+      );
+      expect(res.exito).toBe(false);
+      expect(res.error).toContain("ya están inscritos");
+
+      // Rollback: la prueba origen NO debe haber sido eliminada
+      const origenDb = await prisma.prueba.findUnique({ where: { id: pOrigen.prueba!.id } });
+      expect(origenDb).not.toBeNull();
+    });
+
+    it("rechaza eliminación de prueba por usuarios con rol ayudante u observador", async () => {
+      const sufijo = Date.now();
+      const p = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Permisos ${sufijo}`,
+        tarifaClp: 20000,
+      });
+
+      await expect(
+        ejecutarEliminarPrueba(ctxAyudante, p.prueba!.id)
+      ).rejects.toThrow(ErrorPermiso);
+
+      await expect(
+        ejecutarEliminarPrueba(ctxObservador, p.prueba!.id)
+      ).rejects.toThrow(ErrorPermiso);
     });
   });
 
   // =============================================================
-  // 3. INSCRIPCIÓN EN TERRENO Y CARGO AUTOMÁTICO
+  // 3. INSCRIPCIÓN EN TERRENO
   // =============================================================
   describe("Inscripción de Binomios e Idempotencia", () => {
-    it("inscribe binomio, crea cuota fija automática y es idempotente", async () => {
+    it("inscribe binomio y es idempotente", async () => {
       const sufijo = Date.now();
 
       const club = await crearClubTest(ctxAdmin, `Club Inscribir ${sufijo}`);
@@ -495,16 +637,6 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       expect(insRes.exito).toBe(true);
       expect(insRes.binomio).toBeDefined();
       expect(insRes.inscripciones?.length).toBe(1);
-
-      // Si existe concepto porBinomio activo, se carga cuota automática
-      const cargosCreados = await prisma.cargo.findMany({
-        where: { binomioId: insRes.binomio!.id },
-      });
-      for (const cargo of cargosCreados) {
-        if (cargo.automatico) {
-          expect(cargo.binomioId).toBe(insRes.binomio!.id);
-        }
-      }
 
       // Idempotencia: reenviar misma claveCliente no duplica
       const insDuplicada = await ejecutarInscribir(ctxAyudante, {
@@ -657,7 +789,7 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       const libres = await listarPorAsignar(ctxAdmin);
       const movLibre = libres.find((m: any) => m.id === mov!.id);
       expect(movLibre).toBeDefined();
-      expect(movLibre.porAsignar).toBe(10000);
+      expect(movLibre?.porAsignar).toBe(10000);
     });
 
     it("desasignarPago anula el pago y restaura el saldo por asignar en el movimiento", async () => {
@@ -708,7 +840,7 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       // Ahora el movimiento tiene los $30.000 como por asignar
       const libres = await listarPorAsignar(ctxAdmin);
       const movLibre = libres.find((m: any) => m.id === pagoRes.movimiento!.id);
-      expect(movLibre.porAsignar).toBe(30000);
+      expect(movLibre?.porAsignar).toBe(30000);
     });
   });
 

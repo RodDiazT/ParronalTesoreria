@@ -1,23 +1,19 @@
 import { redirect } from "next/navigation";
 import { obtenerContexto, db } from "@/lib/contexto";
-import { exigir, puede } from "@/lib/permisos";
+import { puede } from "@/lib/permisos";
 import { ConfigurarEstructura } from "@/components/app/estructura";
-import { estadoItem } from "@/dominio/inscripciones/binomios/reglas";
 import { FormularioPagoInscripcion } from "./formulario-pago";
+import { estadoItem } from "@/dominio/inscripciones/binomios/reglas";
 
 export const metadata = {
-  title: "Registrar Pago de Inscripciones · Tesorería",
-  description: "Formulario de recaudación de inscripciones y cargos con reparto automático",
+  title: "Registrar Pago · Tesorería",
+  description: "Formulario de recaudación de inscripciones con reparto automático",
 };
 
-export default async function PagoInscripcionesPage({
+export default async function PagoInscripcionPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    binomioId?: string;
-    jineteId?: string;
-    clubId?: string;
-  }>;
+  searchParams: Promise<{ binomioId?: string; jineteId?: string; clubId?: string }>;
 }) {
   const ctx = await obtenerContexto();
   if (!puede(ctx, "inscripciones.inscribir")) {
@@ -34,7 +30,7 @@ export default async function PagoInscripcionesPage({
 
   const params = await searchParams;
 
-  const [inscripcionesRaw, cargosRaw, binomios, jinetes, clubes] = await Promise.all([
+  const [inscripcionesRaw, binomios, jinetes, clubes] = await Promise.all([
     db(ctx).inscripcion.findMany({
       where: {
         organizacionId: ctx.organizacionId,
@@ -51,31 +47,6 @@ export default async function PagoInscripcionesPage({
             club: true,
           },
         },
-        pagos: {
-          where: { anulado: false },
-          include: { movimiento: true },
-        },
-      },
-      orderBy: { creadoEn: "asc" },
-    }),
-    db(ctx).cargo.findMany({
-      where: {
-        organizacionId: ctx.organizacionId,
-        eventoId: ctx.evento.id,
-        anulado: false,
-        retirado: false,
-      },
-      include: {
-        concepto: true,
-        binomio: {
-          include: {
-            jinete: true,
-            caballo: true,
-            club: true,
-          },
-        },
-        jinete: { include: { club: true } },
-        club: true,
         pagos: {
           where: { anulado: false },
           include: { movimiento: true },
@@ -100,7 +71,6 @@ export default async function PagoInscripcionesPage({
     }),
   ]);
 
-  // Filtrar ítems con saldo > 0 y serializar para RepartoPago
   const itemsCobrables: any[] = [];
 
   for (const ins of inscripcionesRaw) {
@@ -109,7 +79,7 @@ export default async function PagoInscripcionesPage({
       itemsCobrables.push({
         id: ins.id,
         tipo: "inscripcion",
-        nombre: ins.prueba.nombre,
+        nombre: `Prueba: ${ins.prueba.nombre}`,
         sujeto: `${ins.binomio.jinete.nombre} / ${ins.binomio.caballo.nombre}`,
         binomioId: ins.binomioId,
         jineteId: ins.binomio.jineteId,
@@ -118,38 +88,6 @@ export default async function PagoInscripcionesPage({
         pagado: calc.pagado,
         saldo: calc.saldo,
         creadoEn: ins.creadoEn.toISOString(),
-      });
-    }
-  }
-
-  for (const c of cargosRaw) {
-    const calc = estadoItem(c, c.pagos);
-    if (calc.saldo > 0) {
-      let sujeto = "";
-      let binomioId = c.binomioId || undefined;
-      let jineteId = c.jineteId || c.binomio?.jineteId || undefined;
-      let clubId = c.clubId || c.binomio?.clubId || c.jinete?.clubId || undefined;
-
-      if (c.binomio) {
-        sujeto = `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre}`;
-      } else if (c.jinete) {
-        sujeto = c.jinete.nombre;
-      } else if (c.club) {
-        sujeto = c.club.nombre;
-      }
-
-      itemsCobrables.push({
-        id: c.id,
-        tipo: "cargo",
-        nombre: c.concepto.nombre,
-        sujeto,
-        binomioId,
-        jineteId,
-        clubId,
-        monto: calc.monto,
-        pagado: calc.pagado,
-        saldo: calc.saldo,
-        creadoEn: c.creadoEn.toISOString(),
       });
     }
   }

@@ -72,58 +72,31 @@ export async function porCobrarInscripciones(
   ctx: Contexto,
   eventoId: string
 ): Promise<number> {
-  const [inscripciones, cargos] = await Promise.all([
-    db(ctx).inscripcion.findMany({
-      where: {
-        organizacionId: ctx.organizacionId,
-        eventoId,
-        anulado: false,
-        retirado: false,
-      },
-      select: {
-        id: true,
-        montoClp: true,
-        pagos: {
-          where: {
-            anulado: false,
-            movimiento: { anulado: false },
-          },
-          select: { montoClp: true },
+  const inscripciones = await db(ctx).inscripcion.findMany({
+    where: {
+      organizacionId: ctx.organizacionId,
+      eventoId,
+      anulado: false,
+      retirado: false,
+    },
+    select: {
+      id: true,
+      montoClp: true,
+      pagos: {
+        where: {
+          anulado: false,
+          movimiento: { anulado: false },
         },
+        select: { montoClp: true },
       },
-    }),
-    db(ctx).cargo.findMany({
-      where: {
-        organizacionId: ctx.organizacionId,
-        eventoId,
-        anulado: false,
-        retirado: false,
-      },
-      select: {
-        id: true,
-        montoClp: true,
-        pagos: {
-          where: {
-            anulado: false,
-            movimiento: { anulado: false },
-          },
-          select: { montoClp: true },
-        },
-      },
-    }),
-  ]);
+    },
+  });
 
   let total = 0;
 
   for (const ins of inscripciones) {
     const pagado = ins.pagos.reduce((acc, p) => acc + p.montoClp, 0);
     const saldo = Math.max(0, ins.montoClp - pagado);
-    total += saldo;
-  }
-
-  for (const car of cargos) {
-    const pagado = car.pagos.reduce((acc, p) => acc + p.montoClp, 0);
-    const saldo = Math.max(0, car.montoClp - pagado);
     total += saldo;
   }
 
@@ -495,14 +468,7 @@ export async function avisosAdministrador(
         anulado: false,
       },
     }),
-    db(ctx).cargo.count({
-      where: {
-        organizacionId: orgId,
-        eventoId,
-        avisoPendiente: true,
-        anulado: false,
-      },
-    }),
+    Promise.resolve(0),
     db(ctx).binomio.findMany({
       where: {
         organizacionId: orgId,

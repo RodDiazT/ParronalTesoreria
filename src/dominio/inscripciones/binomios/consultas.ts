@@ -81,22 +81,12 @@ export async function listarBinomios(
           },
         },
       },
-      cargos: {
-        where: { anulado: false },
-        include: {
-          concepto: true,
-          pagos: {
-            where: { anulado: false },
-            include: { movimiento: true },
-          },
-        },
-      },
     },
     orderBy: { creadoEn: "desc" },
   });
 
   const resultados = binomios.map((b) => {
-    // Calcular estados de inscripciones y cargos
+    // Calcular estados de inscripciones
     const itemsInscripciones = b.inscripciones.map((ins) => {
       const calc = estadoItem(ins, ins.pagos);
       const avisoEdad = avisoEdadPrueba(b.jinete, ins.prueba, ctx.evento!);
@@ -107,15 +97,8 @@ export async function listarBinomios(
       };
     });
 
-    const itemsCargos = b.cargos.map((cargo) => {
-      const calc = estadoItem(cargo, cargo.pagos);
-      return {
-        ...cargo,
-        calculo: calc,
-      };
-    });
-
-    const todosItems = [...itemsInscripciones, ...itemsCargos];
+    const itemsCargos: any[] = [];
+    const todosItems = [...itemsInscripciones];
     const totalMonto = todosItems.reduce((acc, i) => acc + i.calculo.monto, 0);
     const totalPagado = todosItems.reduce((acc, i) => acc + i.calculo.pagado, 0);
     const saldoTotal = Math.max(0, totalMonto - totalPagado);
@@ -207,16 +190,13 @@ export async function fichaBinomio(ctx: Contexto, id: string) {
           },
         },
       },
-      cargos: {
+      movimientos: {
+        where: { anulado: false },
         include: {
-          concepto: true,
-          pagos: {
-            include: { movimiento: true },
-          },
-          devoluciones: {
-            include: { movimiento: true },
-          },
+          categoria: true,
+          registradoPor: { select: { id: true, nombre: true } },
         },
+        orderBy: { creadoEn: "desc" },
       },
     },
   });
@@ -226,11 +206,11 @@ export async function fichaBinomio(ctx: Contexto, id: string) {
   const auditorias = await db(ctx).registroAuditoria.findMany({
     where: {
       organizacionId: ctx.organizacionId,
-      entidad: { in: ["Binomio", "Inscripcion", "Cargo", "Pago", "Devolucion"] },
+      entidad: { in: ["Binomio", "Inscripcion", "Pago", "Devolucion", "Movimiento"] },
       OR: [
         { entidadId: b.id },
         { entidadId: { in: b.inscripciones.map((i) => i.id) } },
-        { entidadId: { in: b.cargos.map((c) => c.id) } },
+        { entidadId: { in: b.movimientos.map((m) => m.id) } },
       ],
     },
     include: { usuario: { select: { id: true, nombre: true } } },
@@ -252,18 +232,7 @@ export async function fichaBinomio(ctx: Contexto, id: string) {
     });
   });
 
-  const cargosConCalculo = b.cargos.map((c) => {
-    const calc = estadoItem(c, c.pagos);
-    const ret = c.retirado ? retiroItem(c, c.pagos, c.devoluciones) : null;
-    const tarifaEsperada = c.cantidad * c.tarifaClp;
-    const ajuste = c.montoClp !== tarifaEsperada ? c.montoClp - tarifaEsperada : null;
-    return ocultarDatosInscripcion(ctx, {
-      ...c,
-      ajuste,
-      calculo: calc,
-      retiro: ret,
-    });
-  });
+  const cargosConCalculo: any[] = [];
 
   const alertas = alertasJinete(b.jinete, ctx.evento!);
 
@@ -329,51 +298,10 @@ export async function resumenPorPrueba(ctx: Contexto) {
 }
 
 /**
- * 3.12: Pestaña Cargos: lista de cuotas y servicios adicionales.
+ * 3.12: Pestaña Cargos: deprecada, retorna lista vacía.
  */
-export async function listarCargos(ctx: Contexto, conceptoId?: string) {
-  exigir(ctx, "inscripciones.ver");
-
-  if (!ctx.evento) return [];
-
-  const where: any = {
-    organizacionId: ctx.organizacionId,
-    eventoId: ctx.evento.id,
-    anulado: false,
-  };
-
-  if (conceptoId) {
-    where.conceptoId = conceptoId;
-  }
-
-  const cargos = await db(ctx).cargo.findMany({
-    where,
-    include: {
-      concepto: true,
-      binomio: {
-        include: {
-          jinete: true,
-          caballo: true,
-        },
-      },
-      jinete: true,
-      club: true,
-      pagos: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-    },
-    orderBy: { creadoEn: "desc" },
-  });
-
-  return cargos.map((c) => {
-    const calc = estadoItem(c, c.pagos);
-    const cargoDTO = {
-      ...c,
-      calculo: calc,
-    };
-    return ocultarDatosInscripcion(ctx, cargoDTO);
-  });
+export async function listarCargos(_ctx: Contexto, _conceptoId?: string) {
+  return [];
 }
 
 /**
@@ -406,30 +334,6 @@ export async function listarPorCobrar(ctx: Contexto) {
     },
   });
 
-  const cargos = await db(ctx).cargo.findMany({
-    where: {
-      organizacionId: ctx.organizacionId,
-      eventoId: ctx.evento.id,
-      anulado: false,
-    },
-    include: {
-      concepto: true,
-      binomio: {
-        include: {
-          jinete: true,
-          caballo: true,
-          club: true,
-        },
-      },
-      jinete: { include: { club: true } },
-      club: true,
-      pagos: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-    },
-  });
-
   const mapaClubes: Record<
     string,
     {
@@ -455,40 +359,6 @@ export async function listarPorCobrar(ctx: Contexto) {
         id: ins.id,
         nombre: ins.prueba.nombre,
         sujeto: `${ins.binomio.jinete.nombre} / ${ins.binomio.caballo.nombre}`,
-        monto: calc.monto,
-        pagado: calc.pagado,
-        saldo: calc.saldo,
-      });
-      mapaClubes[clubId].totalPorCobrar += calc.saldo;
-      totalGeneral += calc.saldo;
-    }
-  }
-
-  for (const c of cargos) {
-    const calc = estadoItem(c, c.pagos);
-    if (calc.saldo > 0) {
-      const club = c.club || c.binomio?.club || c.jinete?.club;
-      const clubId = club ? club.id : "sin_club";
-      const clubNombre = club ? club.nombre : "Sin club asignado";
-
-      if (!mapaClubes[clubId]) {
-        mapaClubes[clubId] = { clubId, clubNombre, items: [], totalPorCobrar: 0 };
-      }
-
-      let sujeto = "";
-      if (c.binomio) {
-        sujeto = `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre}`;
-      } else if (c.jinete) {
-        sujeto = c.jinete.nombre;
-      } else if (c.club) {
-        sujeto = c.club.nombre;
-      }
-
-      mapaClubes[clubId].items.push({
-        tipo: "cargo",
-        id: c.id,
-        nombre: c.concepto.nombre,
-        sujeto,
         monto: calc.monto,
         pagado: calc.pagado,
         saldo: calc.saldo,
@@ -584,35 +454,6 @@ export async function listarRetiros(ctx: Contexto) {
     orderBy: { anuladoEn: "desc" },
   });
 
-  const cargos = await db(ctx).cargo.findMany({
-    where: {
-      organizacionId: ctx.organizacionId,
-      eventoId: ctx.evento.id,
-      retirado: true,
-    },
-    include: {
-      concepto: true,
-      binomio: {
-        include: {
-          jinete: true,
-          caballo: true,
-          club: true,
-        },
-      },
-      jinete: true,
-      club: true,
-      pagos: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-      devoluciones: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-    },
-    orderBy: { anuladoEn: "desc" },
-  });
-
   const lista = [];
 
   for (const ins of inscripciones) {
@@ -629,29 +470,6 @@ export async function listarRetiros(ctx: Contexto) {
         retenido: ret.retenido,
         motivo: ins.motivoAnulacion,
         fechaRetiro: ins.anuladoEn,
-      })
-    );
-  }
-
-  for (const c of cargos) {
-    const ret = retiroItem(c, c.pagos, c.devoluciones);
-    let sujeto = "";
-    if (c.binomio) sujeto = `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre}`;
-    else if (c.jinete) sujeto = c.jinete.nombre;
-    else if (c.club) sujeto = c.club.nombre;
-
-    lista.push(
-      ocultarDatosInscripcion(ctx, {
-        id: c.id,
-        tipo: "cargo",
-        titulo: c.concepto.nombre,
-        sujeto,
-        club: c.club?.nombre || c.binomio?.club?.nombre || "",
-        pagado: ret.pagado,
-        devuelto: ret.devuelto,
-        retenido: ret.retenido,
-        motivo: c.motivoAnulacion,
-        fechaRetiro: c.anuladoEn,
       })
     );
   }
@@ -680,17 +498,10 @@ export async function estadoCuenta(
     anulado: false,
   };
 
-  let whereCargos: any = {
-    organizacionId: ctx.organizacionId,
-    eventoId: ctx.evento.id,
-    anulado: false,
-  };
-
   let nombreSujeto = "";
 
   if (sujeto.binomioId) {
     whereIns.binomioId = sujeto.binomioId;
-    whereCargos.binomioId = sujeto.binomioId;
     const b = await db(ctx).binomio.findUnique({
       where: { id: sujeto.binomioId },
       include: { jinete: true, caballo: true },
@@ -698,18 +509,10 @@ export async function estadoCuenta(
     if (b) nombreSujeto = `${b.jinete.nombre} / ${b.caballo.nombre}`;
   } else if (sujeto.jineteId) {
     whereIns.binomio = { jineteId: sujeto.jineteId };
-    whereCargos.OR = [
-      { jineteId: sujeto.jineteId },
-      { binomio: { jineteId: sujeto.jineteId } },
-    ];
     const j = await db(ctx).jinete.findUnique({ where: { id: sujeto.jineteId } });
     if (j) nombreSujeto = j.nombre;
   } else if (sujeto.clubId) {
     whereIns.binomio = { clubId: sujeto.clubId };
-    whereCargos.OR = [
-      { clubId: sujeto.clubId },
-      { binomio: { clubId: sujeto.clubId } },
-    ];
     const c = await db(ctx).club.findUnique({ where: { id: sujeto.clubId } });
     if (c) nombreSujeto = c.nombre;
   }
@@ -721,23 +524,6 @@ export async function estadoCuenta(
       binomio: {
         include: { jinete: true, caballo: true },
       },
-      pagos: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-    },
-    orderBy: { creadoEn: "asc" },
-  });
-
-  const cargos = await db(ctx).cargo.findMany({
-    where: whereCargos,
-    include: {
-      concepto: true,
-      binomio: {
-        include: { jinete: true, caballo: true },
-      },
-      jinete: true,
-      club: true,
       pagos: {
         where: { anulado: false },
         include: { movimiento: true },
@@ -779,49 +565,6 @@ export async function estadoCuenta(
       becado: calc.becado,
       porValidar: calc.porValidar,
       creadoEn: ins.creadoEn,
-    });
-  }
-
-  for (const c of cargos) {
-    const calc = estadoItem(c, c.pagos);
-    totalMonto += calc.monto;
-    totalPagado += calc.pagado;
-    if (calc.porValidar) {
-      const montosPorValidar = c.pagos
-        .filter(
-          (p) =>
-            !p.anulado &&
-            p.movimiento &&
-            (p.movimiento.estadoValidacion === "por_validar" ||
-              p.movimiento.estadoValidacion === "observado")
-        )
-        .reduce((a, p) => a + p.montoClp, 0);
-      pagosEnRevision += montosPorValidar;
-    }
-
-    let detalle = c.concepto.nombre;
-    if (c.cantidad > 1 && c.concepto.unidad) {
-      detalle += ` (${c.cantidad} ${c.concepto.unidad}s)`;
-    } else if (c.cantidad > 1) {
-      detalle += ` (x${c.cantidad})`;
-    }
-
-    let sujetoItem = "";
-    if (c.binomio) {
-      sujetoItem = `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre} — `;
-    }
-
-    items.push({
-      id: c.id,
-      tipo: "cargo",
-      descripcion: `${sujetoItem}${detalle}`,
-      monto: calc.monto,
-      pagado: calc.pagado,
-      saldo: calc.saldo,
-      estado: calc.estado,
-      becado: calc.becado,
-      porValidar: calc.porValidar,
-      creadoEn: c.creadoEn,
     });
   }
 
@@ -935,29 +678,10 @@ export async function bandejaAjustes(ctx: Contexto) {
     orderBy: { actualizadoEn: "desc" },
   });
 
-  const cargos = await db(ctx).cargo.findMany({
-    where: {
-      organizacionId: ctx.organizacionId,
-      eventoId: ctx.evento.id,
-      avisoPendiente: true,
-      anulado: false,
-    },
-    include: {
-      concepto: true,
-      binomio: {
-        include: { jinete: true, caballo: true },
-      },
-      jinete: true,
-      club: true,
-      registradoPor: { select: { id: true, nombre: true } },
-    },
-    orderBy: { actualizadoEn: "desc" },
-  });
-
   return {
     inscripciones,
-    cargos,
-    total: inscripciones.length + cargos.length,
+    cargos: [],
+    total: inscripciones.length,
   };
 }
 
@@ -973,16 +697,7 @@ export async function contadorAjustes(ctx: Contexto): Promise<number> {
     },
   });
 
-  const countCargos = await db(ctx).cargo.count({
-    where: {
-      organizacionId: ctx.organizacionId,
-      eventoId: ctx.evento.id,
-      avisoPendiente: true,
-      anulado: false,
-    },
-  });
-
-  return countIns + countCargos;
+  return countIns;
 }
 
 /**
@@ -1009,29 +724,10 @@ export async function porCobrarInscripciones(
     },
   });
 
-  const cargos = await db(ctx).cargo.findMany({
-    where: {
-      organizacionId: ctx.organizacionId,
-      eventoId: evId,
-      anulado: false,
-    },
-    include: {
-      pagos: {
-        where: { anulado: false },
-        include: { movimiento: true },
-      },
-    },
-  });
-
   let totalPorCobrar = 0;
 
   for (const ins of inscripciones) {
     const calc = estadoItem(ins, ins.pagos);
-    totalPorCobrar += calc.saldo;
-  }
-
-  for (const c of cargos) {
-    const calc = estadoItem(c, c.pagos);
     totalPorCobrar += calc.saldo;
   }
 

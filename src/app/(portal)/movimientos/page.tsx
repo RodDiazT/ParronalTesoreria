@@ -23,6 +23,10 @@ export default async function MovimientosPage({
     estadoPago?: "pagado" | "pendiente";
     validacion?: "validado" | "por_validar" | "observado";
     naturaleza?: "dinero" | "especie";
+    caballoId?: string;
+    jineteId?: string;
+    clubId?: string;
+    binomioId?: string;
   }>;
 }) {
   const ctx = await obtenerContexto();
@@ -47,6 +51,10 @@ export default async function MovimientosPage({
     estadoPago: params.estadoPago,
     estadoValidacion: params.validacion,
     naturaleza: params.naturaleza,
+    caballoId: params.caballoId,
+    jineteId: params.jineteId,
+    clubId: params.clubId,
+    binomioId: params.binomioId,
   });
 
   const [categorias, contrapartes] = await Promise.all([
@@ -79,6 +87,10 @@ export default async function MovimientosPage({
           fechaHasta: params.fechaHasta,
           mostrarAnulados,
           soloMios,
+          caballoId: params.caballoId,
+          jineteId: params.jineteId,
+          clubId: params.clubId,
+          binomioId: params.binomioId,
         }}
         usuarioActual={{
           id: ctx.usuario.id,

@@ -4,7 +4,6 @@ import { ListaInscripciones } from "./lista-inscripciones";
 import {
   listarBinomios,
   resumenPorPrueba,
-  listarCargos,
   listarPorCobrar,
   listarPorAsignar,
   listarRetiros,
@@ -12,7 +11,7 @@ import {
 
 export const metadata = {
   title: "Inscripciones · Tesorería",
-  description: "Control de binomios, pruebas, cargos y cobranza",
+  description: "Control de binomios, pruebas y cobranza",
 };
 
 export default async function InscripcionesPage() {
@@ -29,7 +28,6 @@ export default async function InscripcionesPage() {
   const [
     binomios,
     resumenPruebas,
-    cargos,
     porCobrarData,
     porAsignarMovimientos,
     retiros,
@@ -38,7 +36,6 @@ export default async function InscripcionesPage() {
   ] = await Promise.all([
     listarBinomios(ctx),
     resumenPorPrueba(ctx),
-    listarCargos(ctx),
     listarPorCobrar(ctx),
     listarPorAsignar(ctx),
     listarRetiros(ctx),
@@ -60,7 +57,6 @@ export default async function InscripcionesPage() {
       <ListaInscripciones
         binomios={binomios}
         resumenPruebas={resumenPruebas}
-        cargos={cargos}
         porCobrarData={porCobrarData}
         porAsignarMovimientos={porAsignarMovimientos}
         retiros={retiros}

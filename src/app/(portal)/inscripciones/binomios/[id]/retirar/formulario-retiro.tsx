@@ -33,28 +33,16 @@ export function FormularioRetiro({
   const [isPending, startTransition] = useTransition();
 
   // Filtrar ítems activos (no anulados y no retirados)
-  const itemsDisponibles: any[] = [
-    ...binomio.inscripciones
-      .filter((i: any) => !i.anulado && !i.retirado)
-      .map((i: any) => ({
-        id: i.id,
-        tipo: "inscripcion" as const,
-        nombre: i.prueba.nombre,
-        monto: i.calculo?.monto ?? i.montoClp,
-        pagado: i.calculo?.pagado ?? 0,
-        saldo: i.calculo?.saldo ?? i.montoClp,
-      })),
-    ...binomio.cargos
-      .filter((c: any) => !c.anulado && !c.retirado)
-      .map((c: any) => ({
-        id: c.id,
-        tipo: "cargo" as const,
-        nombre: c.concepto.nombre,
-        monto: c.calculo?.monto ?? c.montoTotalClp,
-        pagado: c.calculo?.pagado ?? 0,
-        saldo: c.calculo?.saldo ?? c.montoTotalClp,
-      })),
-  ];
+  const itemsDisponibles: any[] = binomio.inscripciones
+    .filter((i: any) => !i.anulado && !i.retirado)
+    .map((i: any) => ({
+      id: i.id,
+      tipo: "inscripcion" as const,
+      nombre: i.prueba.nombre,
+      monto: i.calculo?.monto ?? i.montoClp,
+      pagado: i.calculo?.pagado ?? 0,
+      saldo: i.calculo?.saldo ?? i.montoClp,
+    }));
 
   // Selección de ítems
   const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>(() => {
@@ -196,7 +184,7 @@ export function FormularioRetiro({
       {/* 1. Selección de ítems */}
       <div className="rounded-xl border border-borde bg-fondo-tarjeta p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-texto">Pruebas y Cargos a Retirar</h2>
+          <h2 className="text-base font-bold text-texto">Pruebas a Retirar</h2>
           <div className="flex gap-2 text-xs">
             <button
               type="button"
@@ -218,7 +206,7 @@ export function FormularioRetiro({
 
         {itemsDisponibles.length === 0 ? (
           <p className="text-xs text-texto-suave">
-            No hay pruebas ni cargos activos para retirar en este binomio.
+            No hay pruebas activas para retirar en este binomio.
           </p>
         ) : (
           <div className="space-y-2">

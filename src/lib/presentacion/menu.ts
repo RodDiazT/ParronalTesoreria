@@ -34,7 +34,7 @@ export function itemsMenu(
     { id: "inicio", etiqueta: "Inicio", href: "/" },
     { id: "movimientos", etiqueta: "Movimientos", href: "/movimientos" },
     { id: "inscripciones", etiqueta: "Inscripciones", href: "/inscripciones" },
-    { id: "participantes", etiqueta: "Participantes", href: "/participantes" },
+    { id: "participantes", etiqueta: "Directorio", href: "/participantes" },
   ];
   grupos.push({ items: principal });
 

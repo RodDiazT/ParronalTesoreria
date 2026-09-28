@@ -21,7 +21,7 @@ function revalidarRutasSeguras() {
 
 export interface ItemRetiroInput {
   id: string;
-  tipo: "inscripcion" | "cargo";
+  tipo?: "inscripcion" | "cargo";
 }
 
 export interface DevolucionInput {
@@ -35,6 +35,24 @@ export interface DevolucionInput {
   claveCliente?: string;
 }
 
+export type ResultadoRetirar =
+  | {
+      exito: true;
+      totalPagado: number;
+      montoDevuelto: number;
+      retenido: number;
+      movimientoGasto: any;
+      error?: undefined;
+    }
+  | {
+      exito: false;
+      error: string;
+      totalPagado?: undefined;
+      montoDevuelto?: undefined;
+      retenido?: undefined;
+      movimientoGasto?: undefined;
+    };
+
 /**
  * 3.8 y 5.3: Retiro de binomio o pruebas por administrador.
  * Detiene si hay pagos por validar. Permite devolución total, parcial o retención.
@@ -46,7 +64,7 @@ export async function ejecutarRetirar(
   motivo: string,
   devolucion?: DevolucionInput,
   archivos: ArchivoEntrada[] = []
-) {
+): Promise<ResultadoRetirar> {
   exigir(ctx, "inscripciones.administrar");
 
   if (!motivo || motivo.trim().length === 0) {
@@ -72,111 +90,58 @@ export async function ejecutarRetirar(
       let totalDevueltoPreviamente = 0;
 
       for (const it of items) {
-        if (it.tipo === "inscripcion") {
-          const ins = await tx.inscripcion.findUnique({
-            where: { id: it.id },
-            include: {
-              pagos: {
-                where: { anulado: false },
-                include: { movimiento: true },
-              },
-              devoluciones: {
-                where: { anulado: false },
-                include: { movimiento: true },
-              },
+        const ins = await tx.inscripcion.findUnique({
+          where: { id: it.id },
+          include: {
+            pagos: {
+              where: { anulado: false },
+              include: { movimiento: true },
             },
-          });
-
-          if (!ins || ins.anulado) {
-            throw new Error(`La inscripción '${it.id}' no existe o ya está anulada.`);
-          }
-
-          // Regla 3.8: Detener si hay pagos por validar u observados
-          for (const p of ins.pagos) {
-            if (
-              p.movimiento &&
-              (p.movimiento.estadoValidacion === "por_validar" ||
-                p.movimiento.estadoValidacion === "observado")
-            ) {
-              throw new Error(
-                "Hay un pago por validar en las pruebas seleccionadas. Valídalo o anúlalo primero en Tesorería."
-              );
-            }
-          }
-
-          const pagado = ins.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
-          const devuelto = ins.devoluciones
-            .filter(esDevolucionVigente)
-            .reduce((a: number, d: any) => a + d.montoClp, 0);
-
-          totalPagado += pagado;
-          totalDevueltoPreviamente += devuelto;
-          itemsCargados.push({ id: it.id, tipo: it.tipo, pagado, devuelto });
-
-          // Marcar como retirado y anulado
-          await tx.inscripcion.update({
-            where: { id: it.id },
-            data: {
-              anulado: true,
-              retirado: true,
-              motivoAnulacion: motivo.trim(),
-              anuladoPorId: ctx.usuario.id,
-              anuladoEn: new Date(),
-              version: ins.version + 1,
+            devoluciones: {
+              where: { anulado: false },
+              include: { movimiento: true },
             },
-          });
-        } else {
-          const cargo = await tx.cargo.findUnique({
-            where: { id: it.id },
-            include: {
-              pagos: {
-                where: { anulado: false },
-                include: { movimiento: true },
-              },
-              devoluciones: {
-                where: { anulado: false },
-                include: { movimiento: true },
-              },
-            },
-          });
+          },
+        });
 
-          if (!cargo || cargo.anulado) {
-            throw new Error(`El cargo '${it.id}' no existe o ya está anulado.`);
-          }
-
-          for (const p of cargo.pagos) {
-            if (
-              p.movimiento &&
-              (p.movimiento.estadoValidacion === "por_validar" ||
-                p.movimiento.estadoValidacion === "observado")
-            ) {
-              throw new Error(
-                "Hay un pago por validar en los cargos seleccionados. Valídalo o anúlalo primero."
-              );
-            }
-          }
-
-          const pagado = cargo.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
-          const devuelto = cargo.devoluciones
-            .filter(esDevolucionVigente)
-            .reduce((a: number, d: any) => a + d.montoClp, 0);
-
-          totalPagado += pagado;
-          totalDevueltoPreviamente += devuelto;
-          itemsCargados.push({ id: it.id, tipo: it.tipo, pagado, devuelto });
-
-          await tx.cargo.update({
-            where: { id: it.id },
-            data: {
-              anulado: true,
-              retirado: true,
-              motivoAnulacion: motivo.trim(),
-              anuladoPorId: ctx.usuario.id,
-              anuladoEn: new Date(),
-              version: cargo.version + 1,
-            },
-          });
+        if (!ins || ins.anulado) {
+          throw new Error(`La inscripción '${it.id}' no existe o ya está anulada.`);
         }
+
+        // Regla 3.8: Detener si hay pagos por validar u observados
+        for (const p of ins.pagos) {
+          if (
+            p.movimiento &&
+            (p.movimiento.estadoValidacion === "por_validar" ||
+              p.movimiento.estadoValidacion === "observado")
+          ) {
+            throw new Error(
+              "Hay un pago por validar en las pruebas seleccionadas. Valídalo o anúlalo primero en Tesorería."
+            );
+          }
+        }
+
+        const pagado = ins.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
+        const devuelto = ins.devoluciones
+          .filter(esDevolucionVigente)
+          .reduce((a: number, d: any) => a + d.montoClp, 0);
+
+        totalPagado += pagado;
+        totalDevueltoPreviamente += devuelto;
+        itemsCargados.push({ id: it.id, tipo: it.tipo || "inscripcion", pagado, devuelto });
+
+        // Marcar como retirado y anulado
+        await tx.inscripcion.update({
+          where: { id: it.id },
+          data: {
+            anulado: true,
+            retirado: true,
+            motivoAnulacion: motivo.trim(),
+            anuladoPorId: ctx.usuario.id,
+            anuladoEn: new Date(),
+            version: ins.version + 1,
+          },
+        });
       }
 
       const retenidoInicial = Math.max(0, totalPagado - totalDevueltoPreviamente);
@@ -228,8 +193,7 @@ export async function ejecutarRetirar(
             data: {
               organizacionId: ctx.organizacionId,
               movimientoId: movimientoGasto.id,
-              inscripcionId: it.tipo === "inscripcion" ? it.id : null,
-              cargoId: it.tipo === "cargo" ? it.id : null,
+              inscripcionId: it.id,
               montoClp: parteDevolucion,
               creadoPorId: ctx.usuario.id,
             },
@@ -352,43 +316,23 @@ export async function ejecutarRegistrarDevolucionRetiro(
       const itemsRetirados = [];
 
       for (const it of items) {
-        if (it.tipo === "inscripcion") {
-          const ins = await tx.inscripcion.findUnique({
-            where: { id: it.id },
-            include: {
-              pagos: { where: { anulado: false } },
-              devoluciones: { where: { anulado: false } },
-            },
-          });
-          if (!ins || !ins.retirado) throw new Error("La inscripción no está retirada.");
+        const ins = await tx.inscripcion.findUnique({
+          where: { id: it.id },
+          include: {
+            pagos: { where: { anulado: false } },
+            devoluciones: { where: { anulado: false } },
+          },
+        });
+        if (!ins || !ins.retirado) throw new Error("La inscripción no está retirada.");
 
-          const pagado = ins.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
-          const devuelto = ins.devoluciones
-            .filter(esDevolucionVigente)
-            .reduce((a: number, d: any) => a + d.montoClp, 0);
-          const retenido = Math.max(0, pagado - devuelto);
+        const pagado = ins.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
+        const devuelto = ins.devoluciones
+          .filter(esDevolucionVigente)
+          .reduce((a: number, d: any) => a + d.montoClp, 0);
+        const retenido = Math.max(0, pagado - devuelto);
 
-          retenidoTotal += retenido;
-          itemsRetirados.push({ id: it.id, tipo: it.tipo, retenido });
-        } else {
-          const cargo = await tx.cargo.findUnique({
-            where: { id: it.id },
-            include: {
-              pagos: { where: { anulado: false } },
-              devoluciones: { where: { anulado: false } },
-            },
-          });
-          if (!cargo || !cargo.retirado) throw new Error("El cargo no está retirado.");
-
-          const pagado = cargo.pagos.filter(esPagoVigente).reduce((a: number, p: any) => a + p.montoClp, 0);
-          const devuelto = cargo.devoluciones
-            .filter(esDevolucionVigente)
-            .reduce((a: number, d: any) => a + d.montoClp, 0);
-          const retenido = Math.max(0, pagado - devuelto);
-
-          retenidoTotal += retenido;
-          itemsRetirados.push({ id: it.id, tipo: it.tipo, retenido });
-        }
+        retenidoTotal += retenido;
+        itemsRetirados.push({ id: it.id, tipo: it.tipo || "inscripcion", retenido });
       }
 
       if (devolucion.montoClp > retenidoTotal) {
@@ -428,8 +372,7 @@ export async function ejecutarRegistrarDevolucionRetiro(
           data: {
             organizacionId: ctx.organizacionId,
             movimientoId: gastoDevolucion.id,
-            inscripcionId: it.tipo === "inscripcion" ? it.id : null,
-            cargoId: it.tipo === "cargo" ? it.id : null,
+            inscripcionId: it.id,
             montoClp: parte,
             creadoPorId: ctx.usuario.id,
           },

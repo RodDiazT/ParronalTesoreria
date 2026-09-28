@@ -102,6 +102,10 @@ export async function editarMovimiento(
     nombreOrigen?: string | null;
     descripcion?: string | null;
     observacion?: string | null;
+    binomioId?: string | null;
+    jineteId?: string | null;
+    caballoId?: string | null;
+    clubId?: string | null;
   },
   version: number
 ) {
@@ -183,7 +187,7 @@ export async function obtenerResumenPendientes(usuarioId: string) {
  */
 export async function ejecutarRegistrarMovimiento(
   ctx: Contexto,
-  datos: MovimientoRegistroInput,
+  datosEntrada: MovimientoRegistroInput,
   archivos: ArchivoEntrada[] = []
 ) {
   exigir(ctx, "registrar");
@@ -194,6 +198,15 @@ export async function ejecutarRegistrarMovimiento(
       error: "No hay un evento abierto vigente para registrar movimientos.",
     };
   }
+
+  const parseado = movimientoRegistroSchema.safeParse(datosEntrada);
+  if (!parseado.success) {
+    return {
+      exito: false,
+      error: parseado.error.issues[0]?.message || "Datos del movimiento no válidos.",
+    };
+  }
+  const datos = parseado.data;
 
   // Idempotencia por claveCliente
   const existente = await db(ctx).movimiento.findUnique({
@@ -278,6 +291,12 @@ export async function ejecutarRegistrarMovimiento(
     });
   }
 
+  // Validar referencias operativas opcionales si vienen
+  if (datos.caballoId) await exigirDeLaOrganizacion(ctx, "caballo", datos.caballoId);
+  if (datos.jineteId) await exigirDeLaOrganizacion(ctx, "jinete", datos.jineteId);
+  if (datos.clubId) await exigirDeLaOrganizacion(ctx, "club", datos.clubId);
+  if (datos.binomioId) await exigirDeLaOrganizacion(ctx, "binomio", datos.binomioId);
+
   // Validar reglas de dominio integradas
   const validacionReglas = validarReglasMovimiento(
     datos,
@@ -338,6 +357,10 @@ export async function ejecutarRegistrarMovimiento(
           validadoEn: estadoValidacion === "validado" ? new Date() : null,
           registradoPorId: ctx.usuario.id,
           claveCliente: datos.claveCliente,
+          binomioId: datos.binomioId || null,
+          jineteId: datos.jineteId || null,
+          caballoId: datos.caballoId || null,
+          clubId: datos.clubId || null,
         },
       });
 
@@ -492,6 +515,10 @@ export async function ejecutarEditarMovimiento(
     nombreOrigen?: string | null;
     descripcion?: string | null;
     observacion?: string | null;
+    binomioId?: string | null;
+    jineteId?: string | null;
+    caballoId?: string | null;
+    clubId?: string | null;
   },
   version: number
 ) {
@@ -538,6 +565,19 @@ export async function ejecutarEditarMovimiento(
     await exigirDeLaOrganizacion(ctx, "contraparte", cambios.contraparteId);
   }
 
+  if (cambios.caballoId && cambios.caballoId !== mov.caballoId) {
+    await exigirDeLaOrganizacion(ctx, "caballo", cambios.caballoId);
+  }
+  if (cambios.jineteId && cambios.jineteId !== mov.jineteId) {
+    await exigirDeLaOrganizacion(ctx, "jinete", cambios.jineteId);
+  }
+  if (cambios.clubId && cambios.clubId !== mov.clubId) {
+    await exigirDeLaOrganizacion(ctx, "club", cambios.clubId);
+  }
+  if (cambios.binomioId && cambios.binomioId !== mov.binomioId) {
+    await exigirDeLaOrganizacion(ctx, "binomio", cambios.binomioId);
+  }
+
   const validado = movimientoEdicionSchema.safeParse({
     id,
     version,
@@ -569,6 +609,10 @@ export async function ejecutarEditarMovimiento(
     contraparteId: mov.contraparteId,
     descripcion: mov.descripcion,
     observacion: mov.observacion,
+    binomioId: mov.binomioId,
+    jineteId: mov.jineteId,
+    caballoId: mov.caballoId,
+    clubId: mov.clubId,
   };
 
   const despues = {
@@ -581,6 +625,10 @@ export async function ejecutarEditarMovimiento(
     contraparteId: cambios.contraparteId || null,
     descripcion: cambios.descripcion || null,
     observacion: cambios.observacion || null,
+    binomioId: cambios.binomioId !== undefined ? cambios.binomioId : mov.binomioId,
+    jineteId: cambios.jineteId !== undefined ? cambios.jineteId : mov.jineteId,
+    caballoId: cambios.caballoId !== undefined ? cambios.caballoId : mov.caballoId,
+    clubId: cambios.clubId !== undefined ? cambios.clubId : mov.clubId,
   };
 
   const actualizado = await db(ctx).$transaction(async (tx) => {
@@ -1373,6 +1421,10 @@ export async function listarMovimientos(
     naturaleza?: "dinero" | "especie";
     mostrarAnulados?: boolean;
     soloMios?: boolean;
+    caballoId?: string;
+    jineteId?: string;
+    clubId?: string;
+    binomioId?: string;
   }
 ) {
   const where: Prisma.MovimientoWhereInput = {
@@ -1430,6 +1482,10 @@ export async function listarMovimientos(
   if (filtros.estadoValidacion) where.estadoValidacion = filtros.estadoValidacion;
   if (filtros.naturaleza) where.naturaleza = filtros.naturaleza;
   if (filtros.soloMios) where.registradoPorId = ctx.usuario.id;
+  if (filtros.caballoId) where.caballoId = filtros.caballoId;
+  if (filtros.jineteId) where.jineteId = filtros.jineteId;
+  if (filtros.clubId) where.clubId = filtros.clubId;
+  if (filtros.binomioId) where.binomioId = filtros.binomioId;
 
   if (filtros.fechaDesde || filtros.fechaHasta) {
     where.fecha = {};
@@ -1451,6 +1507,10 @@ export async function listarMovimientos(
           pagadoPor: { select: { id: true, nombre: true } },
           registradoPor: { select: { id: true, nombre: true } },
           respaldos: { where: { anulado: false } },
+          caballo: true,
+          jinete: true,
+          club: true,
+          binomio: true,
         },
         orderBy: [{ fecha: "desc" }, { creadoEn: "desc" }],
       }),

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Rol, EstadoMembresia } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -974,4 +975,88 @@ export async function obtenerExportacionDatos(usuarioId: string) {
     },
   });
 }
+
+// ============================================================================
+// Edición de Perfil de Usuario (§3.4)
+// ============================================================================
+
+const esquemaActualizarPerfil = z.object({
+  nombre: z
+    .string({ required_error: "El nombre es obligatorio." })
+    .trim()
+    .min(2, "El nombre debe tener al menos 2 caracteres.")
+    .max(120, "El nombre no puede tener más de 120 caracteres."),
+  telefono: z
+    .string()
+    .trim()
+    .max(30, "El teléfono no puede tener más de 30 caracteres.")
+    .optional()
+    .nullable(),
+});
+
+export type ActualizarPerfilInput = z.infer<typeof esquemaActualizarPerfil>;
+
+export async function ejecutarActualizarMiPerfil(
+  usuarioId: string,
+  datos: { nombre: string; telefono?: string | null }
+) {
+  const parseado = esquemaActualizarPerfil.safeParse(datos);
+  if (!parseado.success) {
+    return {
+      exito: false,
+      error: parseado.error.errors[0]?.message || "Datos de perfil no válidos.",
+    };
+  }
+
+  // 1. Verificar usuario
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: usuarioId },
+    include: {
+      membresias: {
+        where: { estado: "activa" },
+      },
+    },
+  });
+
+  if (!usuario) {
+    return { exito: false, error: "Usuario no encontrado." };
+  }
+
+  // 2. Verificar membresía activa (Regla 3.4 §2: Si está en estado solicitada o revocada, o no tiene, rechazar con 403)
+  if (!usuario.membresias || usuario.membresias.length === 0) {
+    return {
+      exito: false,
+      error: "No tienes una membresía activa para editar tu perfil.",
+      codigo: 403,
+    };
+  }
+
+  const { nombre, telefono } = parseado.data;
+
+  const actualizado = await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: {
+      nombre,
+      telefono: telefono && telefono.length > 0 ? telefono : null,
+    },
+  });
+
+  try {
+    revalidatePath("/mi-cuenta");
+    revalidatePath("/", "layout");
+  } catch {
+    // Entorno de pruebas sin Next.js
+  }
+
+  return { exito: true, usuario: actualizado };
+}
+
+export async function actualizarMiPerfil(datos: { nombre: string; telefono?: string | null }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { exito: false, error: "Debes iniciar sesión para actualizar tu perfil." };
+  }
+  return ejecutarActualizarMiPerfil(session.user.id, datos);
+}
+
 

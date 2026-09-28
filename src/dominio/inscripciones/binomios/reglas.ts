@@ -19,7 +19,7 @@ export interface ItemCobroBase {
   montoClp: number;
   anulado: boolean;
   retirado: boolean;
-  creadoEn: Date;
+  creadoEn?: Date;
 }
 
 export interface PagoVigenteLike {
@@ -27,8 +27,8 @@ export interface PagoVigenteLike {
   montoClp: number;
   anulado: boolean;
   movimiento?: {
-    anulado: boolean;
-    estadoValidacion: "por_validar" | "validado" | "observado";
+    anulado?: boolean;
+    estadoValidacion?: "por_validar" | "validado" | "observado" | string;
   } | null;
 }
 
@@ -37,7 +37,8 @@ export interface DevolucionVigenteLike {
   montoClp: number;
   anulado: boolean;
   movimiento?: {
-    anulado: boolean;
+    anulado?: boolean;
+    estadoValidacion?: string;
   } | null;
 }
 

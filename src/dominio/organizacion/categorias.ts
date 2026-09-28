@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { TipoCategoria } from "@prisma/client";
+import { Prisma, TipoCategoria } from "@prisma/client";
 import { obtenerContexto, db, registrarAuditoria } from "@/lib/contexto";
 import { Contexto, exigir } from "@/lib/permisos";
 import { normalizarNombre } from "@/lib/utilidades";
@@ -445,3 +445,131 @@ export async function obtenerCategoriasSelector(tipo: TipoCategoria) {
   const ctx = await obtenerContexto();
   return ejecutarObtenerCategoriasSelector(ctx, tipo);
 }
+
+export async function ejecutarEliminarCategoria(
+  ctx: Contexto,
+  id: string,
+  reasignarAId?: string
+) {
+  if (ctx.rol !== "administrador") {
+    throw new Error("Permiso denegado: rol administrador requerido");
+  }
+
+  const categoria = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!categoria || categoria.organizacionId !== ctx.organizacionId) {
+    return { exito: false, error: "Categoría no encontrada." };
+  }
+
+  if (categoria.claveSistema !== null) {
+    return {
+      exito: false,
+      error: "Las categorías del sistema están protegidas y no pueden ser eliminadas.",
+    };
+  }
+
+  const movimientosCount = await db(ctx).movimiento.count({
+    where: { categoriaId: id },
+  });
+
+  if (movimientosCount === 0) {
+    await db(ctx).$transaction(async (tx) => {
+      await tx.categoria.delete({ where: { id } });
+      await tx.registroAuditoria.create({
+        data: {
+          organizacionId: ctx.organizacionId,
+          usuarioId: ctx.usuario.id,
+          entidad: "Categoria",
+          entidadId: id,
+          accion: "eliminar",
+          antes: categoria as unknown as Prisma.InputJsonValue,
+        },
+      });
+    });
+
+    try {
+      revalidatePath("/configuracion/categorias");
+    } catch {
+      // Test environment
+    }
+    return { exito: true };
+  }
+
+  // Caso B: >0 movimientos registrados
+  if (!reasignarAId) {
+    return {
+      exito: false,
+      error: `La categoría tiene ${movimientosCount} movimientos asociados. Debes seleccionar una categoría de destino para reasignarlos.`,
+    };
+  }
+
+  if (reasignarAId === id) {
+    return {
+      exito: false,
+      error: "La categoría de destino debe ser distinta a la categoría a eliminar.",
+    };
+  }
+
+  const destino = await db(ctx).categoria.findUnique({
+    where: { id: reasignarAId },
+  });
+
+  if (!destino || destino.organizacionId !== ctx.organizacionId) {
+    return {
+      exito: false,
+      error: "La categoría de destino no existe o no pertenece a la organización.",
+    };
+  }
+
+  if (destino.tipo !== categoria.tipo) {
+    return {
+      exito: false,
+      error: `La categoría de destino debe ser del mismo tipo (${categoria.tipo}).`,
+    };
+  }
+
+  if (!destino.activa) {
+    return {
+      exito: false,
+      error: "La categoría de destino debe estar activa.",
+    };
+  }
+
+  await db(ctx).$transaction([
+    db(ctx).movimiento.updateMany({
+      where: { categoriaId: id },
+      data: { categoriaId: reasignarAId },
+    }),
+    db(ctx).categoria.delete({ where: { id } }),
+    db(ctx).registroAuditoria.create({
+      data: {
+        organizacionId: ctx.organizacionId,
+        usuarioId: ctx.usuario.id,
+        entidad: "Categoria",
+        entidadId: id,
+        accion: "eliminar",
+        antes: categoria as unknown as Prisma.InputJsonValue,
+        despues: { reasignadoAId: reasignarAId } as unknown as Prisma.InputJsonValue,
+      },
+    }),
+  ]);
+
+  try {
+    revalidatePath("/configuracion/categorias");
+  } catch {
+    // Test environment
+  }
+  return { exito: true };
+}
+
+export async function eliminarCategoria(id: string, reasignarAId?: string) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarEliminarCategoria(ctx, id, reasignarAId);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+

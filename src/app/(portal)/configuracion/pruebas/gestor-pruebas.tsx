@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trophy, Tag, EyeOff, RotateCcw } from "lucide-react";
+import { Plus, Edit2, Trophy, EyeOff, RotateCcw, Trash2, AlertTriangle, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,17 @@ import { formatearMonto } from "@/lib/presentacion/formato";
 import {
   crearPrueba,
   editarPrueba,
-  crearConcepto,
-  editarConcepto,
+  eliminarPrueba,
 } from "@/dominio/inscripciones/binomios/acciones";
+
+export interface InscripcionPruebaItem {
+  id: string;
+  binomioId: string;
+  binomio: {
+    jinete: { nombre: string };
+    caballo: { nombre: string };
+  };
+}
 
 export interface PruebaConfigItem {
   id: string;
@@ -25,35 +33,21 @@ export interface PruebaConfigItem {
   orden: number;
   activa: boolean;
   version: number;
-}
-
-export interface ConceptoConfigItem {
-  id: string;
-  nombre: string;
-  aplicaA: "binomio" | "participante";
-  tarifaClp: number;
-  unidad: string | null;
-  categoriaReferenciaId: string | null;
-  orden: number;
-  activo: boolean;
-  version: number;
+  inscripciones?: InscripcionPruebaItem[];
 }
 
 interface GestorPruebasProps {
   pruebasIniciales: PruebaConfigItem[];
-  conceptosIniciales: ConceptoConfigItem[];
 }
 
-export function GestorPruebas({
-  pruebasIniciales,
-  conceptosIniciales,
-}: GestorPruebasProps) {
+export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
   const router = useRouter();
-  const [pestana, setPestana] = useState<"pruebas" | "conceptos">("pruebas");
 
   // Modales
   const [modalPrueba, setModalPrueba] = useState<PruebaConfigItem | null | "nuevo">(null);
-  const [modalConcepto, setModalConcepto] = useState<ConceptoConfigItem | null | "nuevo">(null);
+  const [modalEliminar, setModalEliminar] = useState<PruebaConfigItem | null>(null);
+  const [pruebaDestinoId, setPruebaDestinoId] = useState("");
+  const [eliminando, setEliminando] = useState(false);
 
   // Formulario Prueba
   const [nombrePrueba, setNombrePrueba] = useState("");
@@ -62,14 +56,6 @@ export function GestorPruebas({
   const [edadMax, setEdadMax] = useState("");
   const [guardandoPrueba, setGuardandoPrueba] = useState(false);
 
-  // Formulario Concepto
-  const [nombreConcepto, setNombreConcepto] = useState("");
-  const [aplicaAConcepto, setAplicaAConcepto] = useState<"binomio" | "participante">("binomio");
-  const [tarifaConcepto, setTarifaConcepto] = useState("0");
-  const [unidadConcepto, setUnidadConcepto] = useState("");
-  const [guardandoConcepto, setGuardandoConcepto] = useState(false);
-
-  // Abrir modal de prueba
   const abrirModalPrueba = (p?: PruebaConfigItem) => {
     if (p) {
       setModalPrueba(p);
@@ -86,21 +72,9 @@ export function GestorPruebas({
     }
   };
 
-  // Abrir modal de concepto
-  const abrirModalConcepto = (c?: ConceptoConfigItem) => {
-    if (c) {
-      setModalConcepto(c);
-      setNombreConcepto(c.nombre);
-      setAplicaAConcepto(c.aplicaA);
-      setTarifaConcepto(c.tarifaClp.toString());
-      setUnidadConcepto(c.unidad || "");
-    } else {
-      setModalConcepto("nuevo");
-      setNombreConcepto("");
-      setAplicaAConcepto("binomio");
-      setTarifaConcepto("0");
-      setUnidadConcepto("");
-    }
+  const abrirModalEliminar = (p: PruebaConfigItem) => {
+    setModalEliminar(p);
+    setPruebaDestinoId("");
   };
 
   const handleGuardarPrueba = async (e: React.FormEvent) => {
@@ -163,401 +137,352 @@ export function GestorPruebas({
     }
   };
 
-  const handleGuardarConcepto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const tarifa = parseInt(tarifaConcepto.replace(/\D/g, ""), 10) || 0;
-
-    try {
-      setGuardandoConcepto(true);
-      if (modalConcepto === "nuevo") {
-        const res = await crearConcepto({
-          nombre: nombreConcepto,
-          aplicaA: aplicaAConcepto,
-          tarifaClp: tarifa,
-          unidad: unidadConcepto || null,
-        });
-        if (!res.exito) {
-          toast.error(res.error);
-          return;
-        }
-        toast.success("Concepto creado con éxito.");
-      } else if (modalConcepto) {
-        const res = await editarConcepto(
-          modalConcepto.id,
-          {
-            nombre: nombreConcepto,
-            aplicaA: aplicaAConcepto,
-            tarifaClp: tarifa,
-            unidad: unidadConcepto || null,
-          },
-          modalConcepto.version
-        );
-        if (!res.exito) {
-          toast.error(res.error);
-          return;
-        }
-        toast.success("Concepto actualizado.");
-      }
-      setModalConcepto(null);
-      router.refresh();
-    } catch {
-      toast.error("Ocurrió un error al guardar.");
-    } finally {
-      setGuardandoConcepto(false);
+  const handleEliminarPrueba = async () => {
+    if (!modalEliminar) return;
+    const cantIns = modalEliminar.inscripciones?.length || 0;
+    if (cantIns > 0 && !pruebaDestinoId) {
+      toast.error("Debes seleccionar una prueba de destino para reasignar las inscripciones.");
+      return;
     }
-  };
 
-  const handleToggleConceptoActivo = async (c: ConceptoConfigItem) => {
     try {
-      const res = await editarConcepto(c.id, { activo: !c.activo }, c.version);
+      setEliminando(true);
+      const res = await eliminarPrueba(modalEliminar.id, pruebaDestinoId || undefined);
       if (!res.exito) {
         toast.error(res.error);
         return;
       }
-      toast.success(c.activo ? "Concepto desactivado." : "Concepto reactivado.");
+      toast.success("Prueba eliminada con éxito.");
+      setModalEliminar(null);
       router.refresh();
     } catch {
-      toast.error("Error al actualizar estado.");
+      toast.error("Ocurrió un error al eliminar la prueba.");
+    } finally {
+      setEliminando(false);
     }
   };
 
+  // Cálculo de colisiones para modal de eliminación
+  const cantInscripcionesModal = modalEliminar?.inscripciones?.length || 0;
+  const otrasPruebas = pruebasIniciales.filter(
+    (p) => p.id !== modalEliminar?.id && p.activa
+  );
+  const pruebaDestinoSeleccionada = otrasPruebas.find((p) => p.id === pruebaDestinoId);
+  const binomiosDestinoSet = new Set(
+    (pruebaDestinoSeleccionada?.inscripciones || []).map((ins) => ins.binomioId)
+  );
+  const colisiones = (modalEliminar?.inscripciones || []).filter((ins) =>
+    binomiosDestinoSet.has(ins.binomioId)
+  );
+
   return (
     <div className="space-y-6">
-      {/* Selector de pestañas */}
-      <div className="flex border-b border-borde">
-        <button
-          onClick={() => setPestana("pruebas")}
-          className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-            pestana === "pruebas"
-              ? "border-acento text-acento"
-              : "border-transparent text-texto-suave hover:text-texto"
-          }`}
-        >
-          <Trophy className="h-4 w-4" />
-          <span>Pruebas ({pruebasIniciales.length})</span>
-        </button>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-texto-suave">
+            Pruebas hípicas del concurso, tarifas y límites de edad de participantes.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => abrirModalPrueba()}
+            className="flex items-center gap-1.5 bg-acento hover:bg-acento/90 text-white font-medium"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Nueva prueba</span>
+          </Button>
+        </div>
 
-        <button
-          onClick={() => setPestana("conceptos")}
-          className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-            pestana === "conceptos"
-              ? "border-acento text-acento"
-              : "border-transparent text-texto-suave hover:text-texto"
-          }`}
-        >
-          <Tag className="h-4 w-4" />
-          <span>Conceptos de cobro ({conceptosIniciales.length})</span>
-        </button>
-      </div>
-
-      {/* Contenido Pruebas */}
-      {pestana === "pruebas" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-texto-suave">
-              Pruebas hípicas del concurso, tarifas y límites de edad de participantes.
+        {pruebasIniciales.length === 0 ? (
+          <div className="border border-dashed border-borde rounded-xl p-8 text-center bg-superficie">
+            <Trophy className="h-8 w-8 mx-auto text-texto-suave mb-2" />
+            <p className="text-sm font-semibold text-texto">No hay pruebas configuradas</p>
+            <p className="text-xs text-texto-suave mt-1 mb-4">
+              Crea las pruebas de tu concurso (ej: Debutantes 0.60m, Abierta 1.10m).
             </p>
             <Button
-              onClick={() => abrirModalPrueba()}
               size="sm"
-              className="gap-1.5 cursor-pointer text-xs"
+              variant="outline"
+              onClick={() => abrirModalPrueba()}
+              className="text-xs"
             >
-              <Plus className="h-4 w-4" />
-              <span>Nueva prueba</span>
+              Crear primera prueba
             </Button>
           </div>
-
-          <div className="divide-y divide-borde/40 border border-borde rounded-2xl bg-superficie/40 overflow-hidden">
-            {pruebasIniciales.length === 0 ? (
-              <div className="p-8 text-center text-xs text-texto-suave">
-                Aún no hay pruebas registradas. Haz clic en &quot;Nueva prueba&quot; para crear la primera.
-              </div>
-            ) : (
-              pruebasIniciales.map((p) => (
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {pruebasIniciales.map((p) => {
+              const cantIns = p.inscripciones?.length || 0;
+              return (
                 <div
                   key={p.id}
-                  className={`p-4 flex items-center justify-between gap-3 ${
-                    !p.activa ? "opacity-50 bg-superficie/20" : ""
+                  className={`p-4 rounded-xl border transition-all ${
+                    p.activa
+                      ? "bg-superficie border-borde hover:border-borde-fuerte"
+                      : "bg-superficie/40 border-borde/40 opacity-70"
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-texto">{p.nombre}</span>
-                      {!p.activa && (
-                        <span className="text-[10px] bg-borde text-texto-suave px-1.5 py-0.5 rounded">
-                          Inactiva
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-semibold text-texto truncate">{p.nombre}</h3>
+                        {!p.activa && (
+                          <span className="text-[10px] bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-medium px-1.5 py-0.5 rounded">
+                            Inactiva
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-superficie-hover border border-borde text-texto-suave">
+                          <Users className="h-3 w-3" />
+                          {cantIns === 0 ? "Sin inscripciones" : `${cantIns} ${cantIns === 1 ? "inscripción" : "inscripciones"}`}
                         </span>
-                      )}
+                      </div>
+                      <p className="text-base font-bold text-acento mt-1">
+                        {formatearMonto(p.tarifaClp)}
+                      </p>
+                      <div className="text-xs text-texto-suave mt-1 space-y-0.5">
+                        {p.edadMinima !== null || p.edadMaxima !== null ? (
+                          <p>
+                            Edad jinete:{" "}
+                            {p.edadMinima !== null && p.edadMaxima !== null
+                              ? `${p.edadMinima} a ${p.edadMaxima} años`
+                              : p.edadMinima !== null
+                              ? `Mínimo ${p.edadMinima} años`
+                              : `Máximo ${p.edadMaxima} años`}
+                          </p>
+                        ) : (
+                          <p>Sin restricción de edad</p>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-texto-suave mt-0.5">
-                      Tarifa: <strong className="text-texto">{formatearMonto(p.tarifaClp)}</strong>
-                      {(p.edadMinima !== null || p.edadMaxima !== null) && (
-                        <span className="ml-2">
-                          · Edades: {p.edadMinima ?? "sin mín."} a {p.edadMaxima ?? "sin máx."} años
-                        </span>
-                      )}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => abrirModalPrueba(p)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit2 className="h-4 w-4 text-texto-suave" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleTogglePruebaActiva(p)}
-                      className="h-8 w-8 p-0"
-                    >
-                      {p.activa ? (
-                        <EyeOff className="h-4 w-4 text-texto-suave" />
-                      ) : (
-                        <RotateCcw className="h-4 w-4 text-acento" />
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => abrirModalPrueba(p)}
+                        className="h-8 w-8 p-0 text-texto-suave hover:text-texto"
+                        title="Editar prueba"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleTogglePruebaActiva(p)}
+                        className="h-8 w-8 p-0 text-texto-suave hover:text-texto"
+                        title={p.activa ? "Desactivar prueba" : "Reactivar prueba"}
+                      >
+                        {p.activa ? <EyeOff className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => abrirModalEliminar(p)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        title="Eliminar prueba"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Contenido Conceptos */}
-      {pestana === "conceptos" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-texto-suave">
-              Cuota de participación por binomio (automática) y servicios manuales (pensión, alojamiento).
+      {/* Modal / Sheet Formulario Prueba */}
+      <Sheet abierta={Boolean(modalPrueba)} alCerrar={() => setModalPrueba(null)} posicion="centro">
+        <div className="p-6 space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-texto">
+              {modalPrueba === "nuevo" ? "Nueva prueba" : "Editar prueba"}
+            </h2>
+            <p className="text-xs text-texto-suave mt-0.5">
+              Configura los valores de la prueba para este concurso.
             </p>
-            <Button
-              onClick={() => abrirModalConcepto()}
-              size="sm"
-              className="gap-1.5 cursor-pointer text-xs"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Nuevo concepto</span>
-            </Button>
           </div>
 
-          <div className="divide-y divide-borde/40 border border-borde rounded-2xl bg-superficie/40 overflow-hidden">
-            {conceptosIniciales.length === 0 ? (
-              <div className="p-8 text-center text-xs text-texto-suave">
-                Aún no hay conceptos registrados. Puedes crear la cuota de binomio o servicios.
+          <form onSubmit={handleGuardarPrueba} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-texto">Nombre de la prueba *</Label>
+              <Input
+                value={nombrePrueba}
+                onChange={(e) => setNombrePrueba(e.target.value)}
+                placeholder="Ej: Debutantes 0.60m"
+                required
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-texto">Tarifa inscripción (CLP) *</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1000"
+                value={tarifaPrueba}
+                onChange={(e) => setTarifaPrueba(e.target.value)}
+                required
+                className="text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-texto">Edad mínima jinete</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="120"
+                  value={edadMin}
+                  onChange={(e) => setEdadMin(e.target.value)}
+                  placeholder="Opcional"
+                  className="text-sm"
+                />
               </div>
-            ) : (
-              conceptosIniciales.map((c) => (
-                <div
-                  key={c.id}
-                  className={`p-4 flex items-center justify-between gap-3 ${
-                    !c.activo ? "opacity-50 bg-superficie/20" : ""
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-texto">{c.nombre}</span>
-                      <span className="text-[10px] bg-superficie border border-borde px-2 py-0.5 rounded-full font-medium text-texto-suave">
-                        {c.aplicaA === "binomio" ? "Cuota automática binomio" : "Servicio participante"}
-                      </span>
-                      {!c.activo && (
-                        <span className="text-[10px] bg-borde text-texto-suave px-1.5 py-0.5 rounded">
-                          Inactivo
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-texto-suave mt-0.5">
-                      Tarifa: <strong className="text-texto">{formatearMonto(c.tarifaClp)}</strong>
-                      {c.unidad && <span className="ml-1">por {c.unidad}</span>}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => abrirModalConcepto(c)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit2 className="h-4 w-4 text-texto-suave" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggleConceptoActivo(c)}
-                      className="h-8 w-8 p-0"
-                    >
-                      {c.activo ? (
-                        <EyeOff className="h-4 w-4 text-texto-suave" />
-                      ) : (
-                        <RotateCcw className="h-4 w-4 text-acento" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-texto">Edad máxima jinete</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="120"
+                  value={edadMax}
+                  onChange={(e) => setEdadMax(e.target.value)}
+                  placeholder="Opcional"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end gap-2 border-t border-borde">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setModalPrueba(null)}
+                disabled={guardandoPrueba}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={guardandoPrueba}
+                className="bg-acento hover:bg-acento/90 text-white"
+              >
+                {guardandoPrueba ? "Guardando..." : "Guardar prueba"}
+              </Button>
+            </div>
+          </form>
         </div>
-      )}
-
-      {/* Modal Prueba */}
-      <Sheet
-        abierta={modalPrueba !== null}
-        alCerrar={() => setModalPrueba(null)}
-        posicion="abajo"
-        titulo={modalPrueba === "nuevo" ? "Nueva prueba" : "Editar prueba"}
-      >
-        <form onSubmit={handleGuardarPrueba} className="space-y-4 py-2">
-          <div>
-            <Label htmlFor="nombrePrueba">Nombre de la prueba</Label>
-            <Input
-              id="nombrePrueba"
-              value={nombrePrueba}
-              onChange={(e) => setNombrePrueba(e.target.value)}
-              placeholder="Ej: Prueba Abierta 1,10m"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="tarifaPrueba">Tarifa (CLP)</Label>
-            <Input
-              id="tarifaPrueba"
-              type="text"
-              inputMode="numeric"
-              value={tarifaPrueba}
-              onChange={(e) => setTarifaPrueba(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="edadMin">Edad mínima (opcional)</Label>
-              <Input
-                id="edadMin"
-                type="number"
-                value={edadMin}
-                onChange={(e) => setEdadMin(e.target.value)}
-                placeholder="Sin mín."
-              />
-            </div>
-            <div>
-              <Label htmlFor="edadMax">Edad máxima (opcional)</Label>
-              <Input
-                id="edadMax"
-                type="number"
-                value={edadMax}
-                onChange={(e) => setEdadMax(e.target.value)}
-                placeholder="Sin máx."
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setModalPrueba(null)}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={guardandoPrueba} className="flex-1">
-              {guardandoPrueba ? "Guardando..." : "Guardar prueba"}
-            </Button>
-          </div>
-        </form>
       </Sheet>
 
-      {/* Modal Concepto */}
-      <Sheet
-        abierta={modalConcepto !== null}
-        alCerrar={() => setModalConcepto(null)}
-        posicion="abajo"
-        titulo={modalConcepto === "nuevo" ? "Nuevo concepto" : "Editar concepto"}
-      >
-        <form onSubmit={handleGuardarConcepto} className="space-y-4 py-2">
-          <div>
-            <Label htmlFor="nombreConcepto">Nombre del concepto</Label>
-            <Input
-              id="nombreConcepto"
-              value={nombreConcepto}
-              onChange={(e) => setNombreConcepto(e.target.value)}
-              placeholder="Ej: Cuota de participación, Pensión de pesebrera"
-              required
-            />
-          </div>
-
-          <div>
-            <Label>Se cobra a</Label>
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <button
-                type="button"
-                onClick={() => setAplicaAConcepto("binomio")}
-                className={`p-3 rounded-xl border text-xs font-semibold cursor-pointer ${
-                  aplicaAConcepto === "binomio"
-                    ? "border-acento bg-acento/10 text-acento"
-                    : "border-borde bg-superficie text-texto-suave"
-                }`}
-              >
-                Binomio (Automática)
-              </button>
-              <button
-                type="button"
-                onClick={() => setAplicaAConcepto("participante")}
-                className={`p-3 rounded-xl border text-xs font-semibold cursor-pointer ${
-                  aplicaAConcepto === "participante"
-                    ? "border-acento bg-acento/10 text-acento"
-                    : "border-borde bg-superficie text-texto-suave"
-                }`}
-              >
-                Jinete o Club (Manual)
-              </button>
+      {/* Modal Confirmación de Eliminación / Reasignación */}
+      <Sheet abierta={Boolean(modalEliminar)} alCerrar={() => setModalEliminar(null)} posicion="centro">
+        <div className="p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400">
+              <Trash2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-texto">Eliminar prueba</h2>
+              <p className="text-xs text-texto-suave">
+                {modalEliminar?.nombre}
+              </p>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="tarifaConcepto">Tarifa unitaria (CLP)</Label>
-            <Input
-              id="tarifaConcepto"
-              type="text"
-              inputMode="numeric"
-              value={tarifaConcepto}
-              onChange={(e) => setTarifaConcepto(e.target.value)}
-              required
-            />
-          </div>
+          {cantInscripcionesModal === 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-texto">
+                ¿Estás seguro de eliminar la prueba <strong>&ldquo;{modalEliminar?.nombre}&rdquo;</strong>? Esta acción no se puede deshacer.
+              </p>
+              <div className="pt-4 flex justify-end gap-2 border-t border-borde">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setModalEliminar(null)}
+                  disabled={eliminando}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleEliminarPrueba}
+                  disabled={eliminando}
+                >
+                  {eliminando ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg text-xs text-amber-800 dark:text-amber-300">
+                Esta prueba tiene <strong>{cantInscripcionesModal}</strong> inscripción(es) activa(s). Para eliminarla, selecciona la prueba a la cual deseas reasignarlas:
+              </div>
 
-          <div>
-            <Label htmlFor="unidadConcepto">Unidad (opcional)</Label>
-            <Input
-              id="unidadConcepto"
-              value={unidadConcepto}
-              onChange={(e) => setUnidadConcepto(e.target.value)}
-              placeholder="Ej: noche, día, persona"
-            />
-          </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-texto">Prueba de destino *</Label>
+                <select
+                  value={pruebaDestinoId}
+                  onChange={(e) => setPruebaDestinoId(e.target.value)}
+                  className="w-full text-sm rounded-md border border-borde bg-superficie px-3 py-2 text-texto focus:outline-none focus:ring-1 focus:ring-acento"
+                >
+                  <option value="">-- Seleccionar prueba de destino --</option>
+                  {otrasPruebas.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} ({formatearMonto(p.tarifaClp)})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setModalConcepto(null)}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={guardandoConcepto} className="flex-1">
-              {guardandoConcepto ? "Guardando..." : "Guardar concepto"}
-            </Button>
-          </div>
-        </form>
+              {colisiones.length > 0 && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg flex items-start gap-2 text-xs text-red-700 dark:text-red-400">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+                  <div>
+                    <p className="font-semibold">Colisión detectada</p>
+                    <p className="mt-0.5">
+                      No es posible reasignar a esta prueba porque los siguientes binomios ya están inscritos en ella:{" "}
+                      <strong>
+                        {colisiones
+                          .map((c) => `${c.binomio.jinete.nombre} / ${c.binomio.caballo.nombre}`)
+                          .join(", ")}
+                      </strong>
+                      . Debes resolver estas inscripciones previamente.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex justify-end gap-2 border-t border-borde">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setModalEliminar(null)}
+                  disabled={eliminando}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleEliminarPrueba}
+                  disabled={eliminando || !pruebaDestinoId || colisiones.length > 0}
+                >
+                  {eliminando ? "Reasignando..." : "Reasignar y eliminar"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </Sheet>
     </div>
   );
