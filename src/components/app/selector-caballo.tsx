@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Plus, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,24 @@ export function SelectorCaballo({
       .catch(() => {});
   }, [caballoSeleccionadoId]);
 
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickAfuera(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setDesplegado(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickAfuera);
+    return () => document.removeEventListener("mousedown", handleClickAfuera);
+  }, []);
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!contenedorRef.current?.contains(e.relatedTarget as Node)) {
+      setDesplegado(false);
+    }
+  };
+
   const filtrados = todosCaballos.filter((c) => {
     if (clubIdFiltro && c.clubId !== clubIdFiltro) return false;
     const q = busqueda.toLowerCase().trim();
@@ -79,6 +97,11 @@ export function SelectorCaballo({
       (c.clubNombre && c.clubNombre.toLowerCase().includes(q))
     );
   });
+
+  const hayOpciones = filtrados.length > 0;
+  const buscando = busqueda.trim().length > 0;
+  const mostrarCrear = permitirCrear && busqueda.trim().length >= 2;
+  const debeMostrarDropdown = desplegado && (hayOpciones || buscando || mostrarCrear);
 
   const handleSeleccionar = (caballo: {
     id: string;
@@ -179,7 +202,7 @@ export function SelectorCaballo({
           </button>
         </div>
       ) : (
-        <div className="relative">
+        <div ref={contenedorRef} onBlur={handleBlur} className="relative">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-texto-suave pointer-events-none" />
             <Input
@@ -191,11 +214,16 @@ export function SelectorCaballo({
                 setDesplegado(true);
               }}
               onFocus={() => setDesplegado(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setDesplegado(false);
+                }
+              }}
               className="pl-9 pr-3 rounded-2xl"
             />
           </div>
 
-          {desplegado && (
+          {debeMostrarDropdown && (
             <div className="absolute z-40 left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-2xl border border-borde bg-superficie shadow-xl p-1.5 space-y-1">
               {filtrados.length > 0 ? (
                 filtrados.map((c) => (
@@ -203,7 +231,7 @@ export function SelectorCaballo({
                     key={c.id}
                     type="button"
                     onClick={() => handleSeleccionar(c)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-fondo text-left text-sm text-texto transition-colors group"
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-fondo text-left text-sm text-texto transition-colors group cursor-pointer"
                   >
                     <div>
                       <div className="font-medium group-hover:text-acento">{c.nombre}</div>
@@ -214,17 +242,17 @@ export function SelectorCaballo({
                     <Check className="w-4 h-4 text-acento opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))
-              ) : (
+              ) : buscando ? (
                 <div className="p-3 text-center text-xs text-texto-secundario">
                   No se encontraron caballos.
                 </div>
-              )}
+              ) : null}
 
-              {permitirCrear && busqueda.trim().length >= 2 && (
+              {mostrarCrear && (
                 <button
                   type="button"
                   onClick={abrirCreacion}
-                  className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-acento/10 hover:bg-acento/20 text-acento text-left text-sm font-medium transition-colors border-t border-borde/50 mt-1"
+                  className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-acento/10 hover:bg-acento/20 text-acento text-left text-sm font-medium transition-colors border-t border-borde/50 mt-1 cursor-pointer"
                 >
                   <Plus className="w-4 h-4 flex-shrink-0" />
                   <span>Crear caballo «{busqueda.trim()}»</span>

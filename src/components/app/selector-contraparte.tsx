@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Plus, Building2, AlertCircle, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,24 @@ export function SelectorContraparte({
   const [guardando, setGuardando] = useState(false);
   const [parecidos, setParecidos] = useState<{ id: string; nombre: string }[]>([]);
 
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickAfuera(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setDesplegado(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickAfuera);
+    return () => document.removeEventListener("mousedown", handleClickAfuera);
+  }, []);
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!contenedorRef.current?.contains(e.relatedTarget as Node)) {
+      setDesplegado(false);
+    }
+  };
+
   useEffect(() => {
     obtenerContrapartes({ estado: "activas" }).then((datos) => {
       setTodasContrapartes(datos.map((d) => ({ id: d.id, nombre: d.nombre, rut: d.rut })));
@@ -68,6 +86,11 @@ export function SelectorContraparte({
     c.nombre.toLowerCase().includes(busqueda.toLowerCase().trim()) ||
     (c.rut && c.rut.toLowerCase().includes(busqueda.toLowerCase().trim()))
   );
+
+  const hayOpciones = filtradas.length > 0;
+  const buscando = busqueda.trim().length > 0;
+  const mostrarCrear = busqueda.trim().length >= 2;
+  const debeMostrarDropdown = desplegado && (hayOpciones || buscando || mostrarCrear);
 
   const handleSeleccionar = (cp: { id: string; nombre: string }) => {
     setSeleccionada(cp);
@@ -149,7 +172,7 @@ export function SelectorContraparte({
           </button>
         </div>
       ) : (
-        <div className="relative">
+        <div ref={contenedorRef} onBlur={handleBlur} className="relative">
           <div className="relative">
             <Input
               id={id}
@@ -159,14 +182,19 @@ export function SelectorContraparte({
                 setDesplegado(true);
               }}
               onFocus={() => setDesplegado(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setDesplegado(false);
+                }
+              }}
               placeholder="Buscar o escribir para crear..."
               className="h-12 pl-10 pr-4"
             />
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-texto-suave" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-texto-suave pointer-events-none" />
           </div>
 
           {/* Menú desplegable flotante */}
-          {desplegado && (
+          {debeMostrarDropdown && (
             <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-2xl border border-borde bg-superficie p-1.5 shadow-xl animate-in fade-in zoom-in-95">
               {filtradas.length > 0 ? (
                 filtradas.slice(0, 6).map((cp) => (
@@ -180,13 +208,13 @@ export function SelectorContraparte({
                     {cp.rut && <span className="text-xs text-texto-suave ml-2">{cp.rut}</span>}
                   </button>
                 ))
-              ) : (
+              ) : buscando ? (
                 <div className="p-3 text-center text-xs text-texto-suave">
                   No se encontraron coincidencias.
                 </div>
-              )}
+              ) : null}
 
-              {busqueda.trim().length >= 2 && (
+              {mostrarCrear && (
                 <div className="pt-1 mt-1 border-t border-borde/40">
                   <button
                     type="button"

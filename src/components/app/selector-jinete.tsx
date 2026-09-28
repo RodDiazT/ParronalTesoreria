@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Check, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,24 @@ export function SelectorJinete({
     clubNombre?: string;
   } | null>(null);
 
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickAfuera(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setDesplegado(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickAfuera);
+    return () => document.removeEventListener("mousedown", handleClickAfuera);
+  }, []);
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!contenedorRef.current?.contains(e.relatedTarget as Node)) {
+      setDesplegado(false);
+    }
+  };
+
   useEffect(() => {
     listarJinetesActivos()
       .then((datos) => {
@@ -70,6 +88,10 @@ export function SelectorJinete({
       (j.clubNombre && j.clubNombre.toLowerCase().includes(q))
     );
   });
+
+  const hayOpciones = filtrados.length > 0;
+  const buscando = busqueda.trim().length > 0;
+  const debeMostrarDropdown = desplegado && (hayOpciones || buscando);
 
   const handleSeleccionar = (jinete: {
     id: string;
@@ -120,7 +142,7 @@ export function SelectorJinete({
           </button>
         </div>
       ) : (
-        <div className="relative">
+        <div ref={contenedorRef} onBlur={handleBlur} className="relative">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-texto-suave pointer-events-none" />
             <Input
@@ -132,11 +154,16 @@ export function SelectorJinete({
                 setDesplegado(true);
               }}
               onFocus={() => setDesplegado(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setDesplegado(false);
+                }
+              }}
               className="pl-9 pr-3 rounded-2xl"
             />
           </div>
 
-          {desplegado && (
+          {debeMostrarDropdown && (
             <div className="absolute z-40 left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-2xl border border-borde bg-superficie shadow-xl p-1.5 space-y-1">
               {filtrados.length > 0 ? (
                 filtrados.map((j) => (
@@ -144,7 +171,7 @@ export function SelectorJinete({
                     key={j.id}
                     type="button"
                     onClick={() => handleSeleccionar(j)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-fondo text-left text-sm text-texto transition-colors group"
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-fondo text-left text-sm text-texto transition-colors group cursor-pointer"
                   >
                     <div>
                       <div className="font-medium group-hover:text-acento">{j.nombre}</div>
@@ -160,11 +187,11 @@ export function SelectorJinete({
                     <Check className="w-4 h-4 text-acento opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))
-              ) : (
+              ) : buscando ? (
                 <div className="p-3 text-center text-xs text-texto-secundario">
                   No se encontraron jinetes.
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
