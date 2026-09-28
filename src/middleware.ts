@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // Rutas públicas que no requieren autenticación
-const RUTAS_PUBLICAS = ["/ingresar", "/privacidad", "/api/auth"];
+const RUTAS_PUBLICAS = ["/ingresar", "/privacidad", "/api/auth", "/api/health"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

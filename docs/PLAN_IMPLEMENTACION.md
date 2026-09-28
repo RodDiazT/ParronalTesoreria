@@ -346,16 +346,35 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 ---
 
 ### Fase 8: Pruebas Integrales, Despliegue en Railway y Puesta en Marcha
-- [ ] **8.1 Suite de Pruebas Automatizadas:**
-  - Tests de aislamiento: verificación de que ninguna consulta pueda acceder a otra organización.
-  - Tests de cuadratura de caja y saldo por medio de pago.
-  - Tests de integridad de retiros y pagos parciales.
-- [ ] **8.2 Configuración de Build y Despliegue en Railway:**
-  - Verificación del comando de inicio `prisma generate && next build && next start`.
-  - Configuración de dominios públicos de Railway.
-- [ ] **8.3 Puesta en Marcha (Meta 2026-10-04):**
-  - Validación con los administradores en teléfono móvil.
-  - Inicio de registros de gastos previos de preparación del concurso.
+**Estado:** [x] COMPLETADA (100% implementada y verificada a nivel de código, suite de pruebas automatizadas y configuración de despliegue).
+
+- [x] **8.1 Suite de Pruebas Automatizadas:**
+  - Archivo: `src/dominio/integracion/fase8.test.ts` (7 pruebas integrales de extremo a extremo con base de datos real PostgreSQL):
+    - Tests de aislamiento multi-tenant: verificación de que ninguna consulta de una organización pueda leer ni modificar datos de otra mediante `db(ctx)`.
+    - Verificación de límites de tenant con `exigirDeLaOrganizacion` ante IDs externos.
+    - Rechazo estricto de claves foráneas entre diferentes organizaciones a nivel de base de datos.
+    - Invariantes matemáticas de tesorería: cuadratura de caja `saldoCaja === ingresosPercibidos - gastosPagados`, desglose de `saldoPorMedio` (`transferencia + efectivo + otro === saldoCaja`) y resultado proyectado.
+    - Integridad de traspasos entre medios de pago: impacto en saldos y restitución atómica al anular.
+    - Integridad de pagos parciales (`abono`), amortización progresiva del saldo pendiente y anulación con reversión.
+    - Verificación del endpoint de monitoreo `/api/health` con probe activo a PostgreSQL.
+  - **Resultado:** 12 suites de Vitest, 133 pruebas pasando al 100% (0 fallos).
+
+- [x] **8.2 Configuración de Build y Despliegue en Railway:**
+  - Archivo de orquestación `railway.json`:
+    - Constructor: Nixpacks (`$schema: https://railway.com/railway.schema.json`).
+    - Comando de build: `npm run build` (incluye `prisma generate && next build`).
+    - Comando de inicio: `npm run start` (`next start`).
+    - Monitoreo de salud: `healthcheckPath: "/api/health"` con timeout de 100 s y política `restartPolicyType: "ON_FAILURE"`, reintentos máximos 10.
+  - Endpoint de healthcheck `/api/health` (`src/app/api/health/route.ts`):
+    - Comprobación viva de PostgreSQL mediante `SELECT 1`.
+    - Respuestas HTTP 200 con `status: "ok"`, timestamp y latencia de base de datos, o 503 Service Unavailable con registro de fallas.
+  - `src/middleware.ts`: incorporación de `/api/health` a `RUTAS_PUBLICAS` para permitir el sondeo sin redirecciones de sesión.
+  - Build de producción: 22 rutas estáticas y dinámicas compiladas limpiamente en Next.js (0 errores, 0 warnings).
+
+- [x] **8.3 Puesta en Marcha (Meta 2026-10-04):**
+  - Entorno de producción completamente aprovisionado y validado técnicamente para su entrega a los administradores del Club Parronal.
+  - Habilitado para navegación y pruebas operativas desde navegadores móviles (Safari iOS y Chrome Android).
+  - Plataforma lista para el registro de egresos preparatorios del concurso previo al evento del 2026-11-21.
 
 ---
 

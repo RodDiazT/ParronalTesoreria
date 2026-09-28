@@ -294,6 +294,7 @@ export async function ejecutarRegistrarMovimiento(
   // Estado de pago: si es gasto pagado por una persona, nace pendiente como reembolso
   const esReembolso = datos.tipo === "gasto" && Boolean(datos.pagadoPorId);
   const estadoPago = esReembolso ? "pendiente" : datos.estadoPago;
+  const naturaleza = datos.naturaleza ?? "dinero";
 
   // Estado de validación:
   // Administrador -> validado (salvo si es sinIdentificar)
@@ -310,7 +311,7 @@ export async function ejecutarRegistrarMovimiento(
           organizacionId: ctx.organizacionId,
           eventoId: ctx.evento!.id,
           tipo: datos.tipo,
-          naturaleza: datos.naturaleza,
+          naturaleza,
           montoClp: datos.montoClp,
           montoOriginalClp: datos.montoClp,
           fecha: new Date(`${datos.fecha}T00:00:00Z`),
@@ -319,7 +320,7 @@ export async function ejecutarRegistrarMovimiento(
               ? new Date(`${datos.fechaPago}T00:00:00Z`)
               : null,
           medioPago:
-            estadoPago === "pagado" && datos.naturaleza === "dinero"
+            estadoPago === "pagado" && naturaleza === "dinero"
               ? datos.medioPago
               : null,
           estadoPago,
