@@ -18,6 +18,7 @@ import {
   Tag,
   AlertCircle,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,20 @@ import {
   anularMovimiento,
   marcarRespaldoVisto,
 } from "@/dominio/movimientos/acciones";
+import {
+  marcarVisto,
+  revertirAjuste,
+} from "@/dominio/inscripciones/binomios/acciones";
+import { formatearMonto } from "@/lib/presentacion/formato";
 
 interface BandejaValidarProps {
   movimientos: any[];
   respaldosNuevos: any[];
+  ajustesPendientes?: {
+    inscripciones: any[];
+    cargos: any[];
+    total: number;
+  };
   usuarioActual: {
     id: string;
     rol: string;
@@ -43,6 +54,7 @@ interface BandejaValidarProps {
 export function BandejaValidar({
   movimientos: initialMovimientos,
   respaldosNuevos: initialRespaldosNuevos,
+  ajustesPendientes: initialAjustesPendientes,
   usuarioActual,
 }: BandejaValidarProps) {
   const router = useRouter();
@@ -50,6 +62,16 @@ export function BandejaValidar({
 
   const [movimientos, setMovimientos] = useState(initialMovimientos);
   const [respaldosNuevos, setRespaldosNuevos] = useState(initialRespaldosNuevos);
+  const [ajustesPendientes, setAjustesPendientes] = useState(
+    initialAjustesPendientes || { inscripciones: [], cargos: [], total: 0 }
+  );
+  const [modalRevertirAjuste, setModalRevertirAjuste] = useState<{
+    tipo: "inscripcion" | "cargo";
+    id: string;
+    version: number;
+  } | null>(null);
+  const [motivoRevertir, setMotivoRevertir] = useState("");
+
   const [indiceActual, setIndiceActual] = useState(0);
 
   // Modales
@@ -166,6 +188,55 @@ export function BandejaValidar({
       }
     });
   };
+
+  const manejarMarcarVistoAjuste = (tipo: "inscripcion" | "cargo", id: string) => {
+    startTransition(async () => {
+      const res = await marcarVisto(tipo, id);
+      if (res.exito) {
+        toast.success("Ajuste marcado como visto.");
+        setAjustesPendientes((prev) => ({
+          ...prev,
+          inscripciones: prev.inscripciones.filter((i) => i.id !== id),
+          cargos: prev.cargos.filter((c) => c.id !== id),
+          total: Math.max(0, prev.total - 1),
+        }));
+        router.refresh();
+      } else {
+        toast.error(res.error || "No se pudo marcar como visto.");
+      }
+    });
+  };
+
+  const manejarRevertirAjuste = () => {
+    if (!modalRevertirAjuste) return;
+    if (motivoRevertir.trim().length < 10) {
+      toast.error("El motivo debe tener al menos 10 caracteres.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await revertirAjuste(
+        modalRevertirAjuste.tipo,
+        modalRevertirAjuste.id,
+        modalRevertirAjuste.version,
+        motivoRevertir.trim()
+      );
+      if (res.exito) {
+        toast.success("Ajuste revertido correctamente.");
+        setAjustesPendientes((prev) => ({
+          ...prev,
+          inscripciones: prev.inscripciones.filter((i) => i.id !== modalRevertirAjuste.id),
+          cargos: prev.cargos.filter((c) => c.id !== modalRevertirAjuste.id),
+          total: Math.max(0, prev.total - 1),
+        }));
+        setModalRevertirAjuste(null);
+        setMotivoRevertir("");
+        router.refresh();
+      } else {
+        toast.error(res.error || "Error al revertir ajuste.");
+      }
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -552,6 +623,186 @@ export function BandejaValidar({
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Sección: Ajustes de Inscripción Pendientes de Revisión (Regla 3.3) */}
+      {ajustesPendientes.total > 0 && (
+        <div className="bg-white rounded-xl border border-amber-200 p-4 space-y-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <h2 className="text-sm font-bold text-stone-900">
+              Ajustes de inscripción realizados por ayudantes ({ajustesPendientes.total})
+            </h2>
+          </div>
+
+          <div className="space-y-2">
+            {ajustesPendientes.inscripciones.map((ins) => (
+              <div
+                key={ins.id}
+                className="p-3 bg-amber-50/60 rounded-lg border border-amber-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 font-semibold text-stone-900">
+                    <span>
+                      {ins.binomio.jinete.nombre} / {ins.binomio.caballo.nombre}
+                    </span>
+                    <span>•</span>
+                    <span>Prueba: {ins.prueba.nombre}</span>
+                  </div>
+                  <div className="text-stone-600">
+                    <span>Nuevo monto: {formatearMonto(ins.montoClp)}</span>
+                    {ins.ajuste !== null && ins.ajuste !== undefined && (
+                      <span className="ml-1 text-amber-700">
+                        (Ajuste: {formatearMonto(ins.ajuste)})
+                      </span>
+                    )}
+                  </div>
+                  {ins.motivoAjuste && (
+                    <p className="text-stone-500 italic">&quot;{ins.motivoAjuste}&quot;</p>
+                  )}
+                  <span className="text-[11px] text-stone-400 block">
+                    Registrado por {ins.registradoPor?.nombre || "Ayudante"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-white text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                    disabled={isPending}
+                    onClick={() => manejarMarcarVistoAjuste("inscripcion", ins.id)}
+                  >
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    Visto
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-white text-rose-700 hover:bg-rose-50 border-rose-300"
+                    disabled={isPending}
+                    onClick={() => {
+                      setModalRevertirAjuste({
+                        tipo: "inscripcion",
+                        id: ins.id,
+                        version: ins.version,
+                      });
+                      setMotivoRevertir("");
+                    }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Revertir
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {ajustesPendientes.cargos.map((cargo) => (
+              <div
+                key={cargo.id}
+                className="p-3 bg-amber-50/60 rounded-lg border border-amber-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 font-semibold text-stone-900">
+                    <span>
+                      {cargo.binomio
+                        ? `${cargo.binomio.jinete.nombre} / ${cargo.binomio.caballo.nombre}`
+                        : cargo.jinete?.nombre || cargo.club?.nombre || "Cargo"}
+                    </span>
+                    <span>•</span>
+                    <span>Concepto: {cargo.concepto.nombre}</span>
+                  </div>
+                  <div className="text-stone-600">
+                    <span>Nuevo monto: {formatearMonto(cargo.montoTotalClp)}</span>
+                    {cargo.ajuste !== null && cargo.ajuste !== undefined && (
+                      <span className="ml-1 text-amber-700">
+                        (Ajuste: {formatearMonto(cargo.ajuste)})
+                      </span>
+                    )}
+                  </div>
+                  {cargo.motivoAjuste && (
+                    <p className="text-stone-500 italic">&quot;{cargo.motivoAjuste}&quot;</p>
+                  )}
+                  <span className="text-[11px] text-stone-400 block">
+                    Registrado por {cargo.registradoPor?.nombre || "Ayudante"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-white text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                    disabled={isPending}
+                    onClick={() => manejarMarcarVistoAjuste("cargo", cargo.id)}
+                  >
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    Visto
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-white text-rose-700 hover:bg-rose-50 border-rose-300"
+                    disabled={isPending}
+                    onClick={() => {
+                      setModalRevertirAjuste({
+                        tipo: "cargo",
+                        id: cargo.id,
+                        version: cargo.version,
+                      });
+                      setMotivoRevertir("");
+                    }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Revertir
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Revertir Ajuste */}
+      {modalRevertirAjuste && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl border border-stone-200 text-xs">
+            <h3 className="font-bold text-sm text-stone-900 flex items-center gap-1.5">
+              <RotateCcw className="w-4 h-4 text-rose-600" />
+              Revertir ajuste de tarifa
+            </h3>
+            <p className="text-stone-600">
+              El valor volverá a la tarifa base original del concepto o prueba.
+            </p>
+            <Textarea
+              value={motivoRevertir}
+              onChange={(e) => setMotivoRevertir(e.target.value)}
+              placeholder="Motivo de la reversión (mín. 10 caracteres)..."
+              maxLength={300}
+              rows={3}
+              required
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setModalRevertirAjuste(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={isPending || motivoRevertir.trim().length < 10}
+                onClick={manejarRevertirAjuste}
+                className="bg-rose-700 hover:bg-rose-800 text-white font-bold"
+              >
+                Confirmar reversión
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

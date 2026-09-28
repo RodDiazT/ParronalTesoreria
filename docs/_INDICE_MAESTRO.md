@@ -556,6 +556,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-28 | 1.23 | Diagnóstico y revisión de implementación de Fase 6 (Inscripción de binomios, pruebas y pagos): se audita el estado del código fuente y se documentan componentes existentes vs pendientes en _ESTADO_PROYECTO.md, PLAN_IMPLEMENTACION.md e inscripcion-binomios.md | Revisión y diagnóstico de Fase 6 |
 | 2026-09-28 | 1.24 | Fase 7 de implementación técnica completada: Dashboard por rol (`/`), motor de KPIs dinámicos, módulo de Traspasos (`/traspasos`), endpoint seguro y suite de tests con 126 pruebas totales pasando al 100% y build de Next.js limpio | Hito de desarrollo técnico (Fase 7) |
 | 2026-09-28 | 1.25 | Fase 8 de implementación técnica completada: configuración de orquestación y despliegue en Railway (`railway.json`), endpoint de monitoreo `/api/health`, tests de integración integral (`fase8.test.ts`), total de 133 tests en 12 suites pasando al 100% y build de producción Next.js limpio | Hito de desarrollo técnico (Fase 8) |
+| 2026-09-28 | 1.26 | Fase 6 de implementación técnica completada: inscripción de binomios, configuración de pruebas y conceptos, cargos, pagos de inscripción con algoritmo FIFO, retiros y devoluciones, cobranza WhatsApp y componentes del portal. 152 tests pasando en 13 suites y build de Next.js limpio | Hito de desarrollo técnico (Fase 6) |
 
 
 

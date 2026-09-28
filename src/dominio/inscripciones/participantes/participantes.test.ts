@@ -379,11 +379,15 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
 
     it("ayudante puede vincular apoderado y registrar autorización", async () => {
       const sufijo = Date.now().toString().slice(-4);
-      const cRes = await ejecutarCrearClub(ctxAdmin, { nombre: `Club Ayudante ${sufijo}` });
+      const cRes = await ejecutarCrearClub(ctxAdmin, {
+        nombre: `Club Ayudante ${sufijo}`,
+        confirmarAunqueParecido: true,
+      });
       const jineteRes = await ejecutarCrearJinete(ctxAyudante, {
         nombre: `Jinete Sin Aut ${sufijo}`,
         clubId: cRes.club!.id,
         fechaNacimiento: "2013-03-01",
+        confirmarAunqueParecido: true,
       });
 
       // Vincular apoderado
@@ -391,6 +395,7 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
         nuevoApoderado: {
           nombre: `Papá Ayudante ${sufijo}`,
           telefono: "+56 9 7766 5544",
+          confirmarAunqueParecido: true,
         },
         relacion: "padre",
       });

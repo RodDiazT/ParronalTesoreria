@@ -28,13 +28,15 @@ import {
   suprimirDatosClub,
   descargarDatosParticipante,
 } from "@/dominio/inscripciones/participantes/acciones";
+import { EstadoCuenta } from "@/components/app/estado-cuenta";
 
 interface FichaClubProps {
   club: any;
   rol: Rol;
+  estadoCuentaDatos?: any;
 }
 
-export function FichaClub({ club, rol }: FichaClubProps) {
+export function FichaClub({ club, rol, estadoCuentaDatos }: FichaClubProps) {
   const router = useRouter();
   const esAdmin = rol === "administrador";
   const esObservador = rol === "observador";
@@ -203,6 +205,31 @@ export function FichaClub({ club, rol }: FichaClubProps) {
           </div>
         ) : null}
       </div>
+
+      {/* Estado de Cuenta del Club en el evento activo */}
+      {!esObservador && estadoCuentaDatos && (
+        <div className="p-4 rounded-3xl border border-borde bg-superficie space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-texto">Estado de Cuenta del Club</h2>
+            <div className="flex items-center gap-2 text-xs">
+              <Link
+                href="/inscripciones/nueva"
+                className="text-marca hover:underline font-medium"
+              >
+                + Inscribir
+              </Link>
+              <span className="text-texto-suave">•</span>
+              <Link
+                href={`/inscripciones/pago?clubId=${club.id}`}
+                className="text-marca hover:underline font-medium"
+              >
+                Registrar pago
+              </Link>
+            </div>
+          </div>
+          <EstadoCuenta sujeto={{ clubId: club.id }} datos={estadoCuentaDatos} />
+        </div>
+      )}
 
       {/* 2. Jinetes del Club */}
       <div className="p-4 rounded-3xl border border-borde bg-superficie space-y-3">

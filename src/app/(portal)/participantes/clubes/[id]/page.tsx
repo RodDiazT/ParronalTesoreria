@@ -25,6 +25,16 @@ export default async function FichaClubPage({
     notFound();
   }
 
+  let estadoCuentaDatos = null;
+  if (ctx.evento && ctx.rol !== "observador") {
+    try {
+      const { estadoCuenta } = await import("@/dominio/inscripciones/binomios/consultas");
+      estadoCuentaDatos = await estadoCuenta(ctx, { clubId: id });
+    } catch {
+      // Ignorar si no hay inscripciones
+    }
+  }
+
   return (
     <>
       <ConfigurarEstructura
@@ -33,7 +43,8 @@ export default async function FichaClubPage({
         volverHref="/participantes?pestana=clubes"
       />
 
-      <FichaClub club={club} rol={ctx.rol} />
+      <FichaClub club={club} rol={ctx.rol} estadoCuentaDatos={estadoCuentaDatos} />
     </>
   );
 }
+

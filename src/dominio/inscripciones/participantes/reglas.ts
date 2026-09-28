@@ -110,13 +110,26 @@ export interface VinculoParaAlertas {
  */
 export function alertasJinete(
   jinete: JineteParaAlertas,
-  vinculosActivos: VinculoParaAlertas[] = [],
-  apoderados: ApoderadoParaAlertas[] = [],
+  vinculosActivosOrEvento?: VinculoParaAlertas[] | ReferenciaEvento | null,
+  apoderadosOrVacio?: ApoderadoParaAlertas[],
   evento?: ReferenciaEvento | null
 ): AlertaJinete[] {
+  let vinculosActivos: VinculoParaAlertas[] = [];
+  let apoderados: ApoderadoParaAlertas[] = [];
+  let refEvento = evento;
+
+  if (Array.isArray(vinculosActivosOrEvento)) {
+    vinculosActivos = vinculosActivosOrEvento;
+    apoderados = apoderadosOrVacio || [];
+  } else if (vinculosActivosOrEvento && typeof vinculosActivosOrEvento === "object") {
+    refEvento = vinculosActivosOrEvento as ReferenciaEvento;
+    vinculosActivos = (jinete as any).apoderados || [];
+    apoderados = (jinete as any).apoderados?.map((a: any) => a.apoderado).filter(Boolean) || [];
+  }
+
   const alertas: AlertaJinete[] = [];
 
-  const edad = edadEnEvento(jinete.fechaNacimiento, evento);
+  const edad = edadEnEvento(jinete.fechaNacimiento, refEvento);
 
   // Vínculos efectivamente activos
   const vinculosValidos = vinculosActivos.filter((v) => v.activo !== false);

@@ -25,6 +25,16 @@ export default async function FichaJinetePage({
     notFound();
   }
 
+  let estadoCuentaDatos = null;
+  if (ctx.evento && ctx.rol !== "observador") {
+    try {
+      const { estadoCuenta } = await import("@/dominio/inscripciones/binomios/consultas");
+      estadoCuentaDatos = await estadoCuenta(ctx, { jineteId: id });
+    } catch {
+      // Ignorar si no hay inscripciones
+    }
+  }
+
   return (
     <>
       <ConfigurarEstructura
@@ -33,7 +43,8 @@ export default async function FichaJinetePage({
         volverHref="/participantes?pestana=jinetes"
       />
 
-      <FichaJinete jinete={jinete} rol={ctx.rol} />
+      <FichaJinete jinete={jinete} rol={ctx.rol} estadoCuentaDatos={estadoCuentaDatos} />
     </>
   );
 }
+

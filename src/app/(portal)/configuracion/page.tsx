@@ -19,7 +19,16 @@ export default async function ConfiguracionPage() {
     redirect("/sin-permiso");
   }
 
-  const secciones = [
+  interface SeccionConfig {
+    titulo: string;
+    descripcion: string;
+    href: string;
+    icono: any;
+    disponible: boolean;
+    etiqueta?: string;
+  }
+
+  const secciones: SeccionConfig[] = [
     {
       titulo: "Evento vigente",
       descripcion: "Nombre del concurso, fechas de desarrollo, fecha de corte de edad y lugar",
@@ -44,10 +53,9 @@ export default async function ConfiguracionPage() {
     {
       titulo: "Pruebas y conceptos",
       descripcion: "Pruebas del concurso, tarifas, cuotas y conceptos adicionales de cobro",
-      href: "#",
+      href: "/configuracion/pruebas",
       icono: Trophy,
-      disponible: false,
-      etiqueta: "Fase 6",
+      disponible: true,
     },
   ];
 

@@ -38,13 +38,16 @@ import {
   descargarDatosParticipante,
 } from "@/dominio/inscripciones/participantes/acciones";
 import { obtenerHoyEnChile } from "@/dominio/inscripciones/participantes/reglas";
+import { EstadoCuenta } from "@/components/app/estado-cuenta";
+import Link from "next/link";
 
 interface FichaJineteProps {
   jinete: any;
   rol: Rol;
+  estadoCuentaDatos?: any;
 }
 
-export function FichaJinete({ jinete, rol }: FichaJineteProps) {
+export function FichaJinete({ jinete, rol, estadoCuentaDatos }: FichaJineteProps) {
   const router = useRouter();
   const esAdmin = rol === "administrador";
   const esObservador = rol === "observador";
@@ -347,6 +350,31 @@ export function FichaJinete({ jinete, rol }: FichaJineteProps) {
           </div>
         )}
       </div>
+
+      {/* Estado de Cuenta del Jinete en el evento activo */}
+      {!esObservador && estadoCuentaDatos && (
+        <div className="p-4 rounded-3xl border border-borde bg-superficie space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-texto">Estado de Cuenta en Concurso</h2>
+            <div className="flex items-center gap-2 text-xs">
+              <Link
+                href={`/inscripciones/nueva?jineteId=${jinete.id}`}
+                className="text-marca hover:underline font-medium"
+              >
+                + Inscribir
+              </Link>
+              <span className="text-texto-suave">•</span>
+              <Link
+                href={`/inscripciones/pago?jineteId=${jinete.id}`}
+                className="text-marca hover:underline font-medium"
+              >
+                Registrar pago
+              </Link>
+            </div>
+          </div>
+          <EstadoCuenta sujeto={{ jineteId: jinete.id }} datos={estadoCuentaDatos} />
+        </div>
+      )}
 
       {/* 2. Sección Apoderados (Oculta al Observador) */}
       {!esObservador && (

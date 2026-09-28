@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma, MedioPago } from "@prisma/client";
 import { obtenerContexto, db, exigirDeLaOrganizacion, registrarAuditoria } from "@/lib/contexto";
 import { Contexto, exigir, esPropio, exigirNoPropio, puede } from "@/lib/permisos";
 import {
@@ -1703,3 +1703,172 @@ export async function listarAuditoria(
 
   return registros;
 }
+
+export interface MovimientoSistemaInput {
+  claveSistema: "inscripciones" | "devoluciones";
+  tipo: "ingreso" | "gasto";
+  montoClp: number;
+  fecha: string;
+  fechaPago?: string | null;
+  medioPago?: MedioPago | null;
+  nombreOrigen?: string | null;
+  observacion?: string | null;
+  sinRespaldo?: boolean;
+  claveCliente: string;
+  descripcion?: string | null;
+}
+
+/**
+ * 5.6: Registra un movimiento de sistema (inscripciones o devoluciones) dentro de una transacción.
+ * No pasa por el selector libre de categorías y asegura idempotencia mediante claveCliente.
+ */
+export async function registrarMovimientoSistema(
+  tx: any,
+  ctx: Contexto,
+  datos: MovimientoSistemaInput,
+  archivos: ArchivoEntrada[] = []
+) {
+  if (!ctx.evento || ctx.evento.estado !== "abierto") {
+    throw new Error("No hay un evento abierto vigente para registrar movimientos.");
+  }
+
+  // Idempotencia por claveCliente
+  const existente = await tx.movimiento.findUnique({
+    where: {
+      organizacionId_claveCliente: {
+        organizacionId: ctx.organizacionId,
+        claveCliente: datos.claveCliente,
+      },
+    },
+    include: { respaldos: true },
+  });
+
+  if (existente) {
+    if (existente.registradoPorId === ctx.usuario.id) {
+      return existente;
+    }
+    throw new Error("La clave de transacción ya fue utilizada por otro usuario.");
+  }
+
+  // Obtener categoría de sistema
+  const categoria = await tx.categoria.findFirst({
+    where: {
+      organizacionId: ctx.organizacionId,
+      claveSistema: datos.claveSistema,
+    },
+  });
+
+  if (!categoria) {
+    throw new Error(`No se encontró la categoría de sistema '${datos.claveSistema}'.`);
+  }
+
+  // Validación de respaldos o sinRespaldo
+  if (!datos.sinRespaldo && archivos.length === 0) {
+    throw new Error("Debes adjuntar al menos un comprobante o marcar 'Sin respaldo' con observación.");
+  }
+  if (datos.sinRespaldo && (!datos.observacion || datos.observacion.trim().length === 0)) {
+    throw new Error("Si marcas 'Sin respaldo', la observación es obligatoria.");
+  }
+
+  // Validar magic bytes de los archivos
+  const archivosValidados: {
+    buffer: Buffer;
+    tipoMime: "image/jpeg" | "image/png" | "application/pdf";
+    extension: "jpg" | "png" | "pdf";
+    esComprobantePago?: boolean;
+  }[] = [];
+
+  for (const arch of archivos) {
+    const validacion = validarMagicBytesRespaldo(arch.buffer);
+    if (!validacion.valido || !validacion.tipoMime || !validacion.extension) {
+      throw new Error(validacion.error || `Archivo '${arch.nombre}' no válido.`);
+    }
+    archivosValidados.push({
+      buffer: arch.buffer,
+      tipoMime: validacion.tipoMime,
+      extension: validacion.extension,
+      esComprobantePago: arch.esComprobantePago,
+    });
+  }
+
+  // Validación por rol:
+  // Administrador -> validado de inmediato
+  // Ayudante en ingreso de inscripciones -> por_validar
+  const puedeAutoValidar = puede(ctx, "validar");
+  const estadoValidacion = puedeAutoValidar ? "validado" : "por_validar";
+
+  const mov = await tx.movimiento.create({
+    data: {
+      organizacionId: ctx.organizacionId,
+      eventoId: ctx.evento.id,
+      tipo: datos.tipo,
+      naturaleza: "dinero",
+      montoClp: datos.montoClp,
+      montoOriginalClp: datos.montoClp,
+      fecha: new Date(`${datos.fecha}T00:00:00Z`),
+      fechaPago: datos.fechaPago ? new Date(`${datos.fechaPago}T00:00:00Z`) : new Date(`${datos.fecha}T00:00:00Z`),
+      medioPago: datos.medioPago || "transferencia",
+      estadoPago: "pagado",
+      categoriaId: categoria.id,
+      sinIdentificar: false,
+      nombreOrigen: datos.tipo === "ingreso" ? datos.nombreOrigen || null : null,
+      descripcion: datos.descripcion || null,
+      observacion: datos.observacion || null,
+      sinRespaldo: Boolean(datos.sinRespaldo),
+      estadoValidacion,
+      enviadoAValidarPorId: estadoValidacion === "por_validar" ? ctx.usuario.id : null,
+      validadoPorId: estadoValidacion === "validado" ? ctx.usuario.id : null,
+      validadoEn: estadoValidacion === "validado" ? new Date() : null,
+      registradoPorId: ctx.usuario.id,
+      claveCliente: datos.claveCliente,
+    },
+  });
+
+  for (const arch of archivosValidados) {
+    const respaldo = await tx.respaldo.create({
+      data: {
+        organizacionId: ctx.organizacionId,
+        movimientoId: mov.id,
+        ruta: "temporal",
+        tipoMime: arch.tipoMime,
+        bytes: arch.buffer.length,
+        esComprobantePago: arch.esComprobantePago ?? false,
+        subidoPorId: ctx.usuario.id,
+      },
+    });
+
+    const rutaRelativa = construirRutaRelativaRespaldo(
+      ctx.organizacionId,
+      mov.id,
+      respaldo.id,
+      arch.extension
+    );
+
+    await tx.respaldo.update({
+      where: { id: respaldo.id },
+      data: { ruta: rutaRelativa },
+    });
+
+    await guardarArchivoRespaldo(rutaRelativa, arch.buffer);
+  }
+
+  await tx.registroAuditoria.create({
+    data: {
+      organizacionId: ctx.organizacionId,
+      usuarioId: ctx.usuario.id,
+      entidad: "Movimiento",
+      entidadId: mov.id,
+      accion: "crear_sistema",
+      despues: {
+        id: mov.id,
+        tipo: mov.tipo,
+        montoClp: mov.montoClp,
+        claveSistema: datos.claveSistema,
+        estadoValidacion: mov.estadoValidacion,
+      } as Prisma.InputJsonValue,
+    },
+  });
+
+  return mov;
+}
+

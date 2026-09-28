@@ -176,9 +176,10 @@ export function db(ctx: Contexto) {
 export async function exigirDeLaOrganizacion(
   ctx: Contexto,
   modelo: string,
-  id: string
+  id: string,
+  tx?: any
 ): Promise<void> {
-  const cliente = db(ctx);
+  const cliente = tx || db(ctx);
   const modeloDelegate = (cliente as any)[modelo];
 
   if (!modeloDelegate || typeof modeloDelegate.findFirst !== "function") {
@@ -186,7 +187,7 @@ export async function exigirDeLaOrganizacion(
   }
 
   const registro = await modeloDelegate.findFirst({
-    where: { id },
+    where: { id, organizacionId: ctx.organizacionId },
     select: { id: true },
   });
 

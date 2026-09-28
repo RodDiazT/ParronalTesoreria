@@ -22,6 +22,7 @@ import {
   extraerPartesFecha,
   ParecidoCoincidencia,
 } from "./reglas";
+import { reasignarPorFusion } from "@/dominio/inscripciones/binomios/acciones";
 
 function revalidarRutasSeguras() {
   try {
@@ -350,11 +351,9 @@ export async function ejecutarFusionarClubes(
       data: { clubId: conservadoId, version: { increment: 1 } },
     });
 
-    // Reasignar binomios si existen
-    const binomiosReasignados = await tx.binomio.updateMany({
-      where: { clubId: duplicadoId },
-      data: { clubId: conservadoId, version: { increment: 1 } },
-    });
+    // Reasignar binomios y cargos de club
+    const reasig = await reasignarPorFusion(tx, ctx, "club", conservadoId, duplicadoId);
+    const binomiosReasignados = { count: reasig.binomios };
 
     // Completar datos vacíos del conservado
     const nuevoContacto = conservado.contacto || duplicado.contacto || null;
@@ -981,17 +980,10 @@ export async function ejecutarFusionarJinetes(
       });
     }
 
-    // Reasignar binomios si existen
-    const binomiosReasignados = await tx.binomio.updateMany({
-      where: { jineteId: duplicadoId },
-      data: { jineteId: conservadoId, version: { increment: 1 } },
-    });
-
-    // Reasignar cargos si existen
-    const cargosReasignados = await tx.cargo.updateMany({
-      where: { jineteId: duplicadoId },
-      data: { jineteId: conservadoId, version: { increment: 1 } },
-    });
+    // Reasignar binomios y cargos de jinete con validación de conflictos
+    const reasig = await reasignarPorFusion(tx, ctx, "jinete", conservadoId, duplicadoId);
+    const binomiosReasignados = { count: reasig.binomios };
+    const cargosReasignados = { count: reasig.cargos };
 
     // Determinar fecha de nacimiento
     let fnFinal = conservado.fechaNacimiento;
@@ -1569,10 +1561,8 @@ export async function ejecutarFusionarCaballos(
       throw new Error("Uno o ambos caballos no existen.");
     }
 
-    const binomiosReasignados = await tx.binomio.updateMany({
-      where: { caballoId: duplicadoId },
-      data: { caballoId: conservadoId, version: { increment: 1 } },
-    });
+    const reasig = await reasignarPorFusion(tx, ctx, "caballo", conservadoId, duplicadoId);
+    const binomiosReasignados = { count: reasig.binomios };
 
     const conservadoActualizado = await tx.caballo.update({
       where: { id: conservadoId },

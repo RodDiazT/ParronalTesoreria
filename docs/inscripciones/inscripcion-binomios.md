@@ -768,3 +768,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 1.3 | §2: fila del Formulario de inscripción. §3.12: pestaña Por revisar. §5.3: `registrarPagoInscripciones` acepta `tx` y `respaldoExistente` | Aprobación de Formulario de inscripción v1.0 |
 | 2026-09-27 | 1.4 | §3.12: la pestaña Binomios se muestra como tarjeta de dos líneas (UX/UI §3.7) | Aprobación de UX/UI v1.0 |
 | 2026-09-28 | 1.5 | Se documenta el estado de avance técnico: modelos Prisma y permisos configurados previamente, detalle de módulos de dominio, pantallas y tests pendientes de ejecución | Diagnóstico de implementación Fase 6 |
+| 2026-09-28 | 1.6 | Fase 6 de implementación completada: dominio de binomios (`reglas`, `acciones`, `consultas`, `pagos`, `retiros`), 7 pantallas y componentes del portal, suite de 19 tests automatizados pasando al 100% (152 totales) y build de producción Next.js verificado | Finalización e integración Fase 6 |

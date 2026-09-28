@@ -41,30 +41,22 @@ Están aprobados el marco general y todos los componentes del núcleo v1.0 (Orga
   - Componentes táctiles: chips visuales `<AlertasJinete>` y selectores con búsqueda y alta rápida inline (`<SelectorClub>`, `<SelectorJinete>`, `<SelectorCaballo>`, `<SelectorApoderado>`).
   - Pantallas del portal: listado `/participantes` con 4 pestañas y filtro rápido "Con alertas", alta rápida móvil `/participantes/jinetes/nuevo` con edad en vivo, y fichas de detalle `/participantes/jinetes/[id]`, `/participantes/clubes/[id]`, `/participantes/caballos/[id]` y `/participantes/apoderados/[id]`.
   - Suite de 30 tests unitarios y de integración de participantes pasando al 100%. Total del proyecto: 113 tests pasando al 100% (10 suites de Vitest) y build de producción Next.js limpio.
-- **Fase 6 (Inscripción de Binomios, Pruebas y Pagos):** DIAGNÓSTICO Y REVISIÓN DE AVANCE (Pendiente de implementación activa).
-  - **Qué se encuentra realizado previamente (Bases y pre-requisitos de Fases 1 a 5):**
-    - Modelos de datos en Prisma (`prisma/schema.prisma`) y base de datos Railway migrada con las 7 entidades: `Prueba`, `Concepto`, `Binomio`, `Inscripcion`, `Cargo`, `Pago` y `Devolucion`, con enums (`AplicaConcepto`), claves foráneas e índices base.
-    - Matriz de permisos (`src/lib/permisos.ts`) con tipado y validación de acciones: `inscripciones.ver`, `inscripciones.verDatosPersonales`, `inscripciones.inscribir`, `inscripciones.ajustar` e `inscripciones.administrar`.
-    - Navegación e interfaz base: enlace `/inscripciones` en menú principal (`src/lib/presentacion/menu.ts`), accesos rápidos en `HojaRegistrar` (`/inscripciones/pago` e `/inscripciones/nueva`), y sección "Pruebas y conceptos" en `/configuracion` etiquetada como "Fase 6".
-    - Tesorería y movimientos: protección de categorías de sistema (`inscripciones` y `devoluciones`) y anulación en cascada de `pago` y `devolucion` ya integrada en `ejecutarAnularMovimiento`.
-    - Participantes: cálculo de `edadEnEvento` y alertas de menores (`alertasJinete`), reasignación preliminar de binomios y cargos al fusionar jinetes.
-  - **Qué NO se ha implementado aún (Pendiente para completar la Fase 6):**
-    - Módulo de dominio de binomios (`src/dominio/inscripciones/binomios/`):
-      - `reglas.ts`: función canónica `estadoItem` (pendiente, parcial, pagado, becado, retirado, marca `porValidar`), `retiroItem`, `porAsignar`, algoritmo FIFO `repartirMonto`, `avisoEdadPrueba`, `ocultarDatosInscripcion`.
-      - `consultas.ts`: listados y fichas con filtros táctiles, agregación por prueba, agrupaciones de por cobrar/por asignar/retiros, estado de cuenta y texto WhatsApp anonimizado (`textoEstadoCuenta`), cálculo de indicadores de dashboard (`porCobrarInscripciones`, `totalPorAsignar`).
-      - `acciones.ts`: gestión de pruebas y conceptos (`crearPrueba`, `editarPrueba`, `ordenarPruebas`, `crearConcepto`, etc.), flujo rápido `inscribir` con cuota automática por binomio (`automatico: true`), `agregarCargo`, `ajustarItem` con motivo y aviso "Visto" para ayudantes, cambios pre-concurso (`cambiarPrueba`, `cambiarParBinomio`, `moverInscripcion`, `cambiarClubBinomio`), anulación de ítems y binomio.
-      - `pagos.ts`: `registrarPagoInscripciones` mediante movimiento en categoría de sistema `inscripciones`, reparto y bloqueo concurrente `SELECT ... FOR UPDATE`, `asignarPorAsignar`, `corregirReparto`, `desasignarPago`.
-      - `retiros.ts`: `retirar` (sin devolución, parcial o total), registro de devoluciones (`registrarDevolucionRetiro`, `devolverSobrante`) con gasto en categoría `devoluciones`.
-    - Integraciones transversales:
-      - Gancho formal `reasignarPorFusion` en Participantes con detección y bloqueo de `ConflictoBinomios`.
-      - Función interna `registrarMovimientoSistema` en Movimientos y botón "Asignar a inscripciones" en ingresos sin identificar.
-      - Consulta `inscripcionesAfectadasPorCambioDeFecha` en Configuración del Evento.
-    - Componentes táctiles y pantallas del portal (`src/app/(portal)/`):
-      - Componentes `<RepartoPago>`, `<EstadoItem>`, `<EstadoCuenta>`, botón "Copiar estado de cuenta", sección de "Ajustes de inscripción" en `/movimientos/validar`.
-      - Pantallas `/configuracion/pruebas`, `/inscripciones` (6 pestañas), `/inscripciones/nueva`, `/inscripciones/binomios/[id]`, `/inscripciones/pago`, `/inscripciones/movimientos/[id]/asignar`, `/inscripciones/binomios/[id]/retirar`.
-    - Restricciones SQL y suite de pruebas:
-      - Índices parciales condicionales (`WHERE NOT anulado`) y restricciones `CHECK`.
-      - Suite de pruebas de integración y unitarias `binomios.test.ts` en Vitest.
+- **Fase 6 (Inscripción de Binomios, Pruebas, Cargos, Pagos, Retiros y Cobranza WhatsApp):** COMPLETADA.
+  - Dominio y lógica de negocio (`src/dominio/inscripciones/binomios/`):
+    - `reglas.ts`: función canónica `estadoItem` (pendiente, parcial, pagado, becado, retirado, marca `porValidar`), `retiroItem` con cálculo de pagado/devuelto/retenido, `porAsignar`, algoritmo FIFO `repartirMonto`, `avisoEdadPrueba`, `ocultarDatosInscripcion` (ocultamiento riguroso de contacto/RUT/avisos para observador).
+    - `consultas.ts`: listados con filtros táctiles (todas, por cobrar, por asignar, con alertas, por prueba, retiros), ficha completa del binomio (`fichaBinomio`), desglose por prueba (`resumenPorPrueba`), agrupaciones y cálculo de indicadores de dashboard (`porCobrarInscripciones`, `totalPorAsignar`), generador de estado de cuenta para WhatsApp anonimizado (`generarMensajeWhatsApp`).
+    - `acciones.ts`: gestión de pruebas y conceptos (`crearPrueba`, `editarPrueba`, `ordenarPruebas`, `crearConcepto`, etc.), flujo atómico `inscribir` con cuotas automáticas por binomio (`automatico: true`), `agregarCargo`, `ajustarItem` con motivo y aviso no bloqueante "Visto" para administradores, cambios pre-concurso (`cambiarPrueba`, `cambiarParBinomio`, `moverInscripcion`, `cambiarClubBinomio`), anulación de ítems y anulación completa de binomios.
+    - `pagos.ts`: `registrarPagoInscripciones` mediante movimiento en categoría de sistema `inscripciones`, imputación manual y asignación FIFO con transacciones ACID, `asignarPorAsignar` desde ingresos huérfanos o excedentes, `corregirReparto`, `desasignarPago`.
+    - `retiros.ts`: `ejecutarRetirar` (retiro de binomio completo o pruebas individuales, retención o devolución), registro de devoluciones (`registrarDevolucionRetiro`, `devolverSobrante`) con generación de gasto en categoría de sistema `devoluciones`.
+  - Integraciones transversales:
+    - Gancho `reasignarPorFusion` en Participantes con detección y bloqueo de `ConflictoBinomios`.
+    - Función interna `registrarMovimientoSistema` en Movimientos y pantalla de asignación (`/inscripciones/movimientos/[id]/asignar`) para ingresos huérfanos o con saldo sobrante.
+    - Consulta `inscripcionesAfectadasPorCambioDeFecha` en Configuración del Evento.
+  - Componentes táctiles y pantallas del portal (`src/app/(portal)/`):
+    - Componentes `<RepartoPago>`, `<EstadoItemBadge>`, `<EstadoCuenta>`, botón táctil "Copiar para WhatsApp", bandeja de "Ajustes de inscripción" en `/movimientos/validar`.
+    - Pantallas completas: `/configuracion/pruebas`, `/inscripciones` (6 pestañas dinámicas), `/inscripciones/nueva` (con selectores en vivo), `/inscripciones/binomios/[id]` (ficha completa con historial, auditoría y modales de ajuste/cambio), `/inscripciones/pago`, `/inscripciones/movimientos/[id]/asignar`, `/inscripciones/binomios/[id]/retirar`.
+  - Suite de pruebas automatizadas:
+    - `src/dominio/inscripciones/binomios/binomios.test.ts` con 19 pruebas de integración y unitarias pasando al 100%. Total del proyecto: 152 tests pasando en 13 suites de Vitest y build de producción Next.js limpio (42 rutas compiladas).
 - **Fase 7 (Dashboard por Rol y Traspasos entre Medios de Pago):** COMPLETADA.
   - Motor de cálculo dinámico (`src/dominio/dashboard/calculos.ts`): consultas de agregación sin saldos estáticos, cálculo de saldo de caja (`ingresosPercibidos - gastosPagados`), resultado proyectado (`saldoCaja + porCobrar - porPagar`) y desglose estricto por medios (`transferencia + efectivo + otro === saldoCaja`). Desglose de aporte inicial, pendientes a proveedores vs reembolsos a la comisión, y sección aparte (por validar, por asignar, en especie).
   - Avisos del Administrador (`avisosAdministrador`) y resumen "Lo mío" del Ayudante (`loMio`) con comentarios de revisión y botón de corrección.
