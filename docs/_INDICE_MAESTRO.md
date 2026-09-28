@@ -1,6 +1,6 @@
 # Índice Maestro — Tesorería Parronal
 
-Última actualización: 2026-09-27
+Última actualización: 2026-09-28
 
 ## Árbol de carpetas
 
@@ -92,7 +92,7 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
     "nombre": "Tesorería Parronal",
     "repositorio": "github",
     "raiz": "https://github.com/RodDiazT/parronaltesoreria/tree/main/docs",
-    "actualizado": "2026-09-27"
+    "actualizado": "2026-09-28"
   },
   "fases": [
     {
@@ -552,4 +552,6 @@ Dos categorías: **Desarrollo** (lo que Rod configura o entrega para que el proy
 | 2026-09-27 | 1.19 | UX/UI pasa a revisión (v0.1); nuevo dominio y carpeta `interfaz/`. Al aprobarse, el marco general sube a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 (sección 6 del borrador) | Borrador de UX/UI pedido por Rod |
 | 2026-09-27 | 1.20 | UX/UI aprobado (v1.0) sin cambios. Marco general a v1.7, Dashboard a v1.2, Movimientos, Acceso y roles e Inscripción de binomios a v1.4, y Organización y evento a v1.3 | Aprobación de UX/UI |
 | 2026-09-27 | 1.21 | Fase 1 y Fase 2 de implementación técnica completadas, verificadas con tests y desplegadas en Railway según PLAN_IMPLEMENTACION.md | Hito de desarrollo técnico |
+| 2026-09-27 | 1.22 | Fases 3 (UX/UI base y Configuración), 4 (Movimientos y Validación) y 5 (Participantes) completadas y verificadas con 113 tests al 100% y build limpio de Next.js | Hito de desarrollo técnico |
+| 2026-09-28 | 1.23 | Diagnóstico y revisión de implementación de Fase 6 (Inscripción de binomios, pruebas y pagos): se audita el estado del código fuente y se documentan componentes existentes vs pendientes en _ESTADO_PROYECTO.md, PLAN_IMPLEMENTACION.md e inscripcion-binomios.md | Revisión y diagnóstico de Fase 6 |
 

@@ -228,34 +228,63 @@ Este plan define la hoja de ruta paso a paso para implementar el software del po
 
 ### Fase 6: Inscripción de Binomios, Pruebas y Pagos
 **Documento base:** `docs/inscripciones/inscripcion-binomios.md`
+**Estado:** Diagnóstico de avance realizado (Pendiente de implementación activa: 0 de 4 pasos concluidos).
+
+#### Pre-requisitos heredados y completados en fases previas:
+- [x] Modelos de datos en Prisma (`Prueba`, `Concepto`, `Binomio`, `Inscripcion`, `Cargo`, `Pago`, `Devolucion`) y base de datos migrada en Railway.
+- [x] Acciones y matriz de permisos configuradas en `src/lib/permisos.ts` (`inscripciones.ver`, `inscripciones.verDatosPersonales`, `inscripciones.inscribir`, `inscripciones.ajustar`, `inscripciones.administrar`).
+- [x] Categorías de sistema protegidas (`inscripciones`, `devoluciones`) en `src/dominio/organizacion/categorias.ts`.
+- [x] Cascada de anulación de pagos y devoluciones en `ejecutarAnularMovimiento` (`src/dominio/movimientos/acciones.ts`).
+- [x] Cálculo de edad en concurso (`edadEnEvento`) y alertas de menores en Participantes (`src/dominio/inscripciones/participantes/reglas.ts`).
+- [x] Enlaces en menú de navegación (`/inscripciones`) y hoja rápida de registro (`/inscripciones/nueva`, `/inscripciones/pago`).
 
 #### Paso 6.1: Configuración de Pruebas y Conceptos
-- **Archivos:** `src/app/configuracion/pruebas/page.tsx`, `src/app/configuracion/conceptos/page.tsx`.
-- **Qué hace:**
-  - Pruebas del concurso con tarifa y límites de edad mínima/máxima.
-  - Conceptos adicionales: cuota por binomio (automática al inscribir), alojamiento y pensión.
+- **Estado:** Pendiente.
+- **Archivos:** `src/app/(portal)/configuracion/pruebas/page.tsx`, `src/dominio/inscripciones/binomios/acciones.ts`.
+- **Tareas pendientes:**
+  - [ ] Acciones de servidor con validación Zod y auditoría: `crearPrueba`, `editarPrueba`, `ordenarPruebas`, `desactivarPrueba`, `reactivarPrueba`.
+  - [ ] Acciones de conceptos: `crearConcepto`, `editarConcepto`, `ordenarConceptos`, `desactivarConcepto`, `reactivarConcepto`.
+  - [ ] Pantalla `/configuracion/pruebas` con pestañas para Pruebas del concurso y Conceptos adicionales (cuota por binomio automática, pensión, alojamiento).
+  - [ ] Habilitar el acceso en `/configuracion/page.tsx` (remover deshabilitado y etiqueta).
 
 #### Paso 6.2: Inscripción de Binomios en Terreno
-- **Archivos:** `src/app/inscripciones/page.tsx`, `src/app/inscripciones/nueva/page.tsx`, `src/dominio/inscripciones/binomios/acciones.ts`.
-- **Qué hace:**
-  - Selección de jinete, caballo y pruebas en un solo flujo rápido.
-  - Carga automática de la cuota por binomio (`automatico: true`).
-  - Avisos de edad por prueba no bloqueantes.
-  - Manejo de descuentos o becas con motivo obligatorio.
+- **Estado:** Pendiente.
+- **Archivos:** `src/dominio/inscripciones/binomios/reglas.ts`, `src/dominio/inscripciones/binomios/consultas.ts`, `src/dominio/inscripciones/binomios/acciones.ts`, `src/app/(portal)/inscripciones/page.tsx`, `src/app/(portal)/inscripciones/nueva/page.tsx`, `src/app/(portal)/inscripciones/binomios/[id]/page.tsx`.
+- **Tareas pendientes:**
+  - [ ] Reglas puras: `estadoItem` (pendiente, parcial, pagado, becado, retirado, y marca `porValidar`), `avisoEdadPrueba` (no bloqueante), `ocultarDatosInscripcion` (ocultamiento a observador).
+  - [ ] Acción `inscribir`: creación atómica de binomio si no existía, registro de inscripciones en pruebas seleccionadas, carga automática de cuota por binomio (`automatico: true`), idempotencia por `claveCliente`.
+  - [ ] Acciones de gestión y ajuste: `agregarCargo` (servicios manuales a jinete/club), `ajustarItem` (con motivo y aviso "Visto" si es ayudante), `marcarVisto`, `revertirAjuste`.
+  - [ ] Cambios pre-concurso: `cambiarPrueba`, `cambiarParBinomio`, `moverInscripcion`, `cambiarClubBinomio`.
+  - [ ] Anulación: `anularItem` (solo propios sin pago para ayudante, cualquiera sin pago para administrador), `anularBinomio`.
+  - [ ] Pantallas: listado `/inscripciones` con tarjetas de 2 líneas y 6 pestañas, formulario móvil `/inscripciones/nueva` y ficha de detalle `/inscripciones/binomios/[id]`.
 
 #### Paso 6.3: Registro y Asignación de Pagos de Inscripción
-- **Archivos:** `src/dominio/inscripciones/binomios/pagos.ts`.
-- **Qué hace:**
-  - El pago crea un movimiento de ingreso en categoría de sistema `inscripciones`.
-  - Algoritmo `repartirMonto`: reparte el valor transferido entre las inscripciones y cargos pendientes (de más antiguo a más nuevo).
-  - Si sobra dinero, queda registrado como `porAsignar`.
-  - Función única de estado `estadoItem` (pendiente, parcial, pagado, becado, retirado).
+- **Estado:** Pendiente.
+- **Archivos:** `src/dominio/inscripciones/binomios/pagos.ts`, `src/app/(portal)/inscripciones/pago/page.tsx`, `src/app/(portal)/inscripciones/movimientos/[id]/asignar/page.tsx`, `src/components/app/reparto-pago.tsx`, `src/components/app/estado-item.tsx`.
+- **Tareas pendientes:**
+  - [ ] Algoritmo FIFO `repartirMonto`: reparte el valor transferido entre ítems pendientes (de más antiguo a más nuevo) sin superar saldos; remanente queda en `porAsignar`.
+  - [ ] Acción `registrarPagoInscripciones`: crea movimiento de ingreso en categoría de sistema `inscripciones`, bloquea filas con `SELECT ... FOR UPDATE`, valida saldos y crea registros `Pago`.
+  - [ ] Gestión de asignación: `asignarPorAsignar`, `corregirReparto` (para ayudante en movimientos propios por validar) y `desasignarPago` (administrador con anulación lógica de `Pago`).
+  - [ ] Componentes visuales: `<RepartoPago>` interactivo y chip `<EstadoItem>` con marca `· por validar`.
+  - [ ] Pantalla `/inscripciones/pago` y flujo directo "Registrar pago ahora" tras inscribir.
 
 #### Paso 6.4: Retiros, Devoluciones y Cobranza WhatsApp
-- **Archivos:** `src/dominio/inscripciones/binomios/retiros.ts`.
-- **Qué hace:**
-  - Retiro de prueba o binomio con devolución total, parcial o retención (crea gasto en categoría `devoluciones`).
-  - Copiar estado de cuenta formateado para cobro vía WhatsApp (fichas de jinete y club).
+- **Estado:** Pendiente.
+- **Archivos:** `src/dominio/inscripciones/binomios/retiros.ts`, `src/app/(portal)/inscripciones/binomios/[id]/retirar/page.tsx`, `src/components/app/estado-cuenta.tsx`.
+- **Tareas pendientes:**
+  - [ ] Acción `retirar`: retiro de pruebas/binomio por administrador (detiene si hay pagos por validar), con opción sin devolución, parcial o total (gasto en categoría `devoluciones`), registrando `retenido`.
+  - [ ] Devolución posterior (`registrarDevolucionRetiro`) y devolución de sobrante por asignar (`devolverSobrante`).
+  - [ ] Estado de cuenta: consulta `estadoCuenta` y generador de texto limpio para WhatsApp `textoEstadoCuenta` (sin RUT, edades ni contactos personales; con auditoría).
+  - [ ] Componente `<EstadoCuenta>` con botón "Copiar estado de cuenta" en fichas de jinete, club y binomio.
+  - [ ] Integración de fusión: gancho `reasignarPorFusion` en Participantes con detección y bloqueo de `ConflictoBinomios`.
+  - [ ] Consulta `inscripcionesAfectadasPorCambioDeFecha` para vista previa en Configuración del Evento.
+  - [ ] Indicadores de dashboard: `porCobrarInscripciones` y `totalPorAsignar`.
+
+**Criterios de verificación de Fase 6:**
+- [ ] Suite completa de pruebas unitarias y de integración de binomios (`binomios.test.ts`) pasando al 100%.
+- [ ] Verificación de aislamiento multi-tenant en todas las consultas y acciones de binomios.
+- [ ] Compilación Next.js de producción limpia (`npm run build`, 0 errores, 0 warnings).
+- [ ] 100% de tests del proyecto pasando sin fallas.
 
 ---
 

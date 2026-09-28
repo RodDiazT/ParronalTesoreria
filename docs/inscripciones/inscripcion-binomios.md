@@ -730,6 +730,12 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 - paso 14, salvo "Cambiar prueba";
 - la devolución de sobrante (parte del paso 11): mientras tanto, el sobrante queda por asignar.
 
+### 7.1 Estado de avance de la implementación (al 2026-09-28)
+
+- **Paso 1 (Modelos y migración):** PARCIAL. Los modelos `Prueba`, `Concepto`, `Binomio`, `Inscripcion`, `Cargo`, `Pago` y `Devolucion` están creados en `prisma/schema.prisma` y migrados a PostgreSQL en Railway desde la Fase 1. Restricciones `CHECK` e índices únicos condicionales `WHERE NOT anulado` pendientes de migración SQL específica.
+- **Paso 3 (Permisos):** PARCIAL. Acciones base (`inscripciones.ver`, `inscripciones.verDatosPersonales`, `inscripciones.inscribir`, `inscripciones.ajustar`, `inscripciones.administrar`) tipadas y probadas en `src/lib/permisos.ts`. Función de servidor `ocultarDatosInscripcion` pendiente.
+- **Pasos 2, 4 al 17:** PENDIENTES. Módulos de dominio (`reglas.ts`, `acciones.ts`, `consultas.ts`, `pagos.ts`, `retiros.ts`), vistas del portal (`/configuracion/pruebas`, `/inscripciones/*`), componentes UI y suite de tests `binomios.test.ts`.
+
 ---
 
 ## 8. Riesgos
@@ -761,3 +767,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 1.2 | §3.12: la pestaña de `/inscripciones` se refleja en la URL (Dashboard §5.5) | Aprobación de Dashboard v1.0 |
 | 2026-09-27 | 1.3 | §2: fila del Formulario de inscripción. §3.12: pestaña Por revisar. §5.3: `registrarPagoInscripciones` acepta `tx` y `respaldoExistente` | Aprobación de Formulario de inscripción v1.0 |
 | 2026-09-27 | 1.4 | §3.12: la pestaña Binomios se muestra como tarjeta de dos líneas (UX/UI §3.7) | Aprobación de UX/UI v1.0 |
+| 2026-09-28 | 1.5 | Se documenta el estado de avance técnico: modelos Prisma y permisos configurados previamente, detalle de módulos de dominio, pantallas y tests pendientes de ejecución | Diagnóstico de implementación Fase 6 |

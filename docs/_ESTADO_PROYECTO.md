@@ -1,6 +1,6 @@
 # Estado del Proyecto — Tesorería Parronal
 
-Última actualización: 2026-09-27
+Última actualización: 2026-09-28
 
 ## Resumen
 
@@ -41,8 +41,30 @@ Están aprobados el marco general y todos los componentes del núcleo v1.0 (Orga
   - Componentes táctiles: chips visuales `<AlertasJinete>` y selectores con búsqueda y alta rápida inline (`<SelectorClub>`, `<SelectorJinete>`, `<SelectorCaballo>`, `<SelectorApoderado>`).
   - Pantallas del portal: listado `/participantes` con 4 pestañas y filtro rápido "Con alertas", alta rápida móvil `/participantes/jinetes/nuevo` con edad en vivo, y fichas de detalle `/participantes/jinetes/[id]`, `/participantes/clubes/[id]`, `/participantes/caballos/[id]` y `/participantes/apoderados/[id]`.
   - Suite de 30 tests unitarios y de integración de participantes pasando al 100%. Total del proyecto: 113 tests pasando al 100% (10 suites de Vitest) y build de producción Next.js limpio.
-
-El plan paso a paso y la estrategia completa de avance se detallan en [`docs/PLAN_IMPLEMENTACION.md`](PLAN_IMPLEMENTACION.md).
+- **Fase 6 (Inscripción de Binomios, Pruebas y Pagos):** DIAGNÓSTICO Y REVISIÓN DE AVANCE (Pendiente de implementación activa).
+  - **Qué se encuentra realizado previamente (Bases y pre-requisitos de Fases 1 a 5):**
+    - Modelos de datos en Prisma (`prisma/schema.prisma`) y base de datos Railway migrada con las 7 entidades: `Prueba`, `Concepto`, `Binomio`, `Inscripcion`, `Cargo`, `Pago` y `Devolucion`, con enums (`AplicaConcepto`), claves foráneas e índices base.
+    - Matriz de permisos (`src/lib/permisos.ts`) con tipado y validación de acciones: `inscripciones.ver`, `inscripciones.verDatosPersonales`, `inscripciones.inscribir`, `inscripciones.ajustar` e `inscripciones.administrar`.
+    - Navegación e interfaz base: enlace `/inscripciones` en menú principal (`src/lib/presentacion/menu.ts`), accesos rápidos en `HojaRegistrar` (`/inscripciones/pago` e `/inscripciones/nueva`), y sección "Pruebas y conceptos" en `/configuracion` etiquetada como "Fase 6".
+    - Tesorería y movimientos: protección de categorías de sistema (`inscripciones` y `devoluciones`) y anulación en cascada de `pago` y `devolucion` ya integrada en `ejecutarAnularMovimiento`.
+    - Participantes: cálculo de `edadEnEvento` y alertas de menores (`alertasJinete`), reasignación preliminar de binomios y cargos al fusionar jinetes.
+  - **Qué NO se ha implementado aún (Pendiente para completar la Fase 6):**
+    - Módulo de dominio de binomios (`src/dominio/inscripciones/binomios/`):
+      - `reglas.ts`: función canónica `estadoItem` (pendiente, parcial, pagado, becado, retirado, marca `porValidar`), `retiroItem`, `porAsignar`, algoritmo FIFO `repartirMonto`, `avisoEdadPrueba`, `ocultarDatosInscripcion`.
+      - `consultas.ts`: listados y fichas con filtros táctiles, agregación por prueba, agrupaciones de por cobrar/por asignar/retiros, estado de cuenta y texto WhatsApp anonimizado (`textoEstadoCuenta`), cálculo de indicadores de dashboard (`porCobrarInscripciones`, `totalPorAsignar`).
+      - `acciones.ts`: gestión de pruebas y conceptos (`crearPrueba`, `editarPrueba`, `ordenarPruebas`, `crearConcepto`, etc.), flujo rápido `inscribir` con cuota automática por binomio (`automatico: true`), `agregarCargo`, `ajustarItem` con motivo y aviso "Visto" para ayudantes, cambios pre-concurso (`cambiarPrueba`, `cambiarParBinomio`, `moverInscripcion`, `cambiarClubBinomio`), anulación de ítems y binomio.
+      - `pagos.ts`: `registrarPagoInscripciones` mediante movimiento en categoría de sistema `inscripciones`, reparto y bloqueo concurrente `SELECT ... FOR UPDATE`, `asignarPorAsignar`, `corregirReparto`, `desasignarPago`.
+      - `retiros.ts`: `retirar` (sin devolución, parcial o total), registro de devoluciones (`registrarDevolucionRetiro`, `devolverSobrante`) con gasto en categoría `devoluciones`.
+    - Integraciones transversales:
+      - Gancho formal `reasignarPorFusion` en Participantes con detección y bloqueo de `ConflictoBinomios`.
+      - Función interna `registrarMovimientoSistema` en Movimientos y botón "Asignar a inscripciones" en ingresos sin identificar.
+      - Consulta `inscripcionesAfectadasPorCambioDeFecha` en Configuración del Evento.
+    - Componentes táctiles y pantallas del portal (`src/app/(portal)/`):
+      - Componentes `<RepartoPago>`, `<EstadoItem>`, `<EstadoCuenta>`, botón "Copiar estado de cuenta", sección de "Ajustes de inscripción" en `/movimientos/validar`.
+      - Pantallas `/configuracion/pruebas`, `/inscripciones` (6 pestañas), `/inscripciones/nueva`, `/inscripciones/binomios/[id]`, `/inscripciones/pago`, `/inscripciones/movimientos/[id]/asignar`, `/inscripciones/binomios/[id]/retirar`.
+    - Restricciones SQL y suite de pruebas:
+      - Índices parciales condicionales (`WHERE NOT anulado`) y restricciones `CHECK`.
+      - Suite de pruebas de integración y unitarias `binomios.test.ts` en Vitest.
 
 ## Stack o recursos confirmados
 
@@ -115,3 +137,4 @@ El plan paso a paso y la estrategia completa de avance se detallan en [`docs/PLA
 | 2026-09-27 | 1.14 | Ejecución de Fase 3 completada: estructura visual responsive (`<Estructura>`, `<Encabezado>`, `<MenuPrincipal>`, `<HojaRegistrar>`), PWA manifest e íconos, pantallas `/configuracion/*` (evento, organización con logo, categorías con reordenamiento), módulo `/contrapartes` con parecidos Levenshtein, fusión y supresión de datos. Suite de 64 tests pasando al 100% | Implementación de Fase 3 |
 | 2026-09-27 | 1.15 | Ejecución de Fase 4 completada: módulo de movimientos (`/movimientos`, `/movimientos/nuevo`, `/movimientos/[id]`), compresión Canvas, almacenamiento persistente y endpoint seguro `/api/respaldos/[id]`, bandeja de validación individual `/movimientos/validar` con probidad `exigirNoPropio`, pagos y abonos concurrentes (`marcarPagado`), y auditoría general `/auditoria`. Suite de 83 tests pasando al 100% | Implementación de Fase 4 |
 | 2026-09-27 | 1.16 | Ejecución de Fase 5 completada: módulo de participantes (`/participantes`, `/participantes/jinetes/nuevo`, `/participantes/jinetes/[id]`, `/participantes/clubes/[id]`, `/participantes/caballos/[id]`, `/participantes/apoderados/[id]`), reglas de edad `edadEnEvento`, alertas de menores `alertasJinete`, detección de parecidos Levenshtein `buscarParecidos`, creación atómica de jinete con apoderado y autorización, fusiones transaccionales de clubes, jinetes y caballos duplicados, y privacidad normada (Ley 19.628 / 21.719) con supresión y descarga CSV. Suite de 30 tests de participantes y 113 tests totales del proyecto pasando al 100% | Implementación de Fase 5 |
+| 2026-09-28 | 1.17 | Diagnóstico y revisión exhaustiva de Fase 6: se documenta el estado de implementación detallando las bases previas consolidadas (modelos Prisma, permisos en matriz, rutas de menú y cascadas parciales) versus los componentes de dominio, pantallas de portal, ganchos de integración y suite de tests pendientes para su ejecución | Revisión y diagnóstico de Fase 6 |
