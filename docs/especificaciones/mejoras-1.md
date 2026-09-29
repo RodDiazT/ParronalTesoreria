@@ -103,11 +103,15 @@ Dado que el proyecto se encuentra en fase de pruebas activas y no existen datos 
        };
      }
      ```
-   * **Preservación Contable:** Las inscripciones reasignadas mantienen su `tarifaClp`, `montoClp` y pagos vinculados intactos. No se altera la deuda ni los abonos registrados del participante.
+   * **Tratamiento de Inscripciones Retiradas/Anuladas e Integridad Referencial:**
+     Las inscripciones en estado retirado o anulado (`anulado: true`, `retirado: true`) preservan la trazabilidad de pagos (`Pago`), devoluciones (`Devolucion`) y movimientos en Tesorería. En PostgreSQL, la relación `Inscripcion.pruebaId` opera bajo restricción `RESTRICT`. Por lo tanto:
+     - Una prueba se considera de **Caso A (eliminación directa)** únicamente cuando cuenta con **0 registros totales en `Inscripcion`** (tanto activas como anuladas/retiradas).
+     - Si la prueba cuenta con inscripciones históricas retiradas (incluso si tiene 0 activas), clasifica como **Caso B (reasignación requerida)** para transferir dichos registros históricos a una prueba de destino antes de ejecutar el borrado de la entidad `Prueba`.
+     - La **Regla Antiduplicidad** solo evalúa colisiones entre binomios de inscripciones **activas** (`anulado: false`), permitiendo reasignar inscripciones retiradas sin falsos positivos de duplicidad.
    * **Transacción Atómica:**
      ```ts
      await db.$transaction([
-       // 1. Reasignar todas las inscripciones a la nueva prueba
+       // 1. Reasignar todas las inscripciones (activas e históricas) a la nueva prueba
        db.inscripcion.updateMany({
          where: { pruebaId: id },
          data: { pruebaId: reasignarAId }

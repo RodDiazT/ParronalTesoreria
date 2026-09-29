@@ -30,10 +30,11 @@ export default async function PruebasConfiguracionPage() {
     where: { organizacionId: ctx.organizacionId, eventoId: ctx.evento.id },
     include: {
       inscripciones: {
-        where: { anulado: false },
         select: {
           id: true,
           binomioId: true,
+          anulado: true,
+          retirado: true,
           binomio: {
             select: {
               jinete: { select: { nombre: true } },

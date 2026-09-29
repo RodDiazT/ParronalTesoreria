@@ -18,6 +18,8 @@ import {
 export interface InscripcionPruebaItem {
   id: string;
   binomioId: string;
+  anulado?: boolean;
+  retirado?: boolean;
   binomio: {
     jinete: { nombre: string };
     caballo: { nombre: string };
@@ -162,17 +164,23 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
     }
   };
 
-  // Cálculo de colisiones para modal de eliminación
-  const cantInscripcionesModal = modalEliminar?.inscripciones?.length || 0;
+  // Cálculo de colisiones e inscripciones para modal de eliminación
+  const modalInscripciones = modalEliminar?.inscripciones || [];
+  const modalInscripcionesActivas = modalInscripciones.filter((i) => !i.anulado);
+  const modalInscripcionesRetiradas = modalInscripciones.filter((i) => i.anulado);
+  const cantTotalModal = modalInscripciones.length;
+
   const otrasPruebas = pruebasIniciales.filter(
     (p) => p.id !== modalEliminar?.id && p.activa
   );
   const pruebaDestinoSeleccionada = otrasPruebas.find((p) => p.id === pruebaDestinoId);
-  const binomiosDestinoSet = new Set(
-    (pruebaDestinoSeleccionada?.inscripciones || []).map((ins) => ins.binomioId)
+  const binomiosDestinoActivosSet = new Set(
+    (pruebaDestinoSeleccionada?.inscripciones || [])
+      .filter((ins) => !ins.anulado)
+      .map((ins) => ins.binomioId)
   );
-  const colisiones = (modalEliminar?.inscripciones || []).filter((ins) =>
-    binomiosDestinoSet.has(ins.binomioId)
+  const colisiones = modalInscripcionesActivas.filter((ins) =>
+    binomiosDestinoActivosSet.has(ins.binomioId)
   );
 
   return (
@@ -211,7 +219,20 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pruebasIniciales.map((p) => {
-              const cantIns = p.inscripciones?.length || 0;
+              const inscripcionesActivas = (p.inscripciones || []).filter((i) => !i.anulado);
+              const inscripcionesRetiradas = (p.inscripciones || []).filter((i) => i.anulado);
+              const cantActivas = inscripcionesActivas.length;
+              const cantRetiradas = inscripcionesRetiradas.length;
+
+              let textoInscripciones = "Sin inscripciones";
+              if (cantActivas > 0 && cantRetiradas === 0) {
+                textoInscripciones = `${cantActivas} ${cantActivas === 1 ? "inscripción" : "inscripciones"}`;
+              } else if (cantActivas === 0 && cantRetiradas > 0) {
+                textoInscripciones = `${cantRetiradas} ${cantRetiradas === 1 ? "retiro histórico" : "retiros históricos"}`;
+              } else if (cantActivas > 0 && cantRetiradas > 0) {
+                textoInscripciones = `${cantActivas} activas · ${cantRetiradas} ${cantRetiradas === 1 ? "retirada" : "retiradas"}`;
+              }
+
               return (
                 <div
                   key={p.id}
@@ -232,7 +253,7 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
                         )}
                         <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-superficie-hover border border-borde text-texto-suave">
                           <Users className="h-3 w-3" />
-                          {cantIns === 0 ? "Sin inscripciones" : `${cantIns} ${cantIns === 1 ? "inscripción" : "inscripciones"}`}
+                          {textoInscripciones}
                         </span>
                       </div>
                       <p className="text-base font-bold text-acento mt-1">
@@ -394,7 +415,7 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
             </div>
           </div>
 
-          {cantInscripcionesModal === 0 ? (
+          {cantTotalModal === 0 ? (
             <div className="space-y-4">
               <p className="text-sm text-texto">
                 ¿Estás seguro de eliminar la prueba <strong>&ldquo;{modalEliminar?.nombre}&rdquo;</strong>? Esta acción no se puede deshacer.
@@ -423,7 +444,16 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
           ) : (
             <div className="space-y-4">
               <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg text-xs text-amber-800 dark:text-amber-300">
-                Esta prueba tiene <strong>{cantInscripcionesModal}</strong> inscripción(es) activa(s). Para eliminarla, selecciona la prueba a la cual deseas reasignarlas:
+                {modalInscripcionesActivas.length > 0 ? (
+                  <>
+                    Esta prueba tiene <strong>{modalInscripcionesActivas.length}</strong> inscripción(es) activa(s)
+                    {modalInscripcionesRetiradas.length > 0 && ` y ${modalInscripcionesRetiradas.length} retirada(s)`}. Para eliminarla, selecciona la prueba a la cual deseas reasignarlas:
+                  </>
+                ) : (
+                  <>
+                    Esta prueba no tiene inscripciones activas en pista, pero cuenta con <strong>{cantTotalModal}</strong> registro(s) histórico(s) o retirado(s) vinculados a tesorería. Para eliminar la prueba, selecciona a qué prueba transferir dicho historial contable:
+                  </>
+                )}
               </div>
 
               <div className="space-y-1.5">

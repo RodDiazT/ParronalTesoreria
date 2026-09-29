@@ -241,7 +241,6 @@ export async function ejecutarEliminarPrueba(
     where: { id },
     include: {
       inscripciones: {
-        where: { anulado: false },
         include: {
           binomio: {
             include: {
@@ -258,32 +257,48 @@ export async function ejecutarEliminarPrueba(
     return { exito: false, error: "La prueba no existe o no pertenece al evento actual." };
   }
 
-  const cantInscripciones = prueba.inscripciones.length;
+  const inscripcionesActivas = prueba.inscripciones.filter((i) => !i.anulado);
+  const inscripcionesRetiradas = prueba.inscripciones.filter((i) => i.anulado);
+  const cantTotal = prueba.inscripciones.length;
 
-  if (cantInscripciones === 0) {
-    await db(ctx).$transaction(async (tx) => {
-      await tx.prueba.delete({ where: { id } });
-      await tx.registroAuditoria.create({
-        data: {
-          organizacionId: ctx.organizacionId,
-          usuarioId: ctx.usuario.id,
-          entidad: "Prueba",
-          entidadId: id,
-          accion: "eliminar",
-          antes: prueba as unknown as Prisma.InputJsonValue,
-        },
+  // Caso A: 0 inscripciones asociadas (ni activas ni retiradas)
+  if (cantTotal === 0) {
+    try {
+      await db(ctx).$transaction(async (tx) => {
+        await tx.prueba.delete({ where: { id } });
+        await tx.registroAuditoria.create({
+          data: {
+            organizacionId: ctx.organizacionId,
+            usuarioId: ctx.usuario.id,
+            entidad: "Prueba",
+            entidadId: id,
+            accion: "eliminar",
+            antes: prueba as unknown as Prisma.InputJsonValue,
+          },
+        });
       });
-    });
 
-    revalidarRutasSeguras();
-    return { exito: true };
+      revalidarRutasSeguras();
+      return { exito: true };
+    } catch (e: any) {
+      return {
+        exito: false,
+        error: e?.message || "No se pudo eliminar la prueba debido a registros vinculados.",
+      };
+    }
   }
 
-  // Caso B: >0 inscripciones asociadas
+  // Caso B: >0 inscripciones asociadas (activas o retiradas)
   if (!reasignarAId) {
+    const detalle =
+      inscripcionesActivas.length > 0
+        ? `${inscripcionesActivas.length} inscripción(es) activa(s)${
+            inscripcionesRetiradas.length > 0 ? ` y ${inscripcionesRetiradas.length} retirada(s)` : ""
+          }`
+        : `${cantTotal} inscripción(es) histórica(s) retirada(s)`;
     return {
       exito: false,
-      error: `La prueba tiene ${cantInscripciones} inscripciones. Debes seleccionar una prueba de destino para reasignarlas.`,
+      error: `La prueba tiene ${detalle}. Debes seleccionar una prueba de destino para reasignar su historial contable.`,
     };
   }
 
@@ -305,49 +320,63 @@ export async function ejecutarEliminarPrueba(
     };
   }
 
-  // Regla Antiduplicidad:
-  const binomiosOrigen = prueba.inscripciones.map((i) => i.binomioId);
-  const duplicados = await db(ctx).inscripcion.findMany({
-    where: {
-      pruebaId: reasignarAId,
-      binomioId: { in: binomiosOrigen },
-      anulado: false,
-    },
-    include: { binomio: { include: { jinete: true, caballo: true } } },
-  });
+  // Regla Antiduplicidad (se evalúa exclusivamente sobre inscripciones activas):
+  const binomiosOrigenActivos = inscripcionesActivas.map((i) => i.binomioId);
+  if (binomiosOrigenActivos.length > 0) {
+    const duplicados = await db(ctx).inscripcion.findMany({
+      where: {
+        pruebaId: reasignarAId,
+        binomioId: { in: binomiosOrigenActivos },
+        anulado: false,
+      },
+      include: { binomio: { include: { jinete: true, caballo: true } } },
+    });
 
-  if (duplicados.length > 0) {
-    const nombresDuplicados = duplicados.map(
-      (d) => `${d.binomio.jinete.nombre} / ${d.binomio.caballo.nombre}`
-    );
-    return {
-      exito: false,
-      error: `No se puede reasignar: los siguientes binomios ya están inscritos en la prueba de destino: ${nombresDuplicados.join(", ")}.`,
-    };
+    if (duplicados.length > 0) {
+      const nombresDuplicados = duplicados.map(
+        (d) => `${d.binomio.jinete.nombre} / ${d.binomio.caballo.nombre}`
+      );
+      return {
+        exito: false,
+        error: `No se puede reasignar: los siguientes binomios ya están inscritos en la prueba de destino: ${nombresDuplicados.join(", ")}.`,
+      };
+    }
   }
 
   // Transacción atómica
-  await db(ctx).$transaction([
-    db(ctx).inscripcion.updateMany({
-      where: { pruebaId: id },
-      data: { pruebaId: reasignarAId },
-    }),
-    db(ctx).prueba.delete({ where: { id } }),
-    db(ctx).registroAuditoria.create({
-      data: {
-        organizacionId: ctx.organizacionId,
-        usuarioId: ctx.usuario.id,
-        entidad: "Prueba",
-        entidadId: id,
-        accion: "eliminar",
-        antes: prueba as unknown as Prisma.InputJsonValue,
-        despues: { reasignadoAId: reasignarAId } as unknown as Prisma.InputJsonValue,
-      },
-    }),
-  ]);
+  try {
+    await db(ctx).$transaction([
+      db(ctx).inscripcion.updateMany({
+        where: { pruebaId: id },
+        data: { pruebaId: reasignarAId },
+      }),
+      db(ctx).prueba.delete({ where: { id } }),
+      db(ctx).registroAuditoria.create({
+        data: {
+          organizacionId: ctx.organizacionId,
+          usuarioId: ctx.usuario.id,
+          entidad: "Prueba",
+          entidadId: id,
+          accion: "eliminar",
+          antes: prueba as unknown as Prisma.InputJsonValue,
+          despues: {
+            reasignadoAId: reasignarAId,
+            totalInscripciones: cantTotal,
+            activas: inscripcionesActivas.length,
+            retiradas: inscripcionesRetiradas.length,
+          } as unknown as Prisma.InputJsonValue,
+        },
+      }),
+    ]);
 
-  revalidarRutasSeguras();
-  return { exito: true };
+    revalidarRutasSeguras();
+    return { exito: true };
+  } catch (e: any) {
+    return {
+      exito: false,
+      error: e?.message || "Error al reasignar y eliminar la prueba.",
+    };
+  }
 }
 
 export async function eliminarPrueba(id: string, reasignarAId?: string) {

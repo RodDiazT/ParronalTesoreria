@@ -590,6 +590,70 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       expect(origenDb).not.toBeNull();
     });
 
+    it("elimina prueba con solo inscripciones retiradas reasignándolas a prueba destino", async () => {
+      const sufijo = Date.now();
+      const club = await crearClubTest(ctxAdmin, `Club RetElimP ${sufijo}`);
+      const jinete = await crearJineteTest(ctxAdmin, `Jinete RetElimP ${sufijo}`, club.id);
+      const caballo = await crearCaballoTest(ctxAdmin, `Caballo RetElimP ${sufijo}`, club.id);
+
+      const pOrigen = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Con Retiro ${sufijo}`,
+        tarifaClp: 30000,
+      });
+      const pDestino = await ejecutarCrearPrueba(ctxAdmin, {
+        nombre: `Prueba Destino Retiro ${sufijo}`,
+        tarifaClp: 35000,
+      });
+
+      const insRes = await ejecutarInscribir(ctxAdmin, {
+        jineteId: jinete.id,
+        caballoId: caballo.id,
+        clubId: club.id,
+        pruebas: [{ pruebaId: pOrigen.prueba!.id }],
+        claveCliente: `ins-ret-elim-${sufijo}`,
+      });
+      const insId = insRes.inscripciones![0].id;
+
+      // Registrar pago y retirar
+      await ejecutarRegistrarPagoInscripciones(ctxAdmin, {
+        montoClp: 30000,
+        fecha: "2026-11-20",
+        medioPago: "transferencia",
+        sinRespaldo: true,
+        observacion: "Pago inicial",
+        claveCliente: `pago-ret-elim-${sufijo}`,
+        reparto: [{ id: insId, tipo: "inscripcion", montoClp: 30000 }],
+      });
+
+      await ejecutarRetirar(
+        ctxAdmin,
+        insRes.binomio!.id,
+        [{ id: insId, tipo: "inscripcion" }],
+        "Retiro de prueba"
+      );
+
+      // 1. Intentar eliminar sin destino debe fallar pidiendo reasignación
+      const resSinDestino = await ejecutarEliminarPrueba(ctxAdmin, pOrigen.prueba!.id);
+      expect(resSinDestino.exito).toBe(false);
+      expect(resSinDestino.error).toContain("histórica(s) retirada(s)");
+
+      // 2. Con destino, debe reasignar la inscripción retirada y eliminar la prueba sin error de clave foránea
+      const resEliminar = await ejecutarEliminarPrueba(
+        ctxAdmin,
+        pOrigen.prueba!.id,
+        pDestino.prueba!.id
+      );
+      expect(resEliminar.exito).toBe(true);
+
+      const origenDb = await prisma.prueba.findUnique({ where: { id: pOrigen.prueba!.id } });
+      expect(origenDb).toBeNull();
+
+      const insDb = await prisma.inscripcion.findUnique({ where: { id: insId } });
+      expect(insDb?.pruebaId).toBe(pDestino.prueba!.id);
+      expect(insDb?.retirado).toBe(true);
+      expect(insDb?.anulado).toBe(true);
+    });
+
     it("rechaza eliminación de prueba por usuarios con rol ayudante u observador", async () => {
       const sufijo = Date.now();
       const p = await ejecutarCrearPrueba(ctxAdmin, {
