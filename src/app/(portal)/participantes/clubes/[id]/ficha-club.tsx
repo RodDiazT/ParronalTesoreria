@@ -220,7 +220,7 @@ export function FichaClub({ club, rol, estadoCuentaDatos }: FichaClubProps) {
               </Link>
               <span className="text-texto-suave">•</span>
               <Link
-                href={`/inscripciones/pago?clubId=${club.id}`}
+                href={`/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&clubId=${club.id}`}
                 className="text-marca hover:underline font-medium"
               >
                 Registrar pago

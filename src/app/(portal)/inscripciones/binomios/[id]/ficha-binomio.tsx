@@ -352,7 +352,7 @@ export function FichaBinomio({
             {puedeModificar && !binomio.anulado && (
               <>
                 <Link
-                  href={`/inscripciones/pago?binomioId=${binomio.id}`}
+                  href={`/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&binomioId=${binomio.id}`}
                   className="inline-flex items-center justify-center rounded-xl font-semibold text-xs px-3 py-1.5 bg-marca text-white hover:bg-marca/90 transition-colors shadow-sm"
                 >
                   <DollarSign className="w-4 h-4 mr-1" />

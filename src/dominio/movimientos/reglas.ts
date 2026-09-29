@@ -70,6 +70,14 @@ export const movimientoRegistroSchema = z.object({
   jineteId: z.string().optional().nullable(),
   caballoId: z.string().optional().nullable(),
   clubId: z.string().optional().nullable(),
+  repartoInscripciones: z
+    .array(
+      z.object({
+        id: z.string(),
+        montoClp: z.number().int().min(1),
+      })
+    )
+    .optional(),
 });
 
 export type MovimientoRegistroInput = z.input<typeof movimientoRegistroSchema>;
@@ -174,8 +182,8 @@ export function validarReglasMovimiento(
     if (!datos.categoriaId) {
       return { valido: false, error: "La categoría es obligatoria." };
     }
-    if (categoria?.claveSistema === "inscripciones" || categoria?.claveSistema === "devoluciones") {
-      return { valido: false, error: "Las categorías de sistema no pueden seleccionarse manualmente en el formulario." };
+    if (categoria?.claveSistema === "devoluciones") {
+      return { valido: false, error: "La categoría de devoluciones es gestionada automáticamente por el sistema." };
     }
   }
 

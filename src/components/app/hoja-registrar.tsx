@@ -10,35 +10,21 @@ interface HojaRegistrarProps {
 }
 
 /**
- * Hoja inferior con 4 opciones para registrar (Gasto, Ingreso, Pago, Inscribir).
+ * Hoja inferior con opciones para registrar (Movimiento, Inscribir binomio).
  * (docs/interfaz/ux-ui.md §3.2)
  */
 export function HojaRegistrar({ abierta, alCerrar }: HojaRegistrarProps) {
   const opciones = [
     {
-      titulo: "Gasto",
-      descripcion: "Salida de dinero",
-      href: "/movimientos/nuevo?tipo=gasto",
-      icono: ArrowDownLeft,
-      colorIcono: "text-gasto bg-problema-fondo",
-    },
-    {
-      titulo: "Ingreso",
-      descripcion: "Entrada de dinero",
-      href: "/movimientos/nuevo?tipo=ingreso",
+      titulo: "Registrar movimiento",
+      descripcion: "Ingreso o gasto de tesorería",
+      href: "/movimientos/nuevo",
       icono: ArrowUpRight,
-      colorIcono: "text-ingreso bg-listo-fondo",
-    },
-    {
-      titulo: "Pago de inscripción",
-      descripcion: "Abono o saldo",
-      href: "/inscripciones/pago",
-      icono: DollarSign,
       colorIcono: "text-acento bg-superficie border border-borde",
     },
     {
       titulo: "Inscribir binomio",
-      descripcion: "Jinete y caballo",
+      descripcion: "Jinete, caballo y pruebas",
       href: "/inscripciones/nueva",
       icono: UserPlus,
       colorIcono: "text-acento bg-superficie border border-borde",

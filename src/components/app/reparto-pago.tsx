@@ -15,6 +15,9 @@ export interface ItemCobrableParaReparto {
   pagado: number;
   saldo: number;
   creadoEn: Date | string;
+  binomioId?: string;
+  jineteId?: string;
+  clubId?: string;
 }
 
 interface RepartoPagoProps {

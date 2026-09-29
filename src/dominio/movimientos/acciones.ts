@@ -395,6 +395,45 @@ export async function ejecutarRegistrarMovimiento(
         archivosEscritos.push(rutaRelativa);
       }
 
+      // Procesar reparto a inscripciones si fue especificado
+      if (datos.repartoInscripciones && datos.repartoInscripciones.length > 0) {
+        const asignaciones = datos.repartoInscripciones.filter((r) => r.montoClp > 0);
+        const totalAsignado = asignaciones.reduce((acc, r) => acc + r.montoClp, 0);
+
+        if (totalAsignado > datos.montoClp) {
+          throw new Error("La suma asignada a las inscripciones no puede superar el monto del pago.");
+        }
+
+        for (const item of asignaciones) {
+          await exigirDeLaOrganizacion(ctx, "inscripcion", item.id);
+          const ins = await tx.inscripcion.findUnique({
+            where: { id: item.id },
+            include: { pagos: { where: { anulado: false } } },
+          });
+
+          if (!ins || ins.anulado) {
+            throw new Error(`La inscripción '${item.id}' no existe o está anulada.`);
+          }
+
+          const pagadoPreviamente = ins.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
+          const saldoDisponible = Math.max(0, ins.montoClp - pagadoPreviamente);
+
+          if (item.montoClp > saldoDisponible) {
+            throw new Error("El saldo de una de las pruebas cambió. Por favor verifica los montos.");
+          }
+
+          await tx.pago.create({
+            data: {
+              organizacionId: ctx.organizacionId,
+              movimientoId: mov.id,
+              inscripcionId: item.id,
+              montoClp: item.montoClp,
+              creadoPorId: ctx.usuario.id,
+            },
+          });
+        }
+      }
+
       // Registro de auditoría
       await tx.registroAuditoria.create({
         data: {
@@ -420,6 +459,9 @@ export async function ejecutarRegistrarMovimiento(
 
     revalidarRutaSegura("/movimientos");
     revalidarRutaSegura("/movimientos/validar");
+    if (datos.repartoInscripciones && datos.repartoInscripciones.length > 0) {
+      revalidarRutaSegura("/inscripciones");
+    }
 
     return {
       exito: true,

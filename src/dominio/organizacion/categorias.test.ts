@@ -116,9 +116,14 @@ describe("Gestión de Categorías", () => {
     expect(c2Actual!.orden).toBeLessThan(c1Actual!.orden);
   });
 
-  it("obtenerCategoriasSelector oculta inscripciones y devoluciones", async () => {
+  it("obtenerCategoriasSelector incluye inscripciones en ingresos y oculta devoluciones en gastos", async () => {
     const selectorIngreso = await ejecutarObtenerCategoriasSelector(ctxAdmin, "ingreso");
-    expect(selectorIngreso.some((c) => c.claveSistema === "inscripciones")).toBe(false);
+    expect(selectorIngreso.some((c) => c.claveSistema === "inscripciones")).toBe(true);
+
+    const selectorIngresoSinIns = await ejecutarObtenerCategoriasSelector(ctxAdmin, "ingreso", {
+      incluirInscripciones: false,
+    });
+    expect(selectorIngresoSinIns.some((c) => c.claveSistema === "inscripciones")).toBe(false);
 
     const selectorGasto = await ejecutarObtenerCategoriasSelector(ctxAdmin, "gasto");
     expect(selectorGasto.some((c) => c.claveSistema === "devoluciones")).toBe(false);

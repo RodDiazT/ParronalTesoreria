@@ -311,3 +311,16 @@ Para la futura sesión de desarrollo, se recomienda seguir este orden secuencial
   ├── Actualizar `/movimientos/nuevo` con campos opcionales de asignación
   └── Limpiar referencias huérfanas de conceptos/cargos en `ficha-binomio.tsx` y vistas de inscripciones
 ```
+
+---
+
+## 7. Unificación de Movimientos de Tesorería y Cobro de Inscripciones
+
+### 7.1. Motivación y Principios de Diseño
+1. **Regla de Orden:** En cualquier selector o interfaz dual, **Ingreso** se ubica a la **izquierda** (color verde/esmeralda) y **Gasto** a la **derecha** (color rojo/carmín).
+2. **Consolidación en Menú Rápido (`HojaRegistrar`):** En lugar de bifurcar en 4 tarjetas redundantes, el menú se simplifica a dos opciones directas:
+   - **«Registrar movimiento»:** Abre el formulario unificado `/movimientos/nuevo` donde el usuario selecciona el tipo (Ingreso por defecto o Gasto).
+   - **«Inscribir binomio»:** Abre `/inscripciones/nueva` para el registro deportivo en cancha.
+3. **Cobro de Inscripciones Anidado en Ingreso:** Todo pago de inscripciones es fundamentalmente un ingreso de dinero en Tesorería. Al registrar un Ingreso en la categoría «Inscripciones», el formulario despliega dinámicamente el selector de participante (Binomio, Jinete o Club) y la lista de pruebas pendientes con su saldo para realizar el reparto directo (`repartoInscripciones`), extinguiendo la deuda deportiva en la misma transacción contable.
+4. **Compatibilidad:** Los atajos directos (como «Registrar pago» en ficha de binomio) apuntan a `/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&binomioId=[id]`, preseleccionando los campos de forma inmediata. La ruta `/inscripciones/pago` redirige de forma transparente a este flujo unificado.
+

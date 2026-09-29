@@ -365,7 +365,7 @@ export function FichaJinete({ jinete, rol, estadoCuentaDatos }: FichaJineteProps
               </Link>
               <span className="text-texto-suave">•</span>
               <Link
-                href={`/inscripciones/pago?jineteId=${jinete.id}`}
+                href={`/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&jineteId=${jinete.id}`}
                 className="text-marca hover:underline font-medium"
               >
                 Registrar pago

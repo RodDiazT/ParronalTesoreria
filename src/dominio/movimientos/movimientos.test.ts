@@ -52,13 +52,37 @@ describe("Dominio de Movimientos de Tesorería (Fase 4)", () => {
     eventoId = evento.id;
 
     // Categorías de prueba
-    const catGasto = org.categorias.find((c) => c.tipo === "gasto" && !c.claveSistema);
-    const catAuspicio = org.categorias.find(
-      (c) => c.tipo === "ingreso" && c.exigeContraparte
-    );
-    if (!catGasto || !catAuspicio) {
-      throw new Error("Faltan categorías requeridas para los tests.");
+    let catGasto = org.categorias.find((c) => c.tipo === "gasto" && !c.claveSistema && c.activa);
+    if (!catGasto) {
+      catGasto = await prisma.categoria.create({
+        data: {
+          organizacionId: orgId,
+          nombre: "Gasto Test Auto " + Date.now(),
+          nombreNormalizado: ("gasto test auto " + Date.now()).toLowerCase(),
+          tipo: "gasto",
+          activa: true,
+          orden: 99,
+        },
+      });
     }
+
+    let catAuspicio = org.categorias.find(
+      (c) => c.tipo === "ingreso" && c.exigeContraparte && c.activa
+    );
+    if (!catAuspicio) {
+      catAuspicio = await prisma.categoria.create({
+        data: {
+          organizacionId: orgId,
+          nombre: "Auspicio Test Auto " + Date.now(),
+          nombreNormalizado: ("auspicio test auto " + Date.now()).toLowerCase(),
+          tipo: "ingreso",
+          exigeContraparte: true,
+          activa: true,
+          orden: 100,
+        },
+      });
+    }
+
     categoriaGastoId = catGasto.id;
     categoriaIngresoAuspicioId = catAuspicio.id;
 

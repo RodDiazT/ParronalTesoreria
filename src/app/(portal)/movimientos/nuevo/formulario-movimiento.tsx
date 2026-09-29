@@ -28,6 +28,8 @@ import { SelectorContraparte } from "@/components/app/selector-contraparte";
 import { SelectorCaballo } from "@/components/app/selector-caballo";
 import { SelectorJinete } from "@/components/app/selector-jinete";
 import { SelectorClub } from "@/components/app/selector-club";
+import { RepartoPago, ItemCobrableParaReparto } from "@/components/app/reparto-pago";
+import { formatearMonto } from "@/lib/presentacion/formato";
 import {
   registrarMovimientoAction,
   buscarDuplicados,
@@ -36,6 +38,16 @@ import { obtenerFechaHoyChile, requiereContraparte } from "@/dominio/movimientos
 
 interface FormularioMovimientoProps {
   tipoInicial: "gasto" | "ingreso";
+  categoriaInicialClave?: string;
+  preseleccion?: {
+    binomioId?: string;
+    jineteId?: string;
+    clubId?: string;
+  };
+  itemsCobrables?: ItemCobrableParaReparto[];
+  binomios?: any[];
+  jinetes?: any[];
+  clubes?: any[];
   usuarioActual: {
     id: string;
     nombre: string;
@@ -49,6 +61,12 @@ interface FormularioMovimientoProps {
 
 export function FormularioMovimiento({
   tipoInicial,
+  categoriaInicialClave,
+  preseleccion,
+  itemsCobrables = [],
+  binomios = [],
+  jinetes = [],
+  clubes = [],
   usuarioActual,
   miembrosComision,
 }: FormularioMovimientoProps) {
@@ -66,6 +84,15 @@ export function FormularioMovimiento({
   const [tipo, setTipo] = useState<"gasto" | "ingreso">(tipoInicial);
   const [naturaleza, setNaturaleza] = useState<"dinero" | "especie">("dinero");
   const [mostrarOpcionesNaturaleza, setMostrarOpcionesNaturaleza] = useState(false);
+
+  // Estados para reparto de inscripciones (cuando categoría === "inscripciones")
+  const [tipoFiltroInscripcion, setTipoFiltroInscripcion] = useState<"binomio" | "jinete" | "club" | "todos">(
+    preseleccion?.binomioId ? "binomio" : preseleccion?.jineteId ? "jinete" : preseleccion?.clubId ? "club" : "binomio"
+  );
+  const [filtroInscripcionId, setFiltroInscripcionId] = useState<string>(
+    preseleccion?.binomioId || preseleccion?.jineteId || preseleccion?.clubId || ""
+  );
+  const [repartoValores, setRepartoValores] = useState<Record<string, number>>({});
 
   // Monto (formateado con separador de miles)
   const [montoTexto, setMontoTexto] = useState("");
@@ -127,6 +154,43 @@ export function FormularioMovimiento({
     }
   };
 
+  const esCategoriaInscripciones =
+    tipo === "ingreso" &&
+    (categoria?.claveSistema === "inscripciones" ||
+      categoria?.nombre.toLowerCase().includes("inscripci"));
+
+  const itemsFiltrados: ItemCobrableParaReparto[] = itemsCobrables.filter((it) => {
+    if (tipoFiltroInscripcion === "todos" || !filtroInscripcionId) return true;
+    if (tipoFiltroInscripcion === "binomio") return it.binomioId === filtroInscripcionId;
+    if (tipoFiltroInscripcion === "jinete") return it.jineteId === filtroInscripcionId;
+    if (tipoFiltroInscripcion === "club") return it.clubId === filtroInscripcionId;
+    return true;
+  });
+
+  const saldoTotalFiltrado = itemsFiltrados.reduce((a, b) => a + b.saldo, 0);
+
+  const aplicarMontoTotalInscripciones = (monto: number) => {
+    setMontoNumero(monto);
+    setMontoTexto(monto.toLocaleString("es-CL"));
+  };
+
+  const seleccionarFiltroInscripcion = (id: string, nuevoTipo = tipoFiltroInscripcion) => {
+    setFiltroInscripcionId(id);
+    setRepartoValores({});
+    if (!nombreOrigen.trim()) {
+      if (nuevoTipo === "binomio") {
+        const b = binomios.find((item) => item.id === id);
+        if (b?.jinete?.nombre) setNombreOrigen(b.jinete.nombre);
+      } else if (nuevoTipo === "jinete") {
+        const j = jinetes.find((item) => item.id === id);
+        if (j?.nombre) setNombreOrigen(j.nombre);
+      } else if (nuevoTipo === "club") {
+        const c = clubes.find((item) => item.id === id);
+        if (c?.nombre) setNombreOrigen(c.nombre);
+      }
+    }
+  };
+
   // Verifica si la contraparte es obligatoria según las reglas
   const contraparteEsObligatoria = requiereContraparte(
     {
@@ -178,6 +242,22 @@ export function FormularioMovimiento({
       return;
     }
 
+    let repartoArray: { id: string; montoClp: number }[] = [];
+    if (esCategoriaInscripciones) {
+      repartoArray = Object.entries(repartoValores)
+        .filter(([_, m]) => m > 0)
+        .map(([id, m]) => ({
+          id,
+          montoClp: m,
+        }));
+
+      const sumaReparto = Object.values(repartoValores).reduce((a, b) => a + b, 0);
+      if (sumaReparto > montoNumero) {
+        setErrorEnvio("La suma asignada a las inscripciones supera el monto del pago.");
+        return;
+      }
+    }
+
     const payload = {
       tipo,
       naturaleza,
@@ -195,8 +275,10 @@ export function FormularioMovimiento({
       observacion: observacion.trim() || null,
       sinRespaldo,
       caballoId: caballoId || null,
-      jineteId: jineteId || null,
-      clubId: clubId || null,
+      jineteId: jineteId || (esCategoriaInscripciones && tipoFiltroInscripcion === "jinete" ? filtroInscripcionId : null) || null,
+      clubId: clubId || (esCategoriaInscripciones && tipoFiltroInscripcion === "club" ? filtroInscripcionId : null) || null,
+      binomioId: (esCategoriaInscripciones && tipoFiltroInscripcion === "binomio" ? filtroInscripcionId : null) || null,
+      repartoInscripciones: repartoArray.length > 0 ? repartoArray : undefined,
       claveCliente,
     };
 
@@ -337,8 +419,22 @@ export function FormularioMovimiento({
 
   return (
     <form onSubmit={manejarPreEnvio} className="space-y-6">
-      {/* Selector superior de Tipo (Gasto / Ingreso) */}
+      {/* Selector superior de Tipo (Ingreso / Gasto) */}
       <div className="grid grid-cols-2 p-1 bg-stone-100 rounded-xl">
+        <button
+          type="button"
+          onClick={() => {
+            setTipo("ingreso");
+            setCategoria(null);
+          }}
+          className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            tipo === "ingreso"
+              ? "bg-white text-emerald-700 shadow-sm"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          Ingreso
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -354,20 +450,6 @@ export function FormularioMovimiento({
           }`}
         >
           Gasto
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setTipo("ingreso");
-            setCategoria(null);
-          }}
-          className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-            tipo === "ingreso"
-              ? "bg-white text-emerald-700 shadow-sm"
-              : "text-stone-600 hover:text-stone-900"
-          }`}
-        >
-          Ingreso
         </button>
       </div>
 
@@ -471,22 +553,181 @@ export function FormularioMovimiento({
           <SelectorCategoria
             tipo={tipo}
             valorSeleccionado={categoria?.id}
+            claveSistemaSeleccionada={categoriaInicialClave}
             alSeleccionar={(cat) => setCategoria(cat)}
           />
         )}
       </div>
 
+      {/* Imputación a Inscripciones (solo cuando categoría es Inscripciones) */}
+      {esCategoriaInscripciones && (
+        <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-emerald-950">Imputación a Inscripciones</h3>
+              <p className="text-xs text-emerald-700">
+                Selecciona el sujeto y asigna los montos a cada prueba con saldo pendiente.
+              </p>
+            </div>
+            {saldoTotalFiltrado > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => aplicarMontoTotalInscripciones(saldoTotalFiltrado)}
+                className="text-xs h-8 text-emerald-800 border-emerald-300 hover:bg-emerald-100 font-semibold"
+              >
+                Pagar saldo ({formatearMonto(saldoTotalFiltrado)})
+              </Button>
+            )}
+          </div>
+
+          {/* Botones de filtro de sujeto */}
+          <div className="grid grid-cols-4 gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant={tipoFiltroInscripcion === "binomio" ? "default" : "outline"}
+              className={`text-xs h-8 ${
+                tipoFiltroInscripcion === "binomio"
+                  ? "bg-emerald-800 text-white font-semibold"
+                  : "bg-white text-stone-700 hover:bg-stone-50"
+              }`}
+              onClick={() => {
+                setTipoFiltroInscripcion("binomio");
+                seleccionarFiltroInscripcion(binomios[0]?.id || "", "binomio");
+              }}
+            >
+              Binomio
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={tipoFiltroInscripcion === "jinete" ? "default" : "outline"}
+              className={`text-xs h-8 ${
+                tipoFiltroInscripcion === "jinete"
+                  ? "bg-emerald-800 text-white font-semibold"
+                  : "bg-white text-stone-700 hover:bg-stone-50"
+              }`}
+              onClick={() => {
+                setTipoFiltroInscripcion("jinete");
+                seleccionarFiltroInscripcion(jinetes[0]?.id || "", "jinete");
+              }}
+            >
+              Jinete
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={tipoFiltroInscripcion === "club" ? "default" : "outline"}
+              className={`text-xs h-8 ${
+                tipoFiltroInscripcion === "club"
+                  ? "bg-emerald-800 text-white font-semibold"
+                  : "bg-white text-stone-700 hover:bg-stone-50"
+              }`}
+              onClick={() => {
+                setTipoFiltroInscripcion("club");
+                seleccionarFiltroInscripcion(clubes[0]?.id || "", "club");
+              }}
+            >
+              Club
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={tipoFiltroInscripcion === "todos" ? "default" : "outline"}
+              className={`text-xs h-8 ${
+                tipoFiltroInscripcion === "todos"
+                  ? "bg-emerald-800 text-white font-semibold"
+                  : "bg-white text-stone-700 hover:bg-stone-50"
+              }`}
+              onClick={() => {
+                setTipoFiltroInscripcion("todos");
+                seleccionarFiltroInscripcion("", "todos");
+              }}
+            >
+              Todos
+            </Button>
+          </div>
+
+          {/* Desplegable de selección según filtro */}
+          {tipoFiltroInscripcion === "binomio" && (
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-stone-700">Seleccionar Binomio</Label>
+              <select
+                value={filtroInscripcionId}
+                onChange={(e) => seleccionarFiltroInscripcion(e.target.value, "binomio")}
+                className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
+              >
+                <option value="">Selecciona un binomio...</option>
+                {binomios.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.jinete.nombre} / {b.caballo.nombre} ({b.club.nombre})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {tipoFiltroInscripcion === "jinete" && (
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-stone-700">Seleccionar Jinete</Label>
+              <select
+                value={filtroInscripcionId}
+                onChange={(e) => seleccionarFiltroInscripcion(e.target.value, "jinete")}
+                className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
+              >
+                <option value="">Selecciona un jinete...</option>
+                {jinetes.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {tipoFiltroInscripcion === "club" && (
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-stone-700">Seleccionar Club</Label>
+              <select
+                value={filtroInscripcionId}
+                onChange={(e) => seleccionarFiltroInscripcion(e.target.value, "club")}
+                className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
+              >
+                <option value="">Selecciona un club...</option>
+                {clubes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Tabla de reparto */}
+          <RepartoPago
+            montoPago={montoNumero}
+            items={itemsFiltrados}
+            valores={repartoValores}
+            alCambiar={setRepartoValores}
+          />
+        </div>
+      )}
+
       {/* Contraparte (Auspiciador o Proveedor) */}
-      <div className="space-y-1.5">
-        <SelectorContraparte
-          tipoMovimiento={tipo}
-          contraparteSeleccionadaId={contraparte?.id}
-          alSeleccionar={manejarSeleccionContraparte}
-          alLimpiar={() => setContraparte(null)}
-          requerido={contraparteEsObligatoria}
-          label={`Contraparte ${contraparteEsObligatoria ? "(Obligatoria) *" : "(Opcional)"}`}
-        />
-      </div>
+      {!esCategoriaInscripciones && (
+        <div className="space-y-1.5">
+          <SelectorContraparte
+            tipoMovimiento={tipo}
+            contraparteSeleccionadaId={contraparte?.id}
+            alSeleccionar={manejarSeleccionContraparte}
+            alLimpiar={() => setContraparte(null)}
+            requerido={contraparteEsObligatoria}
+            label={`Contraparte ${contraparteEsObligatoria ? "(Obligatoria) *" : "(Opcional)"}`}
+          />
+        </div>
+      )}
 
       {/* ¿Ya se pagó? / ¿Ya se recibió? */}
       <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
@@ -743,53 +984,55 @@ export function FormularioMovimiento({
       )}
 
       {/* Asignación opcional a participante o caballo */}
-      <div className="border border-stone-200 rounded-lg p-3.5 bg-stone-50 space-y-3">
-        <button
-          type="button"
-          onClick={() => setMostrarAsignacion(!mostrarAsignacion)}
-          className="flex items-center justify-between w-full text-xs font-semibold text-stone-700 cursor-pointer"
-        >
-          <span>Asignar a participante o caballo (Opcional)</span>
-          {mostrarAsignacion ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+      {!esCategoriaInscripciones && (
+        <div className="border border-stone-200 rounded-lg p-3.5 bg-stone-50 space-y-3">
+          <button
+            type="button"
+            onClick={() => setMostrarAsignacion(!mostrarAsignacion)}
+            className="flex items-center justify-between w-full text-xs font-semibold text-stone-700 cursor-pointer"
+          >
+            <span>Asignar a participante o caballo (Opcional)</span>
+            {mostrarAsignacion ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
 
-        {mostrarAsignacion && (
-          <div className="pt-2 space-y-3 border-t border-stone-200">
-            <div>
-              <SelectorCaballo
-                caballoSeleccionadoId={caballoId}
-                alSeleccionar={(c) => {
-                  setCaballoId(c.id);
-                  if (c.clubId && !clubId) setClubId(c.clubId);
-                }}
-                alLimpiar={() => setCaballoId("")}
-                label="Caballo relacionado"
-              />
-            </div>
+          {mostrarAsignacion && (
+            <div className="pt-2 space-y-3 border-t border-stone-200">
+              <div>
+                <SelectorCaballo
+                  caballoSeleccionadoId={caballoId}
+                  alSeleccionar={(c) => {
+                    setCaballoId(c.id);
+                    if (c.clubId && !clubId) setClubId(c.clubId);
+                  }}
+                  alLimpiar={() => setCaballoId("")}
+                  label="Caballo relacionado"
+                />
+              </div>
 
-            <div>
-              <SelectorJinete
-                jineteSeleccionadoId={jineteId}
-                alSeleccionar={(j) => {
-                  setJineteId(j.id);
-                  if (j.clubId && !clubId) setClubId(j.clubId);
-                }}
-                alLimpiar={() => setJineteId("")}
-                label="Jinete relacionado"
-              />
-            </div>
+              <div>
+                <SelectorJinete
+                  jineteSeleccionadoId={jineteId}
+                  alSeleccionar={(j) => {
+                    setJineteId(j.id);
+                    if (j.clubId && !clubId) setClubId(j.clubId);
+                  }}
+                  alLimpiar={() => setJineteId("")}
+                  label="Jinete relacionado"
+                />
+              </div>
 
-            <div>
-              <SelectorClub
-                clubSeleccionadoId={clubId}
-                alSeleccionar={(c) => setClubId(c.id)}
-                alLimpiar={() => setClubId("")}
-                label="Club relacionado"
-              />
+              <div>
+                <SelectorClub
+                  clubSeleccionadoId={clubId}
+                  alSeleccionar={(c) => setClubId(c.id)}
+                  alLimpiar={() => setClubId("")}
+                  label="Club relacionado"
+                />
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Errores */}
       {errorEnvio && (

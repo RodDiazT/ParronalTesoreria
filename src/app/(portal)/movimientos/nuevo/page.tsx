@@ -2,13 +2,20 @@ import { redirect } from "next/navigation";
 import { obtenerContexto, db } from "@/lib/contexto";
 import { puede } from "@/lib/permisos";
 import { FormularioMovimiento } from "./formulario-movimiento";
+import { estadoItem } from "@/dominio/inscripciones/binomios/reglas";
 
 export const dynamic = "force-dynamic";
 
 export default async function NuevoMovimientoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{
+    tipo?: string;
+    categoria?: string;
+    binomioId?: string;
+    jineteId?: string;
+    clubId?: string;
+  }>;
 }) {
   const ctx = await obtenerContexto();
 
@@ -16,8 +23,8 @@ export default async function NuevoMovimientoPage({
     redirect("/sin-permiso");
   }
 
-  const { tipo } = await searchParams;
-  const tipoInicial = tipo === "ingreso" ? "ingreso" : "gasto";
+  const { tipo, categoria, binomioId, jineteId, clubId } = await searchParams;
+  const tipoInicial = tipo === "gasto" ? "gasto" : "ingreso";
 
   // Cargar miembros activos para la selección de reembolso por administradores
   const miembrosActivos =
@@ -29,11 +36,89 @@ export default async function NuevoMovimientoPage({
         })
       : [];
 
+  let itemsCobrables: any[] = [];
+  let binomios: any[] = [];
+  let jinetes: any[] = [];
+  let clubes: any[] = [];
+
+  if (ctx.evento) {
+    const [inscripcionesRaw, binomiosData, jinetesData, clubesData] = await Promise.all([
+      db(ctx).inscripcion.findMany({
+        where: {
+          organizacionId: ctx.organizacionId,
+          eventoId: ctx.evento.id,
+          anulado: false,
+          retirado: false,
+        },
+        include: {
+          prueba: true,
+          binomio: {
+            include: {
+              jinete: true,
+              caballo: true,
+              club: true,
+            },
+          },
+          pagos: {
+            where: { anulado: false },
+          },
+        },
+        orderBy: { creadoEn: "asc" },
+      }),
+      db(ctx).binomio.findMany({
+        where: { organizacionId: ctx.organizacionId, eventoId: ctx.evento.id, anulado: false },
+        include: { jinete: true, caballo: true, club: true },
+        orderBy: { jinete: { nombre: "asc" } },
+      }),
+      db(ctx).jinete.findMany({
+        where: { organizacionId: ctx.organizacionId, activo: true },
+        select: { id: true, nombre: true, clubId: true },
+        orderBy: { nombre: "asc" },
+      }),
+      db(ctx).club.findMany({
+        where: { organizacionId: ctx.organizacionId, activo: true },
+        select: { id: true, nombre: true },
+        orderBy: { nombre: "asc" },
+      }),
+    ]);
+
+    binomios = binomiosData;
+    jinetes = jinetesData;
+    clubes = clubesData;
+
+    for (const ins of inscripcionesRaw) {
+      const calc = estadoItem(
+        {
+          id: ins.id,
+          montoClp: ins.prueba.tarifaClp,
+          anulado: ins.anulado,
+          retirado: ins.retirado,
+        },
+        ins.pagos
+      );
+      if (calc.saldo > 0) {
+        itemsCobrables.push({
+          id: ins.id,
+          tipo: "inscripcion",
+          nombre: `Prueba: ${ins.prueba.nombre}`,
+          sujeto: `${ins.binomio.jinete.nombre} / ${ins.binomio.caballo.nombre}`,
+          binomioId: ins.binomioId,
+          jineteId: ins.binomio.jineteId,
+          clubId: ins.binomio.clubId,
+          monto: calc.monto,
+          pagado: calc.pagado,
+          saldo: calc.saldo,
+          creadoEn: ins.creadoEn.toISOString(),
+        });
+      }
+    }
+  }
+
   return (
     <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between border-b border-stone-200 pb-3">
         <h1 className="text-xl font-bold text-stone-900">
-          Registrar {tipoInicial === "gasto" ? "Gasto" : "Ingreso"}
+          Registrar Movimiento
         </h1>
         <span className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600 font-medium">
           Evento: {ctx.evento?.nombre || "Vigente"}
@@ -42,6 +127,16 @@ export default async function NuevoMovimientoPage({
 
       <FormularioMovimiento
         tipoInicial={tipoInicial}
+        categoriaInicialClave={categoria}
+        preseleccion={{
+          binomioId,
+          jineteId,
+          clubId,
+        }}
+        itemsCobrables={itemsCobrables}
+        binomios={binomios}
+        jinetes={jinetes}
+        clubes={clubes}
         usuarioActual={{
           id: ctx.usuario.id,
           nombre: ctx.usuario.nombre || "Yo",

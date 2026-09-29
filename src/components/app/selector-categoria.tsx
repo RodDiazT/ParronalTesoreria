@@ -17,6 +17,7 @@ export interface OpcionCategoria {
 interface SelectorCategoriaProps {
   tipo: "ingreso" | "gasto";
   valorSeleccionado?: string;
+  claveSistemaSeleccionada?: string;
   alSeleccionar: (categoria: OpcionCategoria) => void;
   id?: string;
   label?: string;
@@ -25,12 +26,12 @@ interface SelectorCategoriaProps {
 
 /**
  * Selector desplegable de categorías con botones grandes para una mano en celular.
- * Oculta las categorías de sistema "Inscripciones" y "Devoluciones".
  * (docs/organizacion/organizacion-evento.md §3.4 y §5.4)
  */
 export function SelectorCategoria({
   tipo,
   valorSeleccionado,
+  claveSistemaSeleccionada,
   alSeleccionar,
   id = "selector-categoria",
   label = "Categoría *",
@@ -46,8 +47,20 @@ export function SelectorCategoria({
     obtenerCategoriasSelector(tipo)
       .then((data) => {
         if (!cancelado) {
-          setCategorias(data as OpcionCategoria[]);
+          const cats = data as OpcionCategoria[];
+          setCategorias(cats);
           setCargando(false);
+
+          if (!valorSeleccionado && claveSistemaSeleccionada) {
+            const encontrada = cats.find(
+              (c) =>
+                c.claveSistema === claveSistemaSeleccionada ||
+                c.nombre.toLowerCase() === claveSistemaSeleccionada.toLowerCase()
+            );
+            if (encontrada) {
+              alSeleccionar(encontrada);
+            }
+          }
         }
       })
       .catch(() => {
@@ -57,7 +70,8 @@ export function SelectorCategoria({
     return () => {
       cancelado = true;
     };
-  }, [tipo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipo, claveSistemaSeleccionada]);
 
   return (
     <div className="space-y-1.5">

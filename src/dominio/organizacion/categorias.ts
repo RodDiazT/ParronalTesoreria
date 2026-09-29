@@ -420,12 +420,21 @@ export async function reordenarCategoria(id: string, direccion: "subir" | "bajar
   return res;
 }
 
-export async function ejecutarObtenerCategoriasSelector(ctx: Contexto, tipo: TipoCategoria) {
+export async function ejecutarObtenerCategoriasSelector(
+  ctx: Contexto,
+  tipo: TipoCategoria,
+  opciones?: { incluirInscripciones?: boolean }
+) {
+  const claveSistemaExcluidas: string[] = ["devoluciones"];
+  if (opciones?.incluirInscripciones === false || tipo === "gasto") {
+    claveSistemaExcluidas.push("inscripciones");
+  }
+
   const categorias = await db(ctx).categoria.findMany({
     where: {
       tipo,
       activa: true,
-      claveSistema: { notIn: ["inscripciones", "devoluciones"] },
+      claveSistema: { notIn: claveSistemaExcluidas },
     },
     select: {
       id: true,
@@ -441,9 +450,12 @@ export async function ejecutarObtenerCategoriasSelector(ctx: Contexto, tipo: Tip
   return categorias;
 }
 
-export async function obtenerCategoriasSelector(tipo: TipoCategoria) {
+export async function obtenerCategoriasSelector(
+  tipo: TipoCategoria,
+  opciones?: { incluirInscripciones?: boolean }
+) {
   const ctx = await obtenerContexto();
-  return ejecutarObtenerCategoriasSelector(ctx, tipo);
+  return ejecutarObtenerCategoriasSelector(ctx, tipo, opciones);
 }
 
 export async function ejecutarEliminarCategoria(

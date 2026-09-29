@@ -410,7 +410,7 @@ export function FormularioNuevaInscripcion({
 
         <div className="space-y-2 pt-2">
           <Link
-            href={`/inscripciones/pago?binomioId=${resultadoExitoso.binomioId}`}
+            href={`/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&binomioId=${resultadoExitoso.binomioId}`}
             className="w-full"
           >
             <Button className="w-full gap-2 text-sm h-11">
