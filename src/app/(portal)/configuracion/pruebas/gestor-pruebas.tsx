@@ -85,6 +85,11 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
     const min = edadMin.trim() ? parseInt(edadMin, 10) : null;
     const max = edadMax.trim() ? parseInt(edadMax, 10) : null;
 
+    if (min !== null && max !== null && min > max) {
+      toast.error("La edad mínima no puede ser mayor que la edad máxima.");
+      return;
+    }
+
     try {
       setGuardandoPrueba(true);
       if (modalPrueba === "nuevo") {
@@ -349,32 +354,52 @@ export function GestorPruebas({ pruebasIniciales }: GestorPruebasProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-texto">Edad mínima jinete</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="120"
-                  value={edadMin}
-                  onChange={(e) => setEdadMin(e.target.value)}
-                  placeholder="Opcional"
-                  className="text-sm"
-                />
+            <div className="space-y-2 pt-1 border-t border-borde/60">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-texto">
+                  Restricción de edad del jinete
+                </Label>
+                <span className="text-[10px] text-texto-suave bg-superficie-hover border border-borde px-2 py-0.5 rounded-full">
+                  Opcional
+                </span>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-texto">Edad máxima jinete</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="120"
-                  value={edadMax}
-                  onChange={(e) => setEdadMax(e.target.value)}
-                  placeholder="Opcional"
-                  className="text-sm"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edadMinimaPrueba" className="text-xs font-medium text-texto">
+                    Edad mínima (años)
+                  </Label>
+                  <Input
+                    id="edadMinimaPrueba"
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={edadMin}
+                    onChange={(e) => setEdadMin(e.target.value)}
+                    placeholder="Sin mínimo"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="edadMaximaPrueba" className="text-xs font-medium text-texto">
+                    Edad máxima (años)
+                  </Label>
+                  <Input
+                    id="edadMaximaPrueba"
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={edadMax}
+                    onChange={(e) => setEdadMax(e.target.value)}
+                    placeholder="Sin máximo"
+                    className="text-sm"
+                  />
+                </div>
               </div>
+              <p className="text-[11px] text-texto-suave">
+                Si la prueba no tiene restricción de edad, deja ambos campos vacíos.
+              </p>
             </div>
 
             <div className="pt-4 flex justify-end gap-2 border-t border-borde">

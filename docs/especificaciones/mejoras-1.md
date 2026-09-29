@@ -210,6 +210,12 @@ Dado que el proyecto se encuentra en fase de pruebas activas y no existen datos 
     * Selector desplegable: *Selecciona la prueba de destino*. Filtra pruebas activas del mismo evento (excluyendo la actual).
     * Validación en vivo: si se detecta colisión de binomios duplicados, se muestra la lista de binomios en conflicto y se deshabilita el botón de confirmación hasta resolver el conflicto.
     * Botón de acción: *Reasignar inscripciones y eliminar*.
+* **Formulario de Alta / Edición de Prueba (Claridad en Restricciones de Edad):**
+  * Para evitar fatiga cognitiva o confusión visual provocada por etiquetas repetitivas y visualmente similares («Edad mínima jinete» y «Edad máxima jinete»), los campos se agruparon y diferenciaron:
+    * Encabezado de bloque: **«Restricción de edad del jinete»** con distintivo *«Opcional»*.
+    * Entradas diferenciadas: **«Edad mínima (años)»** (placeholder *«Sin mínimo»*) y **«Edad máxima (años)»** (placeholder *«Sin máximo»*).
+    * Microcopy de ayuda: *«Si la prueba no tiene restricción de edad, deja ambos campos vacíos.»*
+    * Validación en cliente: alerta toast inmediata si la edad mínima ingresada supera a la edad máxima.
 
 ---
 
