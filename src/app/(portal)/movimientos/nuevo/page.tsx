@@ -40,9 +40,11 @@ export default async function NuevoMovimientoPage({
   let binomios: any[] = [];
   let jinetes: any[] = [];
   let clubes: any[] = [];
+  let caballos: any[] = [];
+  let pruebas: any[] = [];
 
   if (ctx.evento) {
-    const [inscripcionesRaw, binomiosData, jinetesData, clubesData] = await Promise.all([
+    const [inscripcionesRaw, binomiosData, jinetesData, clubesData, caballosData, pruebasData] = await Promise.all([
       db(ctx).inscripcion.findMany({
         where: {
           organizacionId: ctx.organizacionId,
@@ -80,11 +82,23 @@ export default async function NuevoMovimientoPage({
         select: { id: true, nombre: true },
         orderBy: { nombre: "asc" },
       }),
+      db(ctx).caballo.findMany({
+        where: { organizacionId: ctx.organizacionId, activo: true },
+        select: { id: true, nombre: true, clubId: true },
+        orderBy: { nombre: "asc" },
+      }),
+      db(ctx).prueba.findMany({
+        where: { eventoId: ctx.evento.id, activa: true },
+        select: { id: true, nombre: true, tarifaClp: true },
+        orderBy: { orden: "asc" },
+      }),
     ]);
 
     binomios = binomiosData;
     jinetes = jinetesData;
     clubes = clubesData;
+    caballos = caballosData;
+    pruebas = pruebasData;
 
     for (const ins of inscripcionesRaw) {
       const calc = estadoItem(
@@ -137,6 +151,8 @@ export default async function NuevoMovimientoPage({
         binomios={binomios}
         jinetes={jinetes}
         clubes={clubes}
+        caballos={caballos}
+        pruebas={pruebas}
         usuarioActual={{
           id: ctx.usuario.id,
           nombre: ctx.usuario.nombre || "Yo",

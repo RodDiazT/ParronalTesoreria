@@ -43,11 +43,15 @@ interface FormularioMovimientoProps {
     binomioId?: string;
     jineteId?: string;
     clubId?: string;
+    caballoId?: string;
+    pruebaId?: string;
   };
   itemsCobrables?: ItemCobrableParaReparto[];
   binomios?: any[];
   jinetes?: any[];
+  caballos?: any[];
   clubes?: any[];
+  pruebas?: any[];
   usuarioActual: {
     id: string;
     nombre: string;
@@ -66,7 +70,9 @@ export function FormularioMovimiento({
   itemsCobrables = [],
   binomios = [],
   jinetes = [],
+  caballos = [],
   clubes = [],
+  pruebas = [],
   usuarioActual,
   miembrosComision,
 }: FormularioMovimientoProps) {
@@ -82,8 +88,10 @@ export function FormularioMovimiento({
 
   // Estados principales del formulario
   const [tipo, setTipo] = useState<"gasto" | "ingreso">(tipoInicial);
-  const [naturaleza, setNaturaleza] = useState<"dinero" | "especie">("dinero");
-  const [mostrarOpcionesNaturaleza, setMostrarOpcionesNaturaleza] = useState(false);
+
+  // Medios de pago unificados
+  const [medioPagoIngreso, setMedioPagoIngreso] = useState<"transferencia" | "efectivo" | "por_cobrar" | "especie">("transferencia");
+  const [medioPagoGasto, setMedioPagoGasto] = useState<"transferencia" | "efectivo" | "por_pagar">("transferencia");
 
   // Estados para reparto de inscripciones (cuando categoría === "inscripciones")
   const [tipoFiltroInscripcion, setTipoFiltroInscripcion] = useState<"binomio" | "jinete" | "club" | "todos">(
@@ -98,12 +106,10 @@ export function FormularioMovimiento({
   const [montoTexto, setMontoTexto] = useState("");
   const [montoNumero, setMontoNumero] = useState<number>(0);
 
-  // Fechas y medios
+  // Fechas
   const hoyChile = obtenerFechaHoyChile();
   const [fecha, setFecha] = useState(hoyChile);
-  const [estadoPago, setEstadoPago] = useState<"pagado" | "pendiente">("pagado");
   const [fechaPago, setFechaPago] = useState(hoyChile);
-  const [medioPago, setMedioPago] = useState<"transferencia" | "efectivo" | "otro">("transferencia");
 
   // Categoría y contraparte
   const [categoria, setCategoria] = useState<OpcionCategoria | null>(null);
@@ -115,15 +121,16 @@ export function FormularioMovimiento({
 
   // Datos adicionales
   const [nombreOrigen, setNombreOrigen] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [observacion, setObservacion] = useState("");
   const [sinRespaldo, setSinRespaldo] = useState(false);
   const [archivos, setArchivos] = useState<ArchivoSeleccionado[]>([]);
 
-  // Asignación complementaria a participante o caballo
-  const [caballoId, setCaballoId] = useState<string>("");
-  const [jineteId, setJineteId] = useState<string>("");
-  const [clubId, setClubId] = useState<string>("");
+  // Asignación de entidades deportivas
+  const [binomioId, setBinomioId] = useState<string>(preseleccion?.binomioId || "");
+  const [caballoId, setCaballoId] = useState<string>(preseleccion?.caballoId || "");
+  const [jineteId, setJineteId] = useState<string>(preseleccion?.jineteId || "");
+  const [clubId, setClubId] = useState<string>(preseleccion?.clubId || "");
+  const [pruebaId, setPruebaId] = useState<string>(preseleccion?.pruebaId || "");
   const [mostrarAsignacion, setMostrarAsignacion] = useState(false);
 
   // Control de duplicados
@@ -194,9 +201,18 @@ export function FormularioMovimiento({
   // Verifica si la contraparte es obligatoria según las reglas
   const contraparteEsObligatoria = requiereContraparte(
     {
-      estadoPago: tipo === "gasto" && pagadoPorId ? "pendiente" : estadoPago,
+      estadoPago:
+        tipo === "gasto" && pagadoPorId
+          ? "pendiente"
+          : tipo === "ingreso"
+          ? medioPagoIngreso === "por_cobrar"
+            ? "pendiente"
+            : "pagado"
+          : medioPagoGasto === "por_pagar"
+          ? "pendiente"
+          : "pagado",
       pagadoPorId: pagadoPorId || null,
-      naturaleza,
+      naturaleza: tipo === "ingreso" && medioPagoIngreso === "especie" ? "especie" : "dinero",
     },
     categoria
   );
@@ -221,14 +237,39 @@ export function FormularioMovimiento({
       return;
     }
 
+    // Validación de sujeto obligatorio según configuración de categoría
+    if (categoria?.exigeSujeto && categoria?.sujetoAsociado) {
+      if (categoria.sujetoAsociado === "caballo" && !caballoId) {
+        setErrorEnvio("Debes seleccionar un caballo para esta categoría.");
+        return;
+      }
+      if (categoria.sujetoAsociado === "jinete" && !jineteId) {
+        setErrorEnvio("Debes seleccionar un jinete para esta categoría.");
+        return;
+      }
+      if (categoria.sujetoAsociado === "club" && !clubId) {
+        setErrorEnvio("Debes seleccionar un club para esta categoría.");
+        return;
+      }
+      if (categoria.sujetoAsociado === "prueba" && !pruebaId) {
+        setErrorEnvio("Debes seleccionar una prueba para esta categoría.");
+        return;
+      }
+      if (categoria.sujetoAsociado === "binomio") {
+        const idBin = binomioId || (esCategoriaInscripciones && tipoFiltroInscripcion === "binomio" ? filtroInscripcionId : "");
+        if (!idBin) {
+          setErrorEnvio("Debes seleccionar un binomio para esta categoría.");
+          return;
+        }
+      }
+    }
+
     if (
       tipo === "ingreso" &&
-      naturaleza === "dinero" &&
-      estadoPago === "pagado" &&
-      medioPago === "transferencia" &&
+      medioPagoIngreso === "transferencia" &&
       !nombreOrigen.trim()
     ) {
-      setErrorEnvio("El nombre de origen es obligatorio en transferencias.");
+      setErrorEnvio("El nombre de origen (titular de la cuenta) es obligatorio en transferencias.");
       return;
     }
 
@@ -258,26 +299,88 @@ export function FormularioMovimiento({
       }
     }
 
+    // Resolver estados de pago y naturaleza unificados
+    const esIngreso = tipo === "ingreso";
+    const esGastoReembolso = tipo === "gasto" && Boolean(pagadoPorId);
+
+    let estadoPagoFinal: "pagado" | "pendiente" = "pagado";
+    let medioPagoFinal: "transferencia" | "efectivo" | "otro" | null = null;
+    let naturalezaFinal: "dinero" | "especie" = "dinero";
+    let fechaPagoFinal: string | null = null;
+
+    if (esIngreso) {
+      if (medioPagoIngreso === "transferencia") {
+        estadoPagoFinal = "pagado";
+        medioPagoFinal = "transferencia";
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = fechaPago || hoyChile;
+      } else if (medioPagoIngreso === "efectivo") {
+        estadoPagoFinal = "pagado";
+        medioPagoFinal = "efectivo";
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = fechaPago || hoyChile;
+      } else if (medioPagoIngreso === "por_cobrar") {
+        estadoPagoFinal = "pendiente";
+        medioPagoFinal = null;
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = null;
+      } else if (medioPagoIngreso === "especie") {
+        estadoPagoFinal = "pagado";
+        medioPagoFinal = null;
+        naturalezaFinal = "especie";
+        fechaPagoFinal = null;
+      }
+    } else {
+      if (esGastoReembolso) {
+        estadoPagoFinal = "pendiente";
+        medioPagoFinal = null;
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = null;
+      } else if (medioPagoGasto === "transferencia") {
+        estadoPagoFinal = "pagado";
+        medioPagoFinal = "transferencia";
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = fechaPago || hoyChile;
+      } else if (medioPagoGasto === "efectivo") {
+        estadoPagoFinal = "pagado";
+        medioPagoFinal = "efectivo";
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = fechaPago || hoyChile;
+      } else if (medioPagoGasto === "por_pagar") {
+        estadoPagoFinal = "pendiente";
+        medioPagoFinal = null;
+        naturalezaFinal = "dinero";
+        fechaPagoFinal = null;
+      }
+    }
+
+    const finalBinomioId = binomioId || (esCategoriaInscripciones && tipoFiltroInscripcion === "binomio" ? filtroInscripcionId : null) || null;
+    const finalJineteId = jineteId || (esCategoriaInscripciones && tipoFiltroInscripcion === "jinete" ? filtroInscripcionId : null) || null;
+    const finalClubId = clubId || (esCategoriaInscripciones && tipoFiltroInscripcion === "club" ? filtroInscripcionId : null) || null;
+    const finalCaballoId = caballoId || null;
+    const finalPruebaId = pruebaId || null;
+
     const payload = {
       tipo,
-      naturaleza,
+      naturaleza: naturalezaFinal,
       montoClp: montoNumero,
       fecha,
-      fechaPago: estadoPago === "pagado" ? fechaPago : null,
-      medioPago: estadoPago === "pagado" && naturaleza === "dinero" ? medioPago : null,
-      estadoPago: tipo === "gasto" && pagadoPorId ? "pendiente" : estadoPago,
+      fechaPago: fechaPagoFinal,
+      medioPago: medioPagoFinal,
+      estadoPago: estadoPagoFinal,
       categoriaId: sinIdentificar ? null : categoria?.id || null,
       sinIdentificar,
       contraparteId: contraparte?.id || null,
       pagadoPorId: tipo === "gasto" && pagadoPorId ? pagadoPorId : null,
-      nombreOrigen: tipo === "ingreso" ? nombreOrigen.trim() || null : null,
-      descripcion: descripcion.trim() || null,
+      nombreOrigen: esIngreso && medioPagoFinal === "transferencia" ? nombreOrigen.trim() || null : null,
+      descripcion: null,
       observacion: observacion.trim() || null,
       sinRespaldo,
-      caballoId: caballoId || null,
-      jineteId: jineteId || (esCategoriaInscripciones && tipoFiltroInscripcion === "jinete" ? filtroInscripcionId : null) || null,
-      clubId: clubId || (esCategoriaInscripciones && tipoFiltroInscripcion === "club" ? filtroInscripcionId : null) || null,
-      binomioId: (esCategoriaInscripciones && tipoFiltroInscripcion === "binomio" ? filtroInscripcionId : null) || null,
+      caballoId: finalCaballoId,
+      jineteId: finalJineteId,
+      clubId: finalClubId,
+      binomioId: finalBinomioId,
+      pruebaId: finalPruebaId,
       repartoInscripciones: repartoArray.length > 0 ? repartoArray : undefined,
       claveCliente,
     };
@@ -392,12 +495,17 @@ export function FormularioMovimiento({
               setGuardadoExitoso(null);
               setMontoTexto("");
               setMontoNumero(0);
-              setDescripcion("");
               setObservacion("");
               setArchivos([]);
               setSinRespaldo(false);
               setSinIdentificar(false);
               setPosiblesDuplicados([]);
+              setBinomioId("");
+              setCaballoId("");
+              setJineteId("");
+              setClubId("");
+              setPruebaId("");
+              setNombreOrigen("");
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -439,7 +547,6 @@ export function FormularioMovimiento({
           type="button"
           onClick={() => {
             setTipo("gasto");
-            setNaturaleza("dinero");
             setSinIdentificar(false);
             setCategoria(null);
           }}
@@ -453,13 +560,13 @@ export function FormularioMovimiento({
         </button>
       </div>
 
-      {/* Monto principal (Teclado numérico grande) */}
+      {/* Monto principal (Teclado numérico grande con alto contraste) */}
       <div className="space-y-1.5">
-        <Label htmlFor="monto-input" className="text-sm font-semibold text-stone-800">
-          {naturaleza === "especie" ? "Valor Estimado *" : "Monto en CLP *"}
+        <Label htmlFor="monto-input" className="text-sm font-semibold text-stone-900">
+          {tipo === "ingreso" && medioPagoIngreso === "especie" ? "Valor Estimado *" : "Monto en CLP *"}
         </Label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500 font-bold text-lg">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-950 font-black text-2xl">
             $
           </div>
           <Input
@@ -469,13 +576,13 @@ export function FormularioMovimiento({
             value={montoTexto}
             onChange={manejarCambioMonto}
             placeholder="0"
-            className="pl-8 text-2xl font-bold h-14 bg-white tracking-tight border-stone-300 focus:border-emerald-600"
+            className="pl-9 text-2xl font-black h-14 bg-white text-stone-950 placeholder:text-stone-400 tracking-tight border-stone-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-sm"
             required
             autoFocus
           />
         </div>
-        {naturaleza === "especie" && (
-          <p className="text-xs text-amber-700 font-medium">
+        {tipo === "ingreso" && medioPagoIngreso === "especie" && (
+          <p className="text-xs text-indigo-700 font-medium">
             Valor comercial aproximado de lo recibido (no suma a la caja en efectivo).
           </p>
         )}
@@ -715,8 +822,113 @@ export function FormularioMovimiento({
         </div>
       )}
 
+      {/* Selectores de entidad deportiva según configuración de la categoría */}
+      {categoria?.sujetoAsociado === "caballo" && (
+        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <SelectorCaballo
+            caballoSeleccionadoId={caballoId}
+            alSeleccionar={(c) => {
+              setCaballoId(c.id);
+              if (c.clubId && !clubId) setClubId(c.clubId);
+            }}
+            alLimpiar={() => setCaballoId("")}
+            requerido={categoria.exigeSujeto}
+            label={`Caballo relacionado ${categoria.exigeSujeto ? "(Obligatorio) *" : "(Opcional)"}`}
+          />
+        </div>
+      )}
+
+      {categoria?.sujetoAsociado === "jinete" && (
+        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <SelectorJinete
+            jineteSeleccionadoId={jineteId}
+            alSeleccionar={(j) => {
+              setJineteId(j.id);
+              if (j.clubId && !clubId) setClubId(j.clubId);
+              if (tipo === "ingreso" && !nombreOrigen.trim() && j.nombre) {
+                setNombreOrigen(j.nombre);
+              }
+            }}
+            alLimpiar={() => setJineteId("")}
+            requerido={categoria.exigeSujeto}
+            label={`Jinete relacionado ${categoria.exigeSujeto ? "(Obligatorio) *" : "(Opcional)"}`}
+          />
+        </div>
+      )}
+
+      {categoria?.sujetoAsociado === "club" && (
+        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <SelectorClub
+            clubSeleccionadoId={clubId}
+            alSeleccionar={(c) => {
+              setClubId(c.id);
+              if (tipo === "ingreso" && !nombreOrigen.trim() && c.nombre) {
+                setNombreOrigen(c.nombre);
+              }
+            }}
+            alLimpiar={() => setClubId("")}
+            requerido={categoria.exigeSujeto}
+            label={`Club relacionado ${categoria.exigeSujeto ? "(Obligatorio) *" : "(Opcional)"}`}
+          />
+        </div>
+      )}
+
+      {categoria?.sujetoAsociado === "prueba" && (
+        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <Label className="text-xs font-semibold text-stone-700">
+            Prueba relacionada {categoria.exigeSujeto ? "(Obligatoria) *" : "(Opcional)"}
+          </Label>
+          <select
+            value={pruebaId}
+            onChange={(e) => setPruebaId(e.target.value)}
+            className="w-full h-11 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-900 font-medium"
+            required={categoria.exigeSujeto}
+          >
+            <option value="">Selecciona una prueba...</option>
+            {pruebas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre} {p.tarifaClp ? `(${formatearMonto(p.tarifaClp)})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {categoria?.sujetoAsociado === "binomio" && !esCategoriaInscripciones && (
+        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <Label className="text-xs font-semibold text-stone-700">
+            Binomio relacionado {categoria.exigeSujeto ? "(Obligatorio) *" : "(Opcional)"}
+          </Label>
+          <select
+            value={binomioId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setBinomioId(id);
+              const b = binomios.find((item) => item.id === id);
+              if (b) {
+                if (b.jineteId) setJineteId(b.jineteId);
+                if (b.caballoId) setCaballoId(b.caballoId);
+                if (b.clubId) setClubId(b.clubId);
+                if (tipo === "ingreso" && !nombreOrigen.trim() && b.jinete?.nombre) {
+                  setNombreOrigen(b.jinete.nombre);
+                }
+              }
+            }}
+            className="w-full h-11 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-900 font-medium"
+            required={categoria.exigeSujeto}
+          >
+            <option value="">Selecciona un binomio...</option>
+            {binomios.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.jinete?.nombre} / {b.caballo?.nombre} ({b.club?.nombre})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Contraparte (Auspiciador o Proveedor) */}
-      {!esCategoriaInscripciones && (
+      {!esCategoriaInscripciones && (categoria?.exigeContraparte || !categoria?.sujetoAsociado) && (
         <div className="space-y-1.5">
           <SelectorContraparte
             tipoMovimiento={tipo}
@@ -729,44 +941,112 @@ export function FormularioMovimiento({
         </div>
       )}
 
-      {/* ¿Ya se pagó? / ¿Ya se recibió? */}
-      <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-stone-600">
-          {tipo === "gasto" ? "¿Ya se pagó?" : "¿Ya se recibió el dinero?"}
-        </Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant={estadoPago === "pagado" ? "default" : "outline"}
-            className={`h-11 ${
-              estadoPago === "pagado"
-                ? "bg-stone-900 text-white font-semibold"
-                : "text-stone-700 hover:bg-stone-100"
-            }`}
-            onClick={() => setEstadoPago("pagado")}
-          >
-            {tipo === "gasto" ? "Ya pagado" : "Ya recibido"}
-          </Button>
-          <Button
-            type="button"
-            variant={estadoPago === "pendiente" ? "default" : "outline"}
-            className={`h-11 ${
-              estadoPago === "pendiente"
-                ? "bg-amber-600 text-white font-semibold"
-                : "text-stone-700 hover:bg-stone-100"
-            }`}
-            onClick={() => setEstadoPago("pendiente")}
-          >
-            {tipo === "gasto" ? "Pendiente (por pagar)" : "Pendiente (por cobrar)"}
-          </Button>
+      {/* Medio de pago simplificado (Ingreso) */}
+      {tipo === "ingreso" && (
+        <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+          <Label className="text-xs font-semibold text-stone-700">
+            Medio de pago / Recepción *
+          </Label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: "transferencia", label: "Transferencia" },
+              { id: "efectivo", label: "Efectivo" },
+              { id: "por_cobrar", label: "Por cobrar" },
+              { id: "especie", label: "Especie / Canje" },
+            ].map((m) => (
+              <Button
+                key={m.id}
+                type="button"
+                variant={medioPagoIngreso === m.id ? "default" : "outline"}
+                className={`h-11 text-xs font-semibold transition-all ${
+                  medioPagoIngreso === m.id
+                    ? m.id === "por_cobrar"
+                      ? "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                      : m.id === "especie"
+                      ? "bg-indigo-700 hover:bg-indigo-800 text-white shadow-sm"
+                      : "bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+                    : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+                }`}
+                onClick={() => setMedioPagoIngreso(m.id as any)}
+              >
+                {m.label}
+              </Button>
+            ))}
+          </div>
+          {medioPagoIngreso === "especie" && (
+            <p className="text-xs text-indigo-700 font-medium pt-1">
+              Registro no monetario: Representa canje, donación o patrocinio en bienes o servicios.
+            </p>
+          )}
+          {medioPagoIngreso === "por_cobrar" && (
+            <p className="text-xs text-amber-700 font-medium pt-1">
+              Quedará registrado como cuenta pendiente de cobro en tesorería.
+            </p>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Medio de pago simplificado (Gasto) */}
+      {tipo === "gasto" && (
+        <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+          <Label className="text-xs font-semibold text-stone-700">
+            Forma de pago *
+          </Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: "transferencia", label: "Transferencia" },
+              { id: "efectivo", label: "Efectivo" },
+              { id: "por_pagar", label: "Por pagar" },
+            ].map((m) => (
+              <Button
+                key={m.id}
+                type="button"
+                variant={medioPagoGasto === m.id ? "default" : "outline"}
+                className={`h-11 text-xs font-semibold transition-all ${
+                  medioPagoGasto === m.id
+                    ? m.id === "por_pagar"
+                      ? "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                      : "bg-stone-900 hover:bg-stone-950 text-white shadow-sm"
+                    : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+                }`}
+                onClick={() => setMedioPagoGasto(m.id as any)}
+              >
+                {m.label}
+              </Button>
+            ))}
+          </div>
+          {medioPagoGasto === "por_pagar" && (
+            <p className="text-xs text-amber-700 font-medium pt-1">
+              Quedará registrado como deuda pendiente de pago.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Nombre de origen (solo ingresos por transferencia) */}
+      {tipo === "ingreso" && medioPagoIngreso === "transferencia" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="nombre-origen" className="text-xs font-semibold text-stone-700">
+            Nombre de origen (Titular de la cuenta que transfiere) *
+          </Label>
+          <Input
+            id="nombre-origen"
+            type="text"
+            value={nombreOrigen}
+            onChange={(e) => setNombreOrigen(e.target.value)}
+            placeholder="Ej: Juan Pérez / Empresa SpA"
+            className="h-11 bg-white text-stone-900 font-medium"
+            maxLength={100}
+            required
+          />
+        </div>
+      )}
 
       {/* Fechas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="fecha" className="text-xs font-semibold text-stone-700">
-            Fecha del hecho *
+            Fecha del movimiento *
           </Label>
           <Input
             id="fecha"
@@ -774,20 +1054,21 @@ export function FormularioMovimiento({
             value={fecha}
             onChange={(e) => {
               setFecha(e.target.value);
-              if (estadoPago === "pagado" && fechaPago < e.target.value) {
+              if (fechaPago < e.target.value) {
                 setFechaPago(e.target.value);
               }
             }}
-            max={estadoPago === "pagado" ? hoyChile : undefined}
-            className="h-11 bg-white"
+            max={hoyChile}
+            className="h-11 bg-white text-stone-900 font-medium"
             required
           />
         </div>
 
-        {estadoPago === "pagado" && (
+        {((tipo === "ingreso" && (medioPagoIngreso === "transferencia" || medioPagoIngreso === "efectivo")) ||
+          (tipo === "gasto" && !pagadoPorId && (medioPagoGasto === "transferencia" || medioPagoGasto === "efectivo"))) && (
           <div className="space-y-1.5">
             <Label htmlFor="fecha-pago" className="text-xs font-semibold text-stone-700">
-              Fecha de pago *
+              Fecha en que se pagó / transfirió *
             </Label>
             <Input
               id="fecha-pago"
@@ -796,57 +1077,12 @@ export function FormularioMovimiento({
               onChange={(e) => setFechaPago(e.target.value)}
               max={hoyChile}
               min={fecha}
-              className="h-11 bg-white"
+              className="h-11 bg-white text-stone-900 font-medium"
               required
             />
           </div>
         )}
       </div>
-
-      {/* Medio de pago (si está pagado y es dinero) */}
-      {estadoPago === "pagado" && naturaleza === "dinero" && (
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-stone-700">Medio de pago *</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: "transferencia", label: "Transferencia" },
-              { id: "efectivo", label: "Efectivo" },
-              { id: "otro", label: "Otro" },
-            ].map((m) => (
-              <Button
-                key={m.id}
-                type="button"
-                variant={medioPago === m.id ? "default" : "outline"}
-                className={`h-10 text-xs font-medium ${
-                  medioPago === m.id ? "bg-stone-800 text-white" : "text-stone-700"
-                }`}
-                onClick={() => setMedioPago(m.id as any)}
-              >
-                {m.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Nombre de origen (solo ingresos) */}
-      {tipo === "ingreso" && naturaleza === "dinero" && (
-        <div className="space-y-1.5">
-          <Label htmlFor="nombre-origen" className="text-xs font-semibold text-stone-700">
-            Nombre de origen {medioPago === "transferencia" && estadoPago === "pagado" ? "*" : "(Opcional)"}
-          </Label>
-          <Input
-            id="nombre-origen"
-            type="text"
-            value={nombreOrigen}
-            onChange={(e) => setNombreOrigen(e.target.value)}
-            placeholder="Titular de la cuenta o quién pagó"
-            className="h-11 bg-white"
-            maxLength={100}
-            required={medioPago === "transferencia" && estadoPago === "pagado"}
-          />
-        </div>
-      )}
 
       {/* Quién pagó (solo gastos: La caja vs Reembolso a una persona) */}
       {tipo === "gasto" && (
@@ -904,26 +1140,7 @@ export function FormularioMovimiento({
         </div>
       )}
 
-      {/* Descripción corta */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between">
-          <Label htmlFor="descripcion" className="text-xs font-semibold text-stone-700">
-            Descripción corta (Opcional)
-          </Label>
-          <span className="text-[11px] text-stone-400">{descripcion.length}/140</span>
-        </div>
-        <Input
-          id="descripcion"
-          type="text"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          placeholder="Ej: Pintura vallas pista 2, premios diplomas..."
-          maxLength={140}
-          className="h-11 bg-white"
-        />
-      </div>
-
-      {/* Observación / Justificación */}
+      {/* Observación / Justificación (Único campo de texto) */}
       <div className="space-y-1.5">
         <div className="flex justify-between">
           <Label htmlFor="observacion" className="text-xs font-semibold text-stone-700">
@@ -935,10 +1152,10 @@ export function FormularioMovimiento({
           id="observacion"
           value={observacion}
           onChange={(e) => setObservacion(e.target.value)}
-          placeholder="Escribe detalles relevantes. No ingreses números de cuenta bancaria ni RUT."
+          placeholder="Escribe detalles u observaciones del movimiento. No ingreses números de cuenta bancaria ni RUT."
           maxLength={500}
           rows={3}
-          className="bg-white"
+          className="bg-white text-stone-900 font-medium"
           required={sinRespaldo}
         />
         <p className="text-[11px] text-stone-500">
@@ -946,45 +1163,8 @@ export function FormularioMovimiento({
         </p>
       </div>
 
-      {/* Opciones avanzadas: Naturaleza (En especie para ingresos) */}
-      {tipo === "ingreso" && (
-        <div className="border border-stone-200 rounded-lg p-3 bg-stone-50">
-          <button
-            type="button"
-            onClick={() => setMostrarOpcionesNaturaleza(!mostrarOpcionesNaturaleza)}
-            className="flex items-center justify-between w-full text-xs font-medium text-stone-700"
-          >
-            <span>Naturaleza del ingreso: {naturaleza === "dinero" ? "Dinero (normal)" : "En especie"}</span>
-            {mostrarOpcionesNaturaleza ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-
-          {mostrarOpcionesNaturaleza && (
-            <div className="pt-3 flex gap-2">
-              <Button
-                type="button"
-                variant={naturaleza === "dinero" ? "default" : "outline"}
-                size="sm"
-                className="text-xs"
-                onClick={() => setNaturaleza("dinero")}
-              >
-                Dinero
-              </Button>
-              <Button
-                type="button"
-                variant={naturaleza === "especie" ? "default" : "outline"}
-                size="sm"
-                className="text-xs"
-                onClick={() => setNaturaleza("especie")}
-              >
-                En especie / Canje
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Asignación opcional a participante o caballo */}
-      {!esCategoriaInscripciones && (
+      {/* Asignación opcional a participante o caballo (solo si la categoría no fija una entidad) */}
+      {!esCategoriaInscripciones && !categoria?.sujetoAsociado && (
         <div className="border border-stone-200 rounded-lg p-3.5 bg-stone-50 space-y-3">
           <button
             type="button"
@@ -1029,6 +1209,24 @@ export function FormularioMovimiento({
                   label="Club relacionado"
                 />
               </div>
+
+              {pruebas.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-stone-700">Prueba relacionada</Label>
+                  <select
+                    value={pruebaId}
+                    onChange={(e) => setPruebaId(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
+                  >
+                    <option value="">Selecciona una prueba...</option>
+                    {pruebas.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} {p.tarifaClp ? `(${formatearMonto(p.tarifaClp)})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
         </div>

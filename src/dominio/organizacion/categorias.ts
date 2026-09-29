@@ -11,6 +11,8 @@ const crearCategoriaSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100, "Máximo 100 caracteres."),
   tipo: z.enum(["ingreso", "gasto"]),
   exigeContraparte: z.boolean().optional(),
+  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba"]).nullable().optional(),
+  exigeSujeto: z.boolean().optional(),
 });
 
 export type CrearCategoriaInput = z.infer<typeof crearCategoriaSchema>;
@@ -23,7 +25,7 @@ export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategori
     return { exito: false, error: validado.error.errors[0]?.message || "Datos inválidos." };
   }
 
-  const { nombre, tipo, exigeContraparte = false } = validado.data;
+  const { nombre, tipo, exigeContraparte = false, sujetoAsociado = null, exigeSujeto = false } = validado.data;
   const nombreNorm = normalizarNombre(nombre);
 
   const existente = await db(ctx).categoria.findFirst({
@@ -62,6 +64,8 @@ export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategori
       nombreNormalizado: nombreNorm,
       tipo,
       exigeContraparte,
+      sujetoAsociado: sujetoAsociado || null,
+      exigeSujeto: Boolean(exigeSujeto),
       activa: true,
       orden: nuevoOrden,
     },
@@ -280,6 +284,97 @@ export async function conmutarExigeContraparte(id: string, exigeContraparte: boo
   return res;
 }
 
+const actualizarCategoriaSchema = z.object({
+  id: z.string(),
+  version: z.number(),
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100, "Máximo 100 caracteres."),
+  exigeContraparte: z.boolean().optional(),
+  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba"]).nullable().optional(),
+  exigeSujeto: z.boolean().optional(),
+});
+
+export type ActualizarCategoriaInput = z.infer<typeof actualizarCategoriaSchema>;
+
+export async function ejecutarActualizarCategoria(ctx: Contexto, datos: ActualizarCategoriaInput) {
+  exigir(ctx, "configurar");
+
+  const validado = actualizarCategoriaSchema.safeParse(datos);
+  if (!validado.success) {
+    return { exito: false, error: validado.error.errors[0]?.message || "Datos inválidos." };
+  }
+
+  const { id, version, nombre, exigeContraparte = false, sujetoAsociado = null, exigeSujeto = false } = validado.data;
+  const nombreNorm = normalizarNombre(nombre);
+
+  const catActual = await db(ctx).categoria.findUnique({
+    where: { id },
+  });
+
+  if (!catActual) {
+    return { exito: false, error: "La categoría no existe." };
+  }
+
+  if (catActual.version !== version) {
+    return { exito: false, error: "La categoría fue modificada previamente. Por favor recarga." };
+  }
+
+  const choque = await db(ctx).categoria.findFirst({
+    where: {
+      tipo: catActual.tipo,
+      nombreNormalizado: nombreNorm,
+      id: { not: id },
+    },
+  });
+
+  if (choque) {
+    return {
+      exito: false,
+      error: `Ya existe otra categoría llamada «${choque.nombre}» en ${catActual.tipo}s.`,
+    };
+  }
+
+  const catActualizada = await db(ctx).categoria.update({
+    where: { id, version },
+    data: {
+      nombre: catActual.claveSistema ? catActual.nombre : nombre,
+      nombreNormalizado: catActual.claveSistema ? catActual.nombreNormalizado : nombreNorm,
+      exigeContraparte,
+      sujetoAsociado: sujetoAsociado || null,
+      exigeSujeto: Boolean(exigeSujeto),
+      version: { increment: 1 },
+    },
+  });
+
+  await registrarAuditoria(ctx, {
+    entidad: "categoria",
+    entidadId: id,
+    accion: "editar",
+    antes: {
+      nombre: catActual.nombre,
+      exigeContraparte: catActual.exigeContraparte,
+      sujetoAsociado: catActual.sujetoAsociado,
+      exigeSujeto: catActual.exigeSujeto,
+    },
+    despues: {
+      nombre: catActualizada.nombre,
+      exigeContraparte: catActualizada.exigeContraparte,
+      sujetoAsociado: catActualizada.sujetoAsociado,
+      exigeSujeto: catActualizada.exigeSujeto,
+    },
+  });
+
+  return { exito: true, categoria: catActualizada };
+}
+
+export async function actualizarCategoria(datos: ActualizarCategoriaInput) {
+  const ctx = await obtenerContexto();
+  const res = await ejecutarActualizarCategoria(ctx, datos);
+  if (res.exito) {
+    revalidatePath("/configuracion/categorias");
+  }
+  return res;
+}
+
 export async function ejecutarDesactivarCategoria(ctx: Contexto, id: string, version: number) {
   exigir(ctx, "configurar");
 
@@ -434,20 +529,34 @@ export async function ejecutarObtenerCategoriasSelector(
     where: {
       tipo,
       activa: true,
-      claveSistema: { notIn: claveSistemaExcluidas },
+      OR: [
+        { claveSistema: null },
+        { claveSistema: { notIn: claveSistemaExcluidas } },
+      ],
     },
     select: {
       id: true,
       nombre: true,
       tipo: true,
       exigeContraparte: true,
+      sujetoAsociado: true,
+      exigeSujeto: true,
       claveSistema: true,
       orden: true,
     },
     orderBy: { orden: "asc" },
   });
 
-  return categorias;
+  return categorias.map((c) => {
+    if (c.claveSistema === "inscripciones") {
+      return {
+        ...c,
+        sujetoAsociado: c.sujetoAsociado || "binomio",
+        exigeSujeto: true,
+      };
+    }
+    return c;
+  });
 }
 
 export async function obtenerCategoriasSelector(

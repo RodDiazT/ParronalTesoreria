@@ -8,6 +8,7 @@ import {
   ejecutarReordenarCategoria,
   ejecutarObtenerCategoriasSelector,
   ejecutarEliminarCategoria,
+  ejecutarActualizarCategoria,
 } from "./categorias";
 import { prisma } from "@/lib/db";
 import { db } from "@/lib/contexto";
@@ -275,6 +276,58 @@ describe("Gestión de Categorías", () => {
       await expect(
         ejecutarEliminarCategoria(ctxAyudante, c.categoria!.id)
       ).rejects.toThrow("Permiso denegado: rol administrador requerido");
+    });
+  });
+
+  describe("Entidad deportiva asociada (sujetoAsociado) y selector de categorías", () => {
+    it("crea y actualiza una categoría con sujetoAsociado y exigeSujeto", async () => {
+      const sufijo = Date.now();
+      const creada = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Pensión Caballo ${sufijo}`,
+        tipo: "ingreso",
+        exigeContraparte: false,
+        sujetoAsociado: "caballo",
+        exigeSujeto: true,
+      });
+
+      expect(creada.exito).toBe(true);
+      expect(creada.categoria?.sujetoAsociado).toBe("caballo");
+      expect(creada.categoria?.exigeSujeto).toBe(true);
+
+      // Actualizar a jinete opcional
+      const actualizada = await ejecutarActualizarCategoria(ctxAdmin, {
+        id: creada.categoria!.id,
+        version: creada.categoria!.version,
+        nombre: `Pensión Jinete ${sufijo}`,
+        exigeContraparte: true,
+        sujetoAsociado: "jinete",
+        exigeSujeto: false,
+      });
+
+      expect(actualizada.exito).toBe(true);
+      expect(actualizada.categoria?.nombre).toBe(`Pensión Jinete ${sufijo}`);
+      expect(actualizada.categoria?.sujetoAsociado).toBe("jinete");
+      expect(actualizada.categoria?.exigeSujeto).toBe(false);
+      expect(actualizada.categoria?.exigeContraparte).toBe(true);
+    });
+
+    it("el selector de categorías retorna categorías personalizadas sin clave de sistema", async () => {
+      const sufijo = Date.now();
+      const catCustom = await ejecutarCrearCategoria(ctxAdmin, {
+        nombre: `Custom Selector ${sufijo}`,
+        tipo: "ingreso",
+        sujetoAsociado: "caballo",
+        exigeSujeto: true,
+      });
+      expect(catCustom.exito).toBe(true);
+
+      const lista = await ejecutarObtenerCategoriasSelector(ctxAdmin, "ingreso");
+      const encontrada = lista.find((c) => c.id === catCustom.categoria!.id);
+
+      expect(encontrada).toBeDefined();
+      expect(encontrada?.nombre).toBe(`Custom Selector ${sufijo}`);
+      expect(encontrada?.sujetoAsociado).toBe("caballo");
+      expect(encontrada?.exigeSujeto).toBe(true);
     });
   });
 });

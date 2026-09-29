@@ -296,10 +296,49 @@ export async function ejecutarRegistrarMovimiento(
   if (datos.jineteId) await exigirDeLaOrganizacion(ctx, "jinete", datos.jineteId);
   if (datos.clubId) await exigirDeLaOrganizacion(ctx, "club", datos.clubId);
   if (datos.binomioId) await exigirDeLaOrganizacion(ctx, "binomio", datos.binomioId);
+  if (datos.pruebaId) await exigirDeLaOrganizacion(ctx, "prueba", datos.pruebaId);
+
+  // Herencia automática de entidades deportivas
+  let binomioId = datos.binomioId || null;
+  let jineteId = datos.jineteId || null;
+  let caballoId = datos.caballoId || null;
+  let clubId = datos.clubId || null;
+  let pruebaId = datos.pruebaId || null;
+
+  if (binomioId) {
+    const bin = await db(ctx).binomio.findUnique({
+      where: { id: binomioId },
+      select: { id: true, jineteId: true, caballoId: true, clubId: true },
+    });
+    if (bin) {
+      jineteId = jineteId || bin.jineteId;
+      caballoId = caballoId || bin.caballoId;
+      clubId = clubId || bin.clubId;
+    }
+  } else if (caballoId && !clubId) {
+    const cab = await db(ctx).caballo.findUnique({
+      where: { id: caballoId },
+      select: { clubId: true },
+    });
+    if (cab?.clubId) clubId = cab.clubId;
+  } else if (jineteId && !clubId) {
+    const jin = await db(ctx).jinete.findUnique({
+      where: { id: jineteId },
+      select: { clubId: true },
+    });
+    if (jin?.clubId) clubId = jin.clubId;
+  }
 
   // Validar reglas de dominio integradas
   const validacionReglas = validarReglasMovimiento(
-    datos,
+    {
+      ...datos,
+      binomioId,
+      jineteId,
+      caballoId,
+      clubId,
+      pruebaId,
+    },
     categoria,
     archivosValidados.length > 0
   );
@@ -357,10 +396,11 @@ export async function ejecutarRegistrarMovimiento(
           validadoEn: estadoValidacion === "validado" ? new Date() : null,
           registradoPorId: ctx.usuario.id,
           claveCliente: datos.claveCliente,
-          binomioId: datos.binomioId || null,
-          jineteId: datos.jineteId || null,
-          caballoId: datos.caballoId || null,
-          clubId: datos.clubId || null,
+          binomioId,
+          jineteId,
+          caballoId,
+          clubId,
+          pruebaId,
         },
       });
 

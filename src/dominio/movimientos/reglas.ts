@@ -70,6 +70,7 @@ export const movimientoRegistroSchema = z.object({
   jineteId: z.string().optional().nullable(),
   caballoId: z.string().optional().nullable(),
   clubId: z.string().optional().nullable(),
+  pruebaId: z.string().optional().nullable(),
   repartoInscripciones: z
     .array(
       z.object({
@@ -88,10 +89,34 @@ export type MovimientoRegistroOutput = z.infer<typeof movimientoRegistroSchema>;
  */
 export function validarReglasMovimiento(
   datos: MovimientoRegistroInput,
-  categoria?: { exigeContraparte: boolean; claveSistema: string | null } | null,
+  categoria?: {
+    exigeContraparte: boolean;
+    claveSistema: string | null;
+    sujetoAsociado?: string | null;
+    exigeSujeto?: boolean;
+  } | null,
   tieneArchivos: boolean = false
 ): { valido: boolean; error?: string } {
   const hoy = obtenerFechaHoyChile();
+
+  // 0. Reglas de sujeto asociado obligatorio
+  if (categoria?.exigeSujeto && categoria?.sujetoAsociado) {
+    if (categoria.sujetoAsociado === "caballo" && !datos.caballoId) {
+      return { valido: false, error: "Debes seleccionar un caballo para esta categoría." };
+    }
+    if (categoria.sujetoAsociado === "jinete" && !datos.jineteId) {
+      return { valido: false, error: "Debes seleccionar un jinete para esta categoría." };
+    }
+    if (categoria.sujetoAsociado === "club" && !datos.clubId) {
+      return { valido: false, error: "Debes seleccionar un club para esta categoría." };
+    }
+    if (categoria.sujetoAsociado === "prueba" && !datos.pruebaId) {
+      return { valido: false, error: "Debes seleccionar una prueba para esta categoría." };
+    }
+    if (categoria.sujetoAsociado === "binomio" && !datos.binomioId) {
+      return { valido: false, error: "Debes seleccionar un binomio para esta categoría." };
+    }
+  }
 
   // 1. Reglas de naturaleza y tipo
   if (datos.tipo === "gasto" && datos.naturaleza === "especie") {
@@ -231,6 +256,7 @@ export const movimientoEdicionSchema = z.object({
   jineteId: z.string().optional().nullable(),
   caballoId: z.string().optional().nullable(),
   clubId: z.string().optional().nullable(),
+  pruebaId: z.string().optional().nullable(),
 });
 
 /**

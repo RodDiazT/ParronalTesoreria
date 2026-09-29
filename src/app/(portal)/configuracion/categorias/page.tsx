@@ -33,6 +33,8 @@ export default async function CategoriasPage() {
     tipo: c.tipo as "ingreso" | "gasto",
     claveSistema: c.claveSistema,
     exigeContraparte: c.exigeContraparte,
+    sujetoAsociado: c.sujetoAsociado,
+    exigeSujeto: c.exigeSujeto,
     activa: c.activa,
     orden: c.orden,
     version: c.version,

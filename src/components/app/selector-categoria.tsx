@@ -10,6 +10,8 @@ export interface OpcionCategoria {
   nombre: string;
   tipo: "ingreso" | "gasto";
   exigeContraparte: boolean;
+  sujetoAsociado?: string | null;
+  exigeSujeto?: boolean;
   claveSistema: string | null;
   orden: number;
 }

@@ -140,6 +140,8 @@ model Categoria {
   tipo                 TipoCategoria
   claveSistema         String?       @map("clave_sistema")
   exigeContraparte     Boolean       @default(false) @map("exige_contraparte")
+  sujetoAsociado       String?       @map("sujeto_asociado")
+  exigeSujeto          Boolean       @default(false) @map("exige_sujeto")
   activa               Boolean       @default(true)
   orden                Int
   version              Int           @default(1)
@@ -357,11 +359,13 @@ model Movimiento {
   jineteId              String?              @map("jinete_id")
   caballoId             String?              @map("caballo_id")
   clubId                String?              @map("club_id")
+  pruebaId              String?              @map("prueba_id")
 
   binomio               Binomio?             @relation(fields: [binomioId], references: [id])
   jinete                Jinete?              @relation(fields: [jineteId], references: [id])
   caballo               Caballo?             @relation(fields: [caballoId], references: [id])
   club                  Club?                @relation(fields: [clubId], references: [id])
+  prueba                Prueba?              @relation(fields: [pruebaId], references: [id])
 
   respaldos             Respaldo[]
   pagos                 Pago[]
@@ -377,6 +381,7 @@ model Movimiento {
   @@index([organizacionId, jineteId])
   @@index([organizacionId, clubId])
   @@index([organizacionId, binomioId])
+  @@index([organizacionId, pruebaId])
   @@map("movimiento")
 }
 
@@ -575,6 +580,7 @@ model Prueba {
   creadoPor         Usuario       @relation("PruebaCreadoPor", fields: [creadoPorId], references: [id])
 
   inscripciones     Inscripcion[]
+  movimientos       Movimiento[]
 
   @@unique([eventoId, nombreNormalizado])
   @@index([organizacionId, eventoId])

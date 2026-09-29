@@ -324,3 +324,40 @@ Para la futura sesión de desarrollo, se recomienda seguir este orden secuencial
 3. **Cobro de Inscripciones Anidado en Ingreso:** Todo pago de inscripciones es fundamentalmente un ingreso de dinero en Tesorería. Al registrar un Ingreso en la categoría «Inscripciones», el formulario despliega dinámicamente el selector de participante (Binomio, Jinete o Club) y la lista de pruebas pendientes con su saldo para realizar el reparto directo (`repartoInscripciones`), extinguiendo la deuda deportiva en la misma transacción contable.
 4. **Compatibilidad:** Los atajos directos (como «Registrar pago» en ficha de binomio) apuntan a `/movimientos/nuevo?tipo=ingreso&categoria=inscripciones&binomioId=[id]`, preseleccionando los campos de forma inmediata. La ruta `/inscripciones/pago` redirige de forma transparente a este flujo unificado.
 
+### 7.2. Configuración de Entidad Asociada por Categoría y Herencia
+1. **Configuración en Gestor de Categorías (`/configuracion/categorias`):**
+   * Toda categoría (ingreso o gasto) permite configurar su **«Entidad deportiva asociada»**:
+     - `Ninguna` (por defecto): Para conceptos generales sin sujeto directo (ej. bebidas, mantención general).
+     - `Caballo`: Para pensiones de pesebreras, herrajes, veterinaria, etc.
+     - `Jinete`: Para cuotas anuales de jinete, acreditaciones personales, etc.
+     - `Binomio`: Para inscripciones deportivas y servicios específicos de binomios.
+     - `Club`: Para garantías o aportes institucionales.
+     - `Prueba`: Para premios o auspicios asignados a una prueba específica.
+   * **Casilla «¿Es obligatorio?» (`exigeSujeto`):** Define si al seleccionar dicha categoría en el registro de un movimiento es mandatorio escoger la entidad o si puede quedar como opcional.
+2. **Herencia Automática de Entidades:**
+   * Al seleccionar un **Binomio**, el sistema guarda en el movimiento contable la herencia completa:
+     - `movimiento.binomioId = binomio.id`
+     - `movimiento.jineteId = binomio.jineteId`
+     - `movimiento.caballoId = binomio.caballoId`
+     - `movimiento.clubId = binomio.clubId`
+   * Si se asocia a `Caballo`, se hereda `movimiento.clubId = caballo.clubId`.
+   * Si se asocia a `Jinete`, se hereda `movimiento.clubId = jinete.clubId`.
+   * Esto garantiza que al ingresar al Directorio de Jinetes, Caballos o Clubes, el historial de movimientos y estados de cuenta refleje automáticamente estos movimientos sin requerir ingresos dobles.
+
+### 7.3. Simplificación Radical de UX/UI en Formulario de Movimientos
+1. **Contraste de Monto:** El campo de monto utiliza `text-stone-950 font-black` con fondo blanco y alto contraste para legibilidad nítida en exteriores o celulares bajo luz solar.
+2. **Medio de Pago Unificado (Eliminación de "¿Se recibió el dinero?" y "Naturaleza"):**
+   * En **Ingreso**: Botones directos `[ Transferencia ] [ Efectivo ] [ Por cobrar ] [ En especie / Canje ]`.
+     - Si marca `Transferencia`: Se despliega únicamente el campo *"Nombre / Titular de origen"*.
+     - Si marca `Efectivo` o `Por cobrar`: El campo de origen permanece oculto.
+     - Si marca `En especie / Canje`: Se registra con naturaleza en especie sin ingreso de caja física.
+     - Se elimina por completo el bloque redundante "¿Ya se recibió el dinero?".
+   * En **Gasto**: Botones directos `[ Transferencia ] [ Efectivo ] [ Por pagar ]`, eliminando el bloque "¿Ya se pagó?".
+3. **Unificación en Campo Único de Observación:**
+   * Se elimina el campo redundante *"Descripción corta"* dejando un solo cuadro de texto: **Observación** para cualquier detalle relevante.
+4. **Formulario Adaptativo por Categoría:**
+   * Se elimina la sección colapsable estática *"Asignar a participante o caballo"*.
+   * El formulario despliega dinámicamente y únicamente el selector que la categoría configurada requiere (`Caballo`, `Jinete`, `Binomio`, `Club` o `Prueba`).
+   * Si la categoría no asocia ninguna entidad, el formulario se mantiene ultra corto y sin elementos distractores.
+
+

@@ -18,6 +18,7 @@ import {
   reactivarCategoria,
   reordenarCategoria,
   eliminarCategoria,
+  actualizarCategoria,
 } from "@/dominio/organizacion/categorias";
 
 export interface CategoriaItem {
@@ -26,6 +27,8 @@ export interface CategoriaItem {
   tipo: "ingreso" | "gasto";
   claveSistema: string | null;
   exigeContraparte: boolean;
+  sujetoAsociado?: string | null;
+  exigeSujeto?: boolean;
   activa: boolean;
   orden: number;
   version: number;
@@ -45,11 +48,16 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
   // Estados del formulario crear
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoExigeContraparte, setNuevoExigeContraparte] = useState(false);
+  const [nuevoSujetoAsociado, setNuevoSujetoAsociado] = useState<string>("");
+  const [nuevoExigeSujeto, setNuevoExigeSujeto] = useState(false);
   const [guardandoCrear, setGuardandoCrear] = useState(false);
   const [sugerenciaReactivar, setSugerenciaReactivar] = useState<{ id: string; nombre: string } | null>(null);
 
   // Estados del formulario editar
   const [nombreEditado, setNombreEditado] = useState("");
+  const [exigeContraparteEditado, setExigeContraparteEditado] = useState(false);
+  const [sujetoAsociadoEditado, setSujetoAsociadoEditado] = useState<string>("");
+  const [exigeSujetoEditado, setExigeSujetoEditado] = useState(false);
   const [guardandoEditar, setGuardandoEditar] = useState(false);
 
   // Estados modal eliminar
@@ -73,6 +81,8 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
       nombre: nuevoNombre,
       tipo: pestana,
       exigeContraparte: nuevoExigeContraparte,
+      sujetoAsociado: (nuevoSujetoAsociado as any) || null,
+      exigeSujeto: nuevoSujetoAsociado ? nuevoExigeSujeto : false,
     });
 
     setGuardandoCrear(false);
@@ -89,6 +99,8 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
     toast.success("Categoría creada con éxito.");
     setNuevoNombre("");
     setNuevoExigeContraparte(false);
+    setNuevoSujetoAsociado("");
+    setNuevoExigeSujeto(false);
     setModalCrear(false);
     router.refresh();
   };
@@ -109,20 +121,35 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
     }
   };
 
-  const handleRenombrar = async (e: React.FormEvent) => {
+  const abrirModalEditar = (cat: CategoriaItem) => {
+    setModalEditar(cat);
+    setNombreEditado(cat.nombre);
+    setExigeContraparteEditado(cat.exigeContraparte);
+    setSujetoAsociadoEditado(cat.sujetoAsociado || "");
+    setExigeSujetoEditado(Boolean(cat.exigeSujeto));
+  };
+
+  const handleEditar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalEditar) return;
 
     setGuardandoEditar(true);
-    const res = await renombrarCategoria(modalEditar.id, nombreEditado, modalEditar.version);
+    const res = await actualizarCategoria({
+      id: modalEditar.id,
+      version: modalEditar.version,
+      nombre: nombreEditado,
+      exigeContraparte: exigeContraparteEditado,
+      sujetoAsociado: (sujetoAsociadoEditado as any) || null,
+      exigeSujeto: sujetoAsociadoEditado ? exigeSujetoEditado : false,
+    });
     setGuardandoEditar(false);
 
     if (!res.exito) {
-      toast.error(res.error || "No se pudo renombrar la categoría.");
+      toast.error(res.error || "No se pudo actualizar la categoría.");
       return;
     }
 
-    toast.success("Categoría renombrada.");
+    toast.success("Categoría actualizada con éxito.");
     setModalEditar(null);
     router.refresh();
   };
@@ -315,7 +342,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] text-texto-suave hover:text-texto">
                         <Checkbox
                           checked={cat.exigeContraparte}
@@ -324,6 +351,11 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                         />
                         <span>Exige contraparte</span>
                       </label>
+                      {cat.sujetoAsociado && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold capitalize">
+                          Asocia {cat.sujetoAsociado} {cat.exigeSujeto ? "(obligatorio)" : "(opcional)"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -331,13 +363,10 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                 {/* Acciones */}
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => {
-                      setModalEditar(cat);
-                      setNombreEditado(cat.nombre);
-                    }}
+                    onClick={() => abrirModalEditar(cat)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-texto-suave hover:bg-fondo hover:text-texto cursor-pointer"
-                    title="Renombrar"
-                    aria-label="Renombrar"
+                    title="Editar categoría"
+                    aria-label="Editar"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
@@ -476,6 +505,36 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
             />
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="catSujeto">Asociar a entidad deportiva</Label>
+            <select
+              id="catSujeto"
+              value={nuevoSujetoAsociado}
+              onChange={(e) => setNuevoSujetoAsociado(e.target.value)}
+              className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
+            >
+              <option value="">Ninguna (general)</option>
+              <option value="caballo">Caballo (ej. pensión, pesebrera, herraje)</option>
+              <option value="jinete">Jinete (ej. cuota jinete, acreditación)</option>
+              <option value="binomio">Binomio (ej. binomio, inscripción)</option>
+              <option value="club">Club (ej. cuota club, garantía)</option>
+              <option value="prueba">Prueba (ej. auspicio prueba, premios)</option>
+            </select>
+          </div>
+
+          {nuevoSujetoAsociado && (
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="catExigeSujeto"
+                checked={nuevoExigeSujeto}
+                onCheckedChange={(c) => setNuevoExigeSujeto(Boolean(c))}
+              />
+              <Label htmlFor="catExigeSujeto" className="text-xs cursor-pointer font-normal">
+                Es obligatorio seleccionar {nuevoSujetoAsociado} al registrar el movimiento
+              </Label>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 pt-1">
             <Checkbox
               id="catExigeContraparte"
@@ -502,15 +561,15 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
         </form>
       </Sheet>
 
-      {/* Modal / Sheet Renombrar Categoría */}
+      {/* Modal / Sheet Editar Categoría */}
       <Sheet
         abierta={Boolean(modalEditar)}
         alCerrar={() => setModalEditar(null)}
         posicion="centro"
-        titulo="Renombrar categoría"
-        descripcion="El nuevo nombre se reflejará en todos los movimientos históricos."
+        titulo="Editar categoría"
+        descripcion="Configura las propiedades y asociaciones de la categoría."
       >
-        <form onSubmit={handleRenombrar} className="space-y-4">
+        <form onSubmit={handleEditar} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="catNombreEditar">Nombre de la categoría *</Label>
             <Input
@@ -521,8 +580,57 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
               maxLength={100}
               value={nombreEditado}
               onChange={(e) => setNombreEditado(e.target.value)}
+              disabled={Boolean(modalEditar?.claveSistema)}
               autoFocus
             />
+            {modalEditar?.claveSistema && (
+              <p className="text-[11px] text-stone-500">
+                El nombre de las categorías del sistema no se puede modificar.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="catSujetoEditar">Asociar a entidad deportiva</Label>
+            <select
+              id="catSujetoEditar"
+              value={sujetoAsociadoEditado}
+              onChange={(e) => setSujetoAsociadoEditado(e.target.value)}
+              disabled={Boolean(modalEditar?.claveSistema === "inscripciones")}
+              className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800 disabled:opacity-60"
+            >
+              <option value="">Ninguna (general)</option>
+              <option value="caballo">Caballo (ej. pensión, pesebrera, herraje)</option>
+              <option value="jinete">Jinete (ej. cuota jinete, acreditación)</option>
+              <option value="binomio">Binomio (ej. binomio, inscripción)</option>
+              <option value="club">Club (ej. cuota club, garantía)</option>
+              <option value="prueba">Prueba (ej. auspicio prueba, premios)</option>
+            </select>
+          </div>
+
+          {sujetoAsociadoEditado && (
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="catExigeSujetoEditar"
+                checked={exigeSujetoEditado}
+                onCheckedChange={(c) => setExigeSujetoEditado(Boolean(c))}
+                disabled={Boolean(modalEditar?.claveSistema === "inscripciones")}
+              />
+              <Label htmlFor="catExigeSujetoEditar" className="text-xs cursor-pointer font-normal">
+                Es obligatorio seleccionar {sujetoAsociadoEditado} al registrar el movimiento
+              </Label>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="catExigeContraparteEditar"
+              checked={exigeContraparteEditado}
+              onCheckedChange={(c) => setExigeContraparteEditado(Boolean(c))}
+            />
+            <Label htmlFor="catExigeContraparteEditar" className="text-xs cursor-pointer font-normal">
+              Exigir contraparte (proveedor/auspiciador) obligatoria al registrar
+            </Label>
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
@@ -535,9 +643,9 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
             </Button>
             <Button
               type="submit"
-              disabled={guardandoEditar || !nombreEditado.trim() || nombreEditado === modalEditar?.nombre}
+              disabled={guardandoEditar || !nombreEditado.trim()}
             >
-              {guardandoEditar ? "Guardando..." : "Guardar nombre"}
+              {guardandoEditar ? "Guardando..." : "Guardar cambios"}
             </Button>
           </div>
         </form>
