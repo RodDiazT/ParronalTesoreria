@@ -40,7 +40,10 @@ export default async function NuevoMovimientoPage({
     where: {
       organizacionId: ctx.organizacionId,
       activa: true,
-      claveSistema: { not: "devoluciones" },
+      OR: [
+        { claveSistema: null },
+        { claveSistema: { not: "devoluciones" } },
+      ],
     },
     select: {
       id: true,

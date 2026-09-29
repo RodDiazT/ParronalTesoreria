@@ -118,6 +118,11 @@ export function FormularioNuevaInscripcion({
   const [guardandoCaballo, setGuardandoCaballo] = useState(false);
   const [parecidosCaballo, setParecidosCaballo] = useState<ParecidoCoincidencia[]>([]);
 
+  // Toggles de datos adicionales en modales in-situ
+  const [masDatosClub, setMasDatosClub] = useState(false);
+  const [masDatosJinete, setMasDatosJinete] = useState(false);
+  const [masDatosCaballo, setMasDatosCaballo] = useState(false);
+
   // Pruebas seleccionadas
   const [pruebasSeleccionadas, setPruebasSeleccionadas] = useState<
     Record<string, { seleccionada: boolean; montoAjustado?: string; motivoAjuste?: string }>
@@ -623,33 +628,55 @@ export function FormularioNuevaInscripcion({
                     </div>
 
                     {marcada && (
-                      <div className="mt-3 pt-3 border-t border-borde/60 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor={`ajuste_${p.id}`} className="text-[11px] text-texto-suave">
-                            Ajustar tarifa (CLP)
-                          </Label>
-                          <Input
-                            id={`ajuste_${p.id}`}
-                            type="number"
-                            placeholder={p.tarifaClp.toString()}
-                            value={config?.montoAjustado ?? ""}
-                            onChange={(e) => handleAjusteMonto(p.id, e.target.value)}
-                            className="h-8 text-xs mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`motivo_${p.id}`} className="text-[11px] text-texto-suave">
-                            Motivo si cambia la tarifa
-                          </Label>
-                          <Input
-                            id={`motivo_${p.id}`}
-                            type="text"
-                            placeholder="Ej: Beca del club, Descuento"
-                            value={config?.motivoAjuste ?? ""}
-                            onChange={(e) => handleAjusteMotivo(p.id, e.target.value)}
-                            className="h-8 text-xs mt-1"
-                          />
-                        </div>
+                      <div className="mt-2.5 pt-2.5 border-t border-borde/60">
+                        {config?.montoAjustado !== undefined && config.montoAjustado !== "" ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in-50">
+                            <div>
+                              <Label htmlFor={`ajuste_${p.id}`} className="text-[11px] text-texto-suave">
+                                Tarifa especial (CLP)
+                              </Label>
+                              <Input
+                                id={`ajuste_${p.id}`}
+                                type="number"
+                                placeholder={p.tarifaClp.toString()}
+                                value={config.montoAjustado}
+                                onChange={(e) => handleAjusteMonto(p.id, e.target.value)}
+                                className="h-8 text-xs mt-1"
+                                autoFocus
+                              />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor={`motivo_${p.id}`} className="text-[11px] text-texto-suave">
+                                  Motivo de tarifa especial *
+                                </Label>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAjusteMonto(p.id, "")}
+                                  className="text-[10px] text-stone-400 hover:text-rose-600 underline"
+                                >
+                                  Quitar ajuste
+                                </button>
+                              </div>
+                              <Input
+                                id={`motivo_${p.id}`}
+                                type="text"
+                                placeholder="Ej: Beca del club, Descuento"
+                                value={config.motivoAjuste ?? ""}
+                                onChange={(e) => handleAjusteMotivo(p.id, e.target.value)}
+                                className="h-8 text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAjusteMonto(p.id, p.tarifaClp.toString())}
+                            className="text-[11px] text-stone-500 hover:text-acento font-medium underline cursor-pointer"
+                          >
+                            + Beca o Tarifa especial
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -676,7 +703,7 @@ export function FormularioNuevaInscripcion({
         </div>
       </form>
 
-      {/* Modal / Sheet Nuevo Club */}
+      {/* Modal / Sheet Nuevo Club (Elevado a zIndex 60 para sobreponerse a modales de jinete y caballo) */}
       <Sheet
         abierta={modalClub}
         alCerrar={() => {
@@ -686,6 +713,7 @@ export function FormularioNuevaInscripcion({
         posicion="centro"
         titulo="Crear nuevo club"
         descripcion="Registra una nueva institución o club ecuestre."
+        zIndex={60}
       >
         <div className="space-y-4">
           {parecidosClub.length > 0 && (
@@ -723,28 +751,38 @@ export function FormularioNuevaInscripcion({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="clubRutInSitu" className="text-xs font-medium text-texto">RUT (opcional)</Label>
-              <Input
-                id="clubRutInSitu"
-                value={rutClub}
-                onChange={(e) => setRutClub(e.target.value)}
-                placeholder="Ej: 12345678-9"
-                className="text-sm"
-              />
+          {masDatosClub ? (
+            <div className="grid grid-cols-2 gap-3 animate-in fade-in-50">
+              <div className="space-y-1.5">
+                <Label htmlFor="clubRutInSitu" className="text-xs font-medium text-texto">RUT (opcional)</Label>
+                <Input
+                  id="clubRutInSitu"
+                  value={rutClub}
+                  onChange={(e) => setRutClub(e.target.value)}
+                  placeholder="Ej: 12345678-9"
+                  className="text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="clubContactoInSitu" className="text-xs font-medium text-texto">Contacto (opcional)</Label>
+                <Input
+                  id="clubContactoInSitu"
+                  value={contactoClub}
+                  onChange={(e) => setContactoClub(e.target.value)}
+                  placeholder="Teléfono o email"
+                  className="text-sm"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="clubContactoInSitu" className="text-xs font-medium text-texto">Contacto (opcional)</Label>
-              <Input
-                id="clubContactoInSitu"
-                value={contactoClub}
-                onChange={(e) => setContactoClub(e.target.value)}
-                placeholder="Teléfono o email"
-                className="text-sm"
-              />
-            </div>
-          </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMasDatosClub(true)}
+              className="text-xs text-stone-500 hover:text-acento underline cursor-pointer"
+            >
+              + Agregar RUT y Contacto (Opcional)
+            </button>
+          )}
 
           <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
             <Button
@@ -848,39 +886,51 @@ export function FormularioNuevaInscripcion({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="jineteRutInSitu" className="text-xs font-medium text-texto">RUT (opcional)</Label>
-              <Input
-                id="jineteRutInSitu"
-                value={rutJinete}
-                onChange={(e) => setRutJinete(e.target.value)}
-                placeholder="Ej: 19876543-2"
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="jineteFechaInSitu" className="text-xs font-medium text-texto">Fecha de nacimiento</Label>
-              <Input
-                id="jineteFechaInSitu"
-                type="date"
-                value={fechaNacimientoJinete}
-                onChange={(e) => setFechaNacimientoJinete(e.target.value)}
-                className="text-sm"
-              />
-            </div>
-          </div>
+          {masDatosJinete ? (
+            <div className="space-y-3 animate-in fade-in-50">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="jineteRutInSitu" className="text-xs font-medium text-texto">RUT (opcional)</Label>
+                  <Input
+                    id="jineteRutInSitu"
+                    value={rutJinete}
+                    onChange={(e) => setRutJinete(e.target.value)}
+                    placeholder="Ej: 19876543-2"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="jineteFechaInSitu" className="text-xs font-medium text-texto">Fecha de nacimiento</Label>
+                  <Input
+                    id="jineteFechaInSitu"
+                    type="date"
+                    value={fechaNacimientoJinete}
+                    onChange={(e) => setFechaNacimientoJinete(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="jineteContactoInSitu" className="text-xs font-medium text-texto">Teléfono / WhatsApp (opcional)</Label>
-            <Input
-              id="jineteContactoInSitu"
-              value={contactoJinete}
-              onChange={(e) => setContactoJinete(e.target.value)}
-              placeholder="+56 9 8765 4321"
-              className="text-sm"
-            />
-          </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="jineteContactoInSitu" className="text-xs font-medium text-texto">Teléfono / WhatsApp (opcional)</Label>
+                <Input
+                  id="jineteContactoInSitu"
+                  value={contactoJinete}
+                  onChange={(e) => setContactoJinete(e.target.value)}
+                  placeholder="+56 9 8765 4321"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMasDatosJinete(true)}
+              className="text-xs text-stone-500 hover:text-acento underline cursor-pointer"
+            >
+              + Agregar fecha nac., RUT y teléfono (Opcional)
+            </button>
+          )}
 
           <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
             <Button
@@ -984,16 +1034,26 @@ export function FormularioNuevaInscripcion({
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="caballoChipInSitu" className="text-xs font-medium text-texto">Microchip (opcional)</Label>
-            <Input
-              id="caballoChipInSitu"
-              value={chipCaballo}
-              onChange={(e) => setChipCaballo(e.target.value)}
-              placeholder="Ej: 985141001234567"
-              className="text-sm"
-            />
-          </div>
+          {masDatosCaballo ? (
+            <div className="space-y-1.5 animate-in fade-in-50">
+              <Label htmlFor="caballoChipInSitu" className="text-xs font-medium text-texto">Microchip (opcional)</Label>
+              <Input
+                id="caballoChipInSitu"
+                value={chipCaballo}
+                onChange={(e) => setChipCaballo(e.target.value)}
+                placeholder="Ej: 985141001234567"
+                className="text-sm"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMasDatosCaballo(true)}
+              className="text-xs text-stone-500 hover:text-acento underline cursor-pointer"
+            >
+              + Agregar Microchip (Opcional)
+            </button>
+          )}
 
           <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
             <Button

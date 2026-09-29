@@ -52,7 +52,7 @@ describe("Dominio de Movimientos de Tesorería (Fase 4)", () => {
     eventoId = evento.id;
 
     // Categorías de prueba
-    let catGasto = org.categorias.find((c) => c.tipo === "gasto" && !c.claveSistema && c.activa);
+    let catGasto = org.categorias.find((c) => c.tipo === "gasto" && !c.claveSistema && !c.exigeContraparte && c.activa);
     if (!catGasto) {
       catGasto = await prisma.categoria.create({
         data: {

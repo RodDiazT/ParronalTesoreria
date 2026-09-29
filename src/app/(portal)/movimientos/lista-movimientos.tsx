@@ -148,10 +148,13 @@ export function ListaMovimientos({
     return "validado";
   };
 
-  const pestanas = [
+  const pestanasPrincipales = [
     { id: "todos", label: "Todos" },
     { id: "por_validar", label: "Por validar" },
     { id: "observados", label: "Observados" },
+  ];
+
+  const pestanasSecundarias = [
     { id: "por_cobrar", label: "Por cobrar" },
     { id: "por_pagar", label: "Por pagar" },
     { id: "sin_respaldo", label: "Sin respaldo" },
@@ -245,25 +248,72 @@ export function ListaMovimientos({
         )}
       </div>
 
-      {/* Pestañas de navegación táctil horizontal */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-stone-200 no-scrollbar">
-        {pestanas.map((p) => {
-          const activa = pestanaActual === p.id;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => cambiarPestana(p.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                activa
-                  ? "bg-emerald-700 text-white shadow-xs"
-                  : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900"
-              }`}
-            >
-              {p.label}
-            </button>
-          );
-        })}
+      {/* Pestañas de navegación responsivas */}
+      <div className="flex items-center justify-between gap-2 pb-1 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {pestanasPrincipales.map((p) => {
+            const activa = pestanaActual === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => cambiarPestana(p.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  activa
+                    ? "bg-emerald-700 text-white shadow-xs"
+                    : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+
+          <div className="hidden sm:flex items-center gap-1.5">
+            {pestanasSecundarias.map((p) => {
+              const activa = pestanaActual === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => cambiarPestana(p.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    activa
+                      ? "bg-emerald-700 text-white shadow-xs"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* En móvil selector compacto para estados secundarios */}
+        <div className="sm:hidden shrink-0">
+          <select
+            value={pestanasSecundarias.some((p) => p.id === pestanaActual) ? pestanaActual : ""}
+            aria-label="Más estados"
+            onChange={(e) => {
+              if (e.target.value) cambiarPestana(e.target.value);
+            }}
+            className={`h-7 px-2 rounded-lg text-xs font-semibold border transition-colors ${
+              pestanasSecundarias.some((p) => p.id === pestanaActual)
+                ? "bg-emerald-50 border-emerald-600 text-emerald-800"
+                : "bg-stone-100 border-stone-200 text-stone-600"
+            }`}
+          >
+            <option value="" disabled>
+              + Más estados
+            </option>
+            {pestanasSecundarias.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Barra de herramientas / Botón Filtros */}

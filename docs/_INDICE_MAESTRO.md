@@ -50,6 +50,7 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | Pendiente | v1.1 | Marco general |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | Pendiente | v1.1 | Marco general |
 | Mejoras 1 | `docs/especificaciones/mejoras-1.md` | Eliminación y reasignación de pruebas y categorías, centralización de ingresos, alta rápida en inscripción y edición de perfil | Aprobado (v1.3) | v1.2 | Marco general |
+| Mejoras 2 (UX/UI) | `docs/especificaciones/mejoras-2-ux-ui.md` | Diagnóstico de categorías ocultas, modales apilados (z-index), fecha única y simplificación de flujos | Propuesta (v1.0) | v1.3 | Marco general |
 
 Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Dashboard. Importación desde Excel pasó a v1.1 (marco v1.4). Con Dashboard y UX/UI aprobados, todos los documentos del núcleo v1.0 están aprobados.
 

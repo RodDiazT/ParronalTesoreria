@@ -14,6 +14,7 @@ interface SheetProps {
   children: React.ReactNode;
   mostrarCerrar?: boolean;
   className?: string;
+  zIndex?: number;
 }
 
 export function Sheet({
@@ -25,6 +26,7 @@ export function Sheet({
   children,
   mostrarCerrar = true,
   className = "",
+  zIndex = 50,
 }: SheetProps) {
   useEffect(() => {
     if (!abierta) return;
@@ -34,21 +36,28 @@ export function Sheet({
     };
 
     document.addEventListener("keydown", manejarTecla);
+    const actual = parseInt(document.body.getAttribute("data-sheets-abiertas") || "0", 10);
+    document.body.setAttribute("data-sheets-abiertas", (actual + 1).toString());
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", manejarTecla);
-      document.body.style.overflow = "unset";
+      const restantes = Math.max(0, parseInt(document.body.getAttribute("data-sheets-abiertas") || "1", 10) - 1);
+      document.body.setAttribute("data-sheets-abiertas", restantes.toString());
+      if (restantes === 0) {
+        document.body.style.overflow = "unset";
+      }
     };
   }, [abierta, alCerrar]);
 
   if (!abierta) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 flex" style={{ zIndex }}>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        style={{ zIndex }}
         onClick={alCerrar}
         aria-hidden="true"
       />
@@ -58,8 +67,9 @@ export function Sheet({
         <div
           role="dialog"
           aria-modal="true"
+          style={{ zIndex: zIndex + 1 }}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 flex max-h-[90vh] flex-col rounded-t-3xl border-t border-borde bg-superficie p-5 shadow-2xl animate-in slide-in-from-bottom duration-200",
+            "fixed inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-3xl border-t border-borde bg-superficie p-5 shadow-2xl animate-in slide-in-from-bottom duration-200",
             className
           )}
         >
@@ -92,8 +102,9 @@ export function Sheet({
         <div
           role="dialog"
           aria-modal="true"
+          style={{ zIndex: zIndex + 1 }}
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex w-[85%] max-w-sm flex-col border-r border-borde bg-superficie shadow-2xl animate-in slide-in-from-left duration-200",
+            "fixed inset-y-0 left-0 flex w-[85%] max-w-sm flex-col border-r border-borde bg-superficie shadow-2xl animate-in slide-in-from-left duration-200",
             className
           )}
         >
@@ -105,8 +116,9 @@ export function Sheet({
         <div
           role="dialog"
           aria-modal="true"
+          style={{ zIndex: zIndex + 1 }}
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-borde bg-superficie p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200",
+            "fixed left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-borde bg-superficie p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200",
             className
           )}
         >

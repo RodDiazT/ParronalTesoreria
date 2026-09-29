@@ -112,6 +112,8 @@ export function FormularioMovimiento({
   const hoyChile = obtenerFechaHoyChile();
   const [fecha, setFecha] = useState(hoyChile);
   const [fechaPago, setFechaPago] = useState(hoyChile);
+  const [mostrarFechaDistinta, setMostrarFechaDistinta] = useState(false);
+  const [editarTitularTercero, setEditarTitularTercero] = useState(false);
 
   // Categoría y contraparte
   const [categoria, setCategoria] = useState<OpcionCategoria | null>(null);
@@ -296,22 +298,21 @@ export function FormularioMovimiento({
       }
     }
 
+    const tieneFotos = archivos.length > 0;
+    const sinRespaldoFinal = !tieneFotos;
+
     if (
       tipo === "ingreso" &&
       medioPagoIngreso === "transferencia" &&
-      !nombreOrigen.trim()
+      !nombreOrigen.trim() &&
+      !contraparte
     ) {
-      setErrorEnvio("El nombre de origen (titular de la cuenta) es obligatorio en transferencias.");
+      setErrorEnvio("El nombre de origen o contraparte es obligatorio en transferencias.");
       return;
     }
 
-    if (sinRespaldo && !observacion.trim()) {
-      setErrorEnvio("La observación es obligatoria si marcas 'Sin respaldo'.");
-      return;
-    }
-
-    if (!sinRespaldo && archivos.length === 0) {
-      setErrorEnvio("Adjunta al menos una foto o comprobante, o marca 'Sin respaldo'.");
+    if (!tieneFotos && !observacion.trim()) {
+      setErrorEnvio("Adjunta al menos una foto o comprobante, o escribe una breve justificación en la observación.");
       return;
     }
 
@@ -323,18 +324,19 @@ export function FormularioMovimiento({
     let medioPagoFinal: "transferencia" | "efectivo" | "otro" | null = null;
     let naturalezaFinal: "dinero" | "especie" = "dinero";
     let fechaPagoFinal: string | null = null;
+    const fechaEfectiva = mostrarFechaDistinta ? (fechaPago || fecha) : fecha;
 
     if (esIngreso) {
       if (medioPagoIngreso === "transferencia") {
         estadoPagoFinal = "pagado";
         medioPagoFinal = "transferencia";
         naturalezaFinal = "dinero";
-        fechaPagoFinal = fechaPago || hoyChile;
+        fechaPagoFinal = fechaEfectiva || hoyChile;
       } else if (medioPagoIngreso === "efectivo") {
         estadoPagoFinal = "pagado";
         medioPagoFinal = "efectivo";
         naturalezaFinal = "dinero";
-        fechaPagoFinal = fechaPago || hoyChile;
+        fechaPagoFinal = fechaEfectiva || hoyChile;
       } else if (medioPagoIngreso === "por_cobrar") {
         estadoPagoFinal = "pendiente";
         medioPagoFinal = null;
@@ -344,7 +346,7 @@ export function FormularioMovimiento({
         estadoPagoFinal = "pagado";
         medioPagoFinal = null;
         naturalezaFinal = "especie";
-        fechaPagoFinal = fechaPago || hoyChile;
+        fechaPagoFinal = fechaEfectiva || hoyChile;
       }
     } else {
       if (esGastoReembolso) {
@@ -356,12 +358,12 @@ export function FormularioMovimiento({
         estadoPagoFinal = "pagado";
         medioPagoFinal = "transferencia";
         naturalezaFinal = "dinero";
-        fechaPagoFinal = fechaPago || hoyChile;
+        fechaPagoFinal = fechaEfectiva || hoyChile;
       } else if (medioPagoGasto === "efectivo") {
         estadoPagoFinal = "pagado";
         medioPagoFinal = "efectivo";
         naturalezaFinal = "dinero";
-        fechaPagoFinal = fechaPago || hoyChile;
+        fechaPagoFinal = fechaEfectiva || hoyChile;
       } else if (medioPagoGasto === "por_pagar") {
         estadoPagoFinal = "pendiente";
         medioPagoFinal = null;
@@ -388,10 +390,10 @@ export function FormularioMovimiento({
       sinIdentificar,
       contraparteId: contraparte?.id || null,
       pagadoPorId: tipo === "gasto" && pagadoPorId ? pagadoPorId : null,
-      nombreOrigen: esIngreso && medioPagoFinal === "transferencia" ? nombreOrigen.trim() || null : null,
+      nombreOrigen: esIngreso && medioPagoFinal === "transferencia" ? (nombreOrigen.trim() || contraparte?.nombre || null) : null,
       descripcion: null,
       observacion: observacion.trim() || null,
-      sinRespaldo,
+      sinRespaldo: sinRespaldoFinal,
       caballoId: finalCaballoId,
       jineteId: finalJineteId,
       clubId: finalClubId,
@@ -602,42 +604,6 @@ export function FormularioMovimiento({
             Valor comercial aproximado de lo recibido (no suma a la caja en efectivo).
           </p>
         )}
-      </div>
-
-      {/* Respaldo fotográfico o digital */}
-      <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold text-stone-900">
-            Respaldo (Boleta / Comprobante) *
-          </Label>
-          <span className="text-xs text-stone-500">
-            {sinRespaldo ? "Sin respaldo" : `${archivos.length} adjuntos`}
-          </span>
-        </div>
-
-        {!sinRespaldo && (
-          <CapturaRespaldo
-            archivos={archivos}
-            onChange={setArchivos}
-            maxArchivos={5}
-            deshabilitado={isPending}
-          />
-        )}
-
-        <div className="flex items-center space-x-2 pt-2 border-t border-stone-200">
-          <Checkbox
-            id="sin-respaldo"
-            checked={sinRespaldo}
-            onCheckedChange={(c) => setSinRespaldo(Boolean(c))}
-            disabled={isPending}
-          />
-          <Label
-            htmlFor="sin-respaldo"
-            className="text-xs font-medium text-stone-700 cursor-pointer"
-          >
-            No tengo respaldo físico ni digital (exige observación obligatoria)
-          </Label>
-        </div>
       </div>
 
       {/* Categoría y botón "No sé de qué es" */}
@@ -1100,47 +1066,76 @@ export function FormularioMovimiento({
       {/* Nombre de origen (solo ingresos por transferencia) */}
       {tipo === "ingreso" && medioPagoIngreso === "transferencia" && (
         <div className="space-y-1.5">
-          <Label htmlFor="nombre-origen" className="text-xs font-semibold text-stone-700">
-            Nombre de origen (Titular de la cuenta que transfiere) *
-          </Label>
-          <Input
-            id="nombre-origen"
-            type="text"
-            value={nombreOrigen}
-            onChange={(e) => setNombreOrigen(e.target.value)}
-            placeholder="Ej: Juan Pérez / Empresa SpA"
-            className="h-11 bg-white text-stone-900 font-medium"
-            maxLength={100}
-            required
-          />
+          <div className="flex items-center justify-between">
+            <Label htmlFor="nombre-origen" className="text-xs font-semibold text-stone-700">
+              Titular que transfiere {!contraparte && "*"}
+            </Label>
+            {contraparte && (
+              <button
+                type="button"
+                onClick={() => setEditarTitularTercero(!editarTitularTercero)}
+                className="text-[11px] text-stone-500 hover:text-emerald-700 underline cursor-pointer"
+              >
+                {editarTitularTercero ? "Usar nombre de contraparte" : "¿Transfirió un tercero?"}
+              </button>
+            )}
+          </div>
+          {contraparte && !editarTitularTercero ? (
+            <div className="flex items-center justify-between h-10 px-3 bg-stone-100 rounded-lg text-xs text-stone-700">
+              <span>Transfiere: <strong>{contraparte.nombre}</strong></span>
+              <span className="text-[10px] text-stone-400">Por defecto</span>
+            </div>
+          ) : (
+            <Input
+              id="nombre-origen"
+              type="text"
+              value={nombreOrigen}
+              onChange={(e) => setNombreOrigen(e.target.value)}
+              placeholder="Ej: Juan Pérez / Empresa SpA"
+              className="h-11 bg-white text-stone-900 font-medium"
+              maxLength={100}
+              required={!contraparte}
+            />
+          )}
         </div>
       )}
 
-      {/* Fechas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
+      {/* Fecha (Única por defecto) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
           <Label htmlFor="fecha" className="text-xs font-semibold text-stone-700">
-            Fecha del movimiento *
+            Fecha *
           </Label>
-          <Input
-            id="fecha"
-            type="date"
-            value={fecha}
-            onChange={(e) => {
-              setFecha(e.target.value);
-              if (fechaPago < e.target.value) {
-                setFechaPago(e.target.value);
-              }
-            }}
-            max={hoyChile}
-            className="h-11 bg-white text-stone-900 font-medium"
-            required
-          />
+          {((tipo === "ingreso" && (medioPagoIngreso === "transferencia" || medioPagoIngreso === "efectivo")) ||
+            (tipo === "gasto" && !pagadoPorId && (medioPagoGasto === "transferencia" || medioPagoGasto === "efectivo"))) && (
+            <button
+              type="button"
+              onClick={() => {
+                setMostrarFechaDistinta(!mostrarFechaDistinta);
+                if (mostrarFechaDistinta) setFechaPago(fecha);
+              }}
+              className="text-[11px] text-stone-500 hover:text-emerald-700 underline cursor-pointer"
+            >
+              {mostrarFechaDistinta ? "Usar misma fecha para todo" : "¿Fecha de comprobante distinta al pago?"}
+            </button>
+          )}
         </div>
-
-        {((tipo === "ingreso" && (medioPagoIngreso === "transferencia" || medioPagoIngreso === "efectivo")) ||
-          (tipo === "gasto" && !pagadoPorId && (medioPagoGasto === "transferencia" || medioPagoGasto === "efectivo"))) && (
-          <div className="space-y-1.5">
+        <Input
+          id="fecha"
+          type="date"
+          value={fecha}
+          onChange={(e) => {
+            setFecha(e.target.value);
+            if (!mostrarFechaDistinta) {
+              setFechaPago(e.target.value);
+            }
+          }}
+          max={hoyChile}
+          className="h-11 bg-white text-stone-900 font-medium"
+          required
+        />
+        {mostrarFechaDistinta && (
+          <div className="space-y-1.5 pt-2 animate-in fade-in-50">
             <Label htmlFor="fecha-pago" className="text-xs font-semibold text-stone-700">
               Fecha en que se pagó / transfirió *
             </Label>
@@ -1150,7 +1145,6 @@ export function FormularioMovimiento({
               value={fechaPago}
               onChange={(e) => setFechaPago(e.target.value)}
               max={hoyChile}
-              min={fecha}
               className="h-11 bg-white text-stone-900 font-medium"
               required
             />
@@ -1158,41 +1152,38 @@ export function FormularioMovimiento({
         )}
       </div>
 
-      {/* Quién pagó (solo gastos: La caja vs Reembolso a una persona) */}
+      {/* Quién pagó (solo gastos: La caja vs Reembolso compacto) */}
       {tipo === "gasto" && (
-        <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
-          <Label className="text-xs font-semibold text-stone-700">¿Quién pagó el gasto?</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+          <Label className="text-xs font-semibold text-stone-700">¿De dónde salió el dinero?</Label>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setPagadoPorId("")}
-              className={`p-2.5 rounded-lg border text-left text-xs font-medium transition-all ${
+              className={`h-11 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                 pagadoPorId === ""
-                  ? "bg-white border-emerald-600 text-emerald-900 ring-1 ring-emerald-600"
-                  : "bg-white border-stone-200 text-stone-600 hover:bg-stone-50"
+                  ? "bg-emerald-700 text-white border-emerald-700 shadow-sm"
+                  : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
               }`}
             >
-              <span className="font-bold block">La caja del club</span>
-              <span className="text-[11px] text-stone-500">Dinero directo de la cuenta o efectivo</span>
+              La caja del club (Directo)
             </button>
-
             <button
               type="button"
               onClick={() => setPagadoPorId(usuarioActual.id)}
-              className={`p-2.5 rounded-lg border text-left text-xs font-medium transition-all ${
+              className={`h-11 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                 pagadoPorId === usuarioActual.id
-                  ? "bg-white border-amber-600 text-amber-900 ring-1 ring-amber-600"
-                  : "bg-white border-stone-200 text-stone-600 hover:bg-stone-50"
+                  ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                  : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
               }`}
             >
-              <span className="font-bold block">Yo, de mi bolsillo</span>
-              <span className="text-[11px] text-stone-500">Nace pendiente por devolver (reembolso)</span>
+              Mi bolsillo (Reembolso)
             </button>
           </div>
 
           {/* Administrador puede elegir además a otros miembros de la comisión */}
-          {usuarioActual.rol === "administrador" && miembrosComision.length > 0 && (
-            <div className="pt-2">
+          {usuarioActual.rol === "administrador" && miembrosComision.length > 0 && pagadoPorId !== "" && (
+            <div className="pt-1.5">
               <Label htmlFor="otro-miembro" className="text-[11px] text-stone-500">
                 O asignar reembolso a otro miembro de la comisión:
               </Label>
@@ -1202,8 +1193,8 @@ export function FormularioMovimiento({
                 onChange={(e) => setPagadoPorId(e.target.value)}
                 className="mt-1 w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
               >
-                <option value="">Seleccionar otro miembro...</option>
-                {miembrosComision.map((m) => (
+                <option value={usuarioActual.id}>Yo ({usuarioActual.nombre})</option>
+                {miembrosComision.filter((m) => m.id !== usuarioActual.id).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.nombre}
                   </option>
@@ -1214,27 +1205,44 @@ export function FormularioMovimiento({
         </div>
       )}
 
-      {/* Observación / Justificación (Único campo de texto) */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between">
-          <Label htmlFor="observacion" className="text-xs font-semibold text-stone-700">
-            Observación {sinRespaldo ? "(Obligatoria con Sin respaldo) *" : "(Opcional)"}
+      {/* Respaldo y Observación unificados */}
+      <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold text-stone-900">
+            Respaldo (Boleta / Comprobante)
           </Label>
-          <span className="text-[11px] text-stone-400">{observacion.length}/500</span>
+          <span className="text-xs text-stone-500">
+            {archivos.length > 0 ? `${archivos.length} adjunto(s)` : "Opcional si justificas"}
+          </span>
         </div>
-        <Textarea
-          id="observacion"
-          value={observacion}
-          onChange={(e) => setObservacion(e.target.value)}
-          placeholder="Escribe detalles u observaciones del movimiento. No ingreses números de cuenta bancaria ni RUT."
-          maxLength={500}
-          rows={3}
-          className="bg-white text-stone-900 font-medium"
-          required={sinRespaldo}
+
+        <CapturaRespaldo
+          archivos={archivos}
+          onChange={(nuevos) => setArchivos(nuevos)}
+          maxArchivos={5}
+          deshabilitado={isPending}
         />
-        <p className="text-[11px] text-stone-500">
-          Por privacidad normativa (Ley 19.628 / 21.719), no escribas datos bancarios ni RUTs en este campo.
-        </p>
+
+        <div className="space-y-1.5 pt-2 border-t border-stone-200">
+          <div className="flex justify-between">
+            <Label htmlFor="observacion" className="text-xs font-semibold text-stone-700">
+              Observación / Justificación {archivos.length === 0 ? "(Recomendada sin comprobante)" : "(Opcional)"}
+            </Label>
+            <span className="text-[11px] text-stone-400">{observacion.length}/500</span>
+          </div>
+          <Textarea
+            id="observacion"
+            value={observacion}
+            onChange={(e) => setObservacion(e.target.value)}
+            placeholder="Escribe detalles u observaciones del movimiento. No ingreses números de cuenta bancaria ni RUT."
+            maxLength={500}
+            rows={2}
+            className="bg-white text-stone-900 font-medium"
+          />
+          <p className="text-[11px] text-stone-500">
+            Por privacidad normativa (Ley 19.628 / 21.719), no escribas datos bancarios ni RUTs en este campo.
+          </p>
+        </div>
       </div>
 
       {/* Asignación opcional a participante o caballo (solo si la categoría no fija una entidad) */}

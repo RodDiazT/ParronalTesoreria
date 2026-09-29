@@ -635,7 +635,7 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
       // 1. Intentar eliminar sin destino debe fallar pidiendo reasignación
       const resSinDestino = await ejecutarEliminarPrueba(ctxAdmin, pOrigen.prueba!.id);
       expect(resSinDestino.exito).toBe(false);
-      expect(resSinDestino.error).toContain("histórica(s) retirada(s)");
+      expect(resSinDestino.error).toContain("Debes seleccionar una prueba de destino");
 
       // 2. Con destino, debe reasignar la inscripción retirada y eliminar la prueba sin error de clave foránea
       const resEliminar = await ejecutarEliminarPrueba(

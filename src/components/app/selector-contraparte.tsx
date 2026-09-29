@@ -54,23 +54,22 @@ export function SelectorContraparte({
   const [guardando, setGuardando] = useState(false);
   const [parecidos, setParecidos] = useState<{ id: string; nombre: string }[]>([]);
 
+  const [mostrarMasDatos, setMostrarMasDatos] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickAfuera(e: MouseEvent) {
+    function handleClickAfuera(e: MouseEvent | TouchEvent) {
       if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
         setDesplegado(false);
       }
     }
     document.addEventListener("mousedown", handleClickAfuera);
-    return () => document.removeEventListener("mousedown", handleClickAfuera);
+    document.addEventListener("touchstart", handleClickAfuera);
+    return () => {
+      document.removeEventListener("mousedown", handleClickAfuera);
+      document.removeEventListener("touchstart", handleClickAfuera);
+    };
   }, []);
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (!contenedorRef.current?.contains(e.relatedTarget as Node)) {
-      setDesplegado(false);
-    }
-  };
 
   useEffect(() => {
     obtenerContrapartes({ estado: "activas" }).then((datos) => {
@@ -120,6 +119,7 @@ export function SelectorContraparte({
     }
 
     setModalCrear(true);
+    setMostrarMasDatos(false);
     setDesplegado(false);
   };
 
@@ -172,7 +172,7 @@ export function SelectorContraparte({
           </button>
         </div>
       ) : (
-        <div ref={contenedorRef} onBlur={handleBlur} className="relative">
+        <div ref={contenedorRef} className="relative">
           <div className="relative">
             <Input
               id={id}
@@ -302,29 +302,42 @@ export function SelectorContraparte({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="space-y-1.5">
-              <Label htmlFor="cpRutRapido">RUT (opcional)</Label>
-              <Input
-                id="cpRutRapido"
-                type="text"
-                value={rut}
-                onChange={(e) => setRut(e.target.value)}
-                placeholder="12.345.678-9"
-              />
+          {!mostrarMasDatos && !rut && !contacto ? (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setMostrarMasDatos(true)}
+                className="text-xs font-semibold text-acento hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Agregar RUT o Contacto (opcional)</span>
+              </button>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-borde/40 mt-1 animate-in fade-in">
+              <div className="space-y-1.5">
+                <Label htmlFor="cpRutRapido">RUT (opcional)</Label>
+                <Input
+                  id="cpRutRapido"
+                  type="text"
+                  value={rut}
+                  onChange={(e) => setRut(e.target.value)}
+                  placeholder="12.345.678-9"
+                />
+              </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="cpContactoRapido">Contacto (opcional)</Label>
-              <Input
-                id="cpContactoRapido"
-                type="text"
-                value={contacto}
-                onChange={(e) => setContacto(e.target.value)}
-                placeholder="+56 9 1234 5678"
-              />
+              <div className="space-y-1.5">
+                <Label htmlFor="cpContactoRapido">Contacto (opcional)</Label>
+                <Input
+                  id="cpContactoRapido"
+                  type="text"
+                  value={contacto}
+                  onChange={(e) => setContacto(e.target.value)}
+                  placeholder="+56 9 1234 5678"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-3 border-t border-borde/40">
             <Button
