@@ -344,7 +344,7 @@ export function FormularioMovimiento({
         estadoPagoFinal = "pagado";
         medioPagoFinal = null;
         naturalezaFinal = "especie";
-        fechaPagoFinal = null;
+        fechaPagoFinal = fechaPago || hoyChile;
       }
     } else {
       if (esGastoReembolso) {

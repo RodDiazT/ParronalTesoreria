@@ -374,8 +374,8 @@ export async function ejecutarRegistrarMovimiento(
           montoOriginalClp: datos.montoClp,
           fecha: new Date(`${datos.fecha}T00:00:00Z`),
           fechaPago:
-            estadoPago === "pagado" && datos.fechaPago
-              ? new Date(`${datos.fechaPago}T00:00:00Z`)
+            estadoPago === "pagado"
+              ? new Date(`${datos.fechaPago || datos.fecha}T00:00:00Z`)
               : null,
           medioPago:
             estadoPago === "pagado" && naturaleza === "dinero"
