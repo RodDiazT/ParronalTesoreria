@@ -22,6 +22,11 @@ import {
   extraerPartesFecha,
   ParecidoCoincidencia,
 } from "./reglas";
+import {
+  ejecutarListarClubesActivos,
+  ejecutarListarJinetesActivos,
+  ejecutarListarCaballosActivos,
+} from "./consultas";
 import { reasignarPorFusion } from "@/dominio/inscripciones/binomios/acciones";
 
 function revalidarRutasSeguras() {
@@ -1816,3 +1821,19 @@ export async function jinetesAfectadosPorCambioDeFecha(
   const ctx = await obtenerContexto();
   return ejecutarJinetesAfectadosPorCambioDeFecha(ctx, eventoId, nuevaFechaReferencia);
 }
+
+export async function obtenerClubesActivos() {
+  const ctx = await obtenerContexto();
+  return ejecutarListarClubesActivos(ctx);
+}
+
+export async function obtenerJinetesActivos() {
+  const ctx = await obtenerContexto();
+  return ejecutarListarJinetesActivos(ctx);
+}
+
+export async function obtenerCaballosActivos() {
+  const ctx = await obtenerContexto();
+  return ejecutarListarCaballosActivos(ctx);
+}
+

@@ -203,6 +203,8 @@ export function FormularioNuevaInscripcion({
       toast.success(`Club «${nuevo.nombre}» creado con éxito.`);
       setListaClubes((prev) => [...prev, { id: nuevo.id, nombre: nuevo.nombre }]);
       setClubId(nuevo.id);
+      setClubIdJinete(nuevo.id);
+      setClubIdCaballo(nuevo.id);
       setModalClub(false);
       setNombreClub("");
       setRutClub("");
@@ -306,7 +308,11 @@ export function FormularioNuevaInscripcion({
 
       const nuevo = res.caballo!;
       toast.success(`Caballo «${nuevo.nombre}» creado con éxito.`);
-      setListaCaballos((prev) => [...prev, { id: nuevo.id, nombre: nuevo.nombre, clubId: nuevo.clubId }]);
+      const clubNombre = listaClubes.find((c) => c.id === nuevo.clubId)?.nombre || "";
+      setListaCaballos((prev) => [
+        ...prev,
+        { id: nuevo.id, nombre: nuevo.nombre, clubId: nuevo.clubId, clubNombre },
+      ]);
       setCaballoId(nuevo.id);
       if (!clubId) {
         setClubId(nuevo.clubId);
@@ -456,6 +462,7 @@ export function FormularioNuevaInscripcion({
             </button>
           </div>
           <SelectorJinete
+            jinetesDisponibles={listaJinetes}
             jineteSeleccionadoId={jineteId}
             alSeleccionar={(j) => {
               setJineteId(j.id);
@@ -491,6 +498,7 @@ export function FormularioNuevaInscripcion({
             </button>
           </div>
           <SelectorCaballo
+            caballosDisponibles={listaCaballos}
             caballoSeleccionadoId={caballoId}
             alSeleccionar={(c) => {
               setCaballoId(c.id);
@@ -500,6 +508,7 @@ export function FormularioNuevaInscripcion({
             }}
             alLimpiar={() => setCaballoId("")}
             label=""
+            permitirCrear={false}
             requerido
           />
         </div>
@@ -520,10 +529,12 @@ export function FormularioNuevaInscripcion({
             </button>
           </div>
           <SelectorClub
+            clubesDisponibles={listaClubes}
             clubSeleccionadoId={clubId}
             alSeleccionar={(c) => setClubId(c.id)}
             alLimpiar={() => setClubId("")}
             label=""
+            permitirCrear={false}
           />
         </div>
 
@@ -537,8 +548,18 @@ export function FormularioNuevaInscripcion({
           </div>
 
           {pruebas.length === 0 ? (
-            <div className="p-4 rounded-xl border border-borde bg-superficie/30 text-xs text-texto-suave text-center">
-              No hay pruebas activas configuradas para este evento.
+            <div className="p-5 rounded-2xl border border-amber-200 bg-amber-50/60 text-center space-y-3">
+              <div className="text-amber-800 text-sm font-semibold">
+                No hay pruebas activas configuradas en este evento
+              </div>
+              <p className="text-xs text-amber-700 max-w-sm mx-auto">
+                Para inscribir un binomio primero debes crear al menos una prueba técnica con su tarifa en la configuración del evento.
+              </p>
+              <Link href="/configuracion/pruebas" className="inline-block">
+                <Button size="sm" variant="outline" className="text-xs bg-white border-amber-300 text-amber-900 hover:bg-amber-100">
+                  + Configurar Pruebas
+                </Button>
+              </Link>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -791,7 +812,19 @@ export function FormularioNuevaInscripcion({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="jineteClubInSitu" className="text-xs font-medium text-texto">Club de pertenencia *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="jineteClubInSitu" className="text-xs font-medium text-texto">
+                Club de pertenencia *
+              </Label>
+              <button
+                type="button"
+                onClick={() => setModalClub(true)}
+                className="text-[11px] text-acento font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Crear Club</span>
+              </button>
+            </div>
             <select
               id="jineteClubInSitu"
               value={clubIdJinete || clubId}
@@ -915,7 +948,19 @@ export function FormularioNuevaInscripcion({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="caballoClubInSitu" className="text-xs font-medium text-texto">Club de pertenencia *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="caballoClubInSitu" className="text-xs font-medium text-texto">
+                Club de pertenencia *
+              </Label>
+              <button
+                type="button"
+                onClick={() => setModalClub(true)}
+                className="text-[11px] text-acento font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Crear Club</span>
+              </button>
+            </div>
             <select
               id="caballoClubInSitu"
               value={clubIdCaballo || clubId}

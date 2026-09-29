@@ -4,9 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Check, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { listarJinetesActivos } from "@/dominio/inscripciones/participantes/consultas";
+import { obtenerJinetesActivos } from "@/dominio/inscripciones/participantes/acciones";
+
+export interface OpcionJinete {
+  id: string;
+  nombre: string;
+  clubId: string;
+  edad?: number | null;
+  clubNombre?: string;
+}
 
 interface SelectorJineteProps {
+  jinetesDisponibles?: OpcionJinete[];
   jineteSeleccionadoId?: string;
   clubIdFiltro?: string;
   alSeleccionar: (jinete: {
@@ -25,9 +34,10 @@ interface SelectorJineteProps {
 
 /**
  * Selector reutilizable de Jinete con visualización de club y edad.
- * (docs/inscripciones/participantes.md §3.2 y §5.5)
+ * Soporta carga directa desde el servidor (prop jinetesDisponibles) o remota.
  */
 export function SelectorJinete({
+  jinetesDisponibles,
   jineteSeleccionadoId,
   clubIdFiltro,
   alSeleccionar,
@@ -68,21 +78,47 @@ export function SelectorJinete({
     }
   };
 
+  // Carga y sincronización de jinetes disponibles
   useEffect(() => {
-    listarJinetesActivos()
+    if (jinetesDisponibles) {
+      const normalizados = jinetesDisponibles.map((j) => ({
+        ...j,
+        edad: j.edad ?? null,
+      }));
+      setTodosJinetes(normalizados);
+      return;
+    }
+
+    obtenerJinetesActivos()
       .then((datos) => {
-        setTodosJinetes(datos);
-        if (jineteSeleccionadoId) {
-          const found = datos.find((j) => j.id === jineteSeleccionadoId);
-          if (found) setSeleccionado(found);
-        }
+        setTodosJinetes(datos as any);
       })
-      .catch(() => {});
-  }, [jineteSeleccionadoId]);
+      .catch((err) => {
+        console.error("Error al cargar jinetes:", err);
+      });
+  }, [jinetesDisponibles]);
+
+  // Sincronización inmediata de seleccionado al cambiar jineteSeleccionadoId o la lista
+  useEffect(() => {
+    if (!jineteSeleccionadoId) {
+      setSeleccionado(null);
+      return;
+    }
+
+    const fuente = jinetesDisponibles && jinetesDisponibles.length > 0 ? jinetesDisponibles : todosJinetes;
+    const found = fuente.find((j) => j.id === jineteSeleccionadoId);
+    if (found) {
+      setSeleccionado({
+        ...found,
+        edad: found.edad ?? null,
+      });
+    }
+  }, [jineteSeleccionadoId, jinetesDisponibles, todosJinetes]);
 
   const filtrados = todosJinetes.filter((j) => {
     if (clubIdFiltro && j.clubId !== clubIdFiltro) return false;
     const q = busqueda.toLowerCase().trim();
+    if (!q) return true;
     return (
       j.nombre.toLowerCase().includes(q) ||
       (j.clubNombre && j.clubNombre.toLowerCase().includes(q))
@@ -114,12 +150,14 @@ export function SelectorJinete({
 
   return (
     <div className="w-full space-y-1.5 text-left">
-      <Label htmlFor={id} className="text-sm font-medium text-texto">
-        {label} {requerido && <span className="text-problema">*</span>}
-      </Label>
+      {label && (
+        <Label htmlFor={id} className="text-sm font-medium text-texto">
+          {label} {requerido && <span className="text-problema">*</span>}
+        </Label>
+      )}
 
       {seleccionado ? (
-        <div className="flex items-center justify-between p-3 rounded-2xl border border-borde bg-superficie">
+        <div className="flex items-center justify-between p-3 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-semibold text-texto truncate">
               {seleccionado.nombre}
@@ -129,14 +167,14 @@ export function SelectorJinete({
               {seleccionado.edad !== null ? (
                 <span>• {seleccionado.edad} años</span>
               ) : (
-                <span className="text-falta-texto">• Sin fecha</span>
+                <span className="text-texto-suave">• Sin fecha de nacimiento</span>
               )}
             </div>
           </div>
           <button
             type="button"
             onClick={handleLimpiar}
-            className="p-1.5 rounded-full hover:bg-fondo text-texto-secundario hover:text-texto transition-colors"
+            className="p-1.5 rounded-full hover:bg-white/80 dark:hover:bg-stone-800 text-texto-secundario hover:text-texto transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -189,9 +227,13 @@ export function SelectorJinete({
                 ))
               ) : buscando ? (
                 <div className="p-3 text-center text-xs text-texto-secundario">
-                  No se encontraron jinetes.
+                  No se encontraron jinetes que coincidan con «<strong>{busqueda}</strong>».
                 </div>
-              ) : null}
+              ) : (
+                <div className="p-3 text-center text-xs text-texto-secundario">
+                  No hay jinetes disponibles.
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -7,11 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet } from "@/components/ui/sheet";
-import { crearClub } from "@/dominio/inscripciones/participantes/acciones";
-import { listarClubesActivos } from "@/dominio/inscripciones/participantes/consultas";
+import { crearClub, obtenerClubesActivos } from "@/dominio/inscripciones/participantes/acciones";
 import { ParecidoCoincidencia } from "@/dominio/inscripciones/participantes/reglas";
 
+export interface OpcionClub {
+  id: string;
+  nombre: string;
+}
+
 interface SelectorClubProps {
+  clubesDisponibles?: OpcionClub[];
   clubSeleccionadoId?: string;
   alSeleccionar: (club: { id: string; nombre: string }) => void;
   alLimpiar?: () => void;
@@ -28,6 +33,7 @@ interface SelectorClubProps {
  * (docs/inscripciones/participantes.md §3.2, §3.5 y §5.5)
  */
 export function SelectorClub({
+  clubesDisponibles,
   clubSeleccionadoId,
   alSeleccionar,
   alLimpiar,
@@ -50,6 +56,45 @@ export function SelectorClub({
   const [guardando, setGuardando] = useState(false);
   const [parecidos, setParecidos] = useState<ParecidoCoincidencia[]>([]);
 
+  // Carga y sincronización de clubes disponibles
+  useEffect(() => {
+    if (clubesDisponibles) {
+      setTodosClubes(clubesDisponibles);
+      return;
+    }
+
+    obtenerClubesActivos()
+      .then((datos) => {
+        setTodosClubes(datos as any);
+      })
+      .catch((err) => {
+        console.error("Error al cargar clubes:", err);
+      });
+  }, [clubesDisponibles]);
+
+  // Sincronización inmediata de seleccionado al cambiar clubSeleccionadoId o la lista
+  useEffect(() => {
+    if (!clubSeleccionadoId) {
+      setSeleccionado(null);
+      return;
+    }
+
+    const fuente = clubesDisponibles && clubesDisponibles.length > 0 ? clubesDisponibles : todosClubes;
+    const found = fuente.find((c) => c.id === clubSeleccionadoId);
+    if (found) {
+      setSeleccionado(found);
+    }
+  }, [clubSeleccionadoId, clubesDisponibles, todosClubes]);
+
+  const filtrados = todosClubes.filter((c) =>
+    c.nombre.toLowerCase().includes(busqueda.toLowerCase().trim())
+  );
+
+  const hayOpciones = filtrados.length > 0;
+  const buscando = busqueda.trim().length > 0;
+  const mostrarCrear = permitirCrear && busqueda.trim().length >= 2;
+  const debeMostrarDropdown = desplegado && (hayOpciones || buscando || mostrarCrear);
+
   const contenedorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,27 +112,6 @@ export function SelectorClub({
       setDesplegado(false);
     }
   };
-
-  useEffect(() => {
-    listarClubesActivos()
-      .then((datos) => {
-        setTodosClubes(datos);
-        if (clubSeleccionadoId) {
-          const found = datos.find((c) => c.id === clubSeleccionadoId);
-          if (found) setSeleccionado(found);
-        }
-      })
-      .catch(() => {});
-  }, [clubSeleccionadoId]);
-
-  const filtrados = todosClubes.filter((c) =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase().trim())
-  );
-
-  const hayOpciones = filtrados.length > 0;
-  const buscando = busqueda.trim().length > 0;
-  const mostrarCrear = permitirCrear && busqueda.trim().length >= 2;
-  const debeMostrarDropdown = desplegado && (hayOpciones || buscando || mostrarCrear);
 
   const handleSeleccionar = (club: { id: string; nombre: string }) => {
     setSeleccionado(club);
@@ -138,8 +162,8 @@ export function SelectorClub({
 
       if (res.club) {
         toast.success(`Club "${res.club.nombre}" creado exitosamente.`);
-        const actualizados = await listarClubesActivos();
-        setTodosClubes(actualizados);
+        const actualizados = await obtenerClubesActivos();
+        setTodosClubes(actualizados as any);
         handleSeleccionar({ id: res.club.id, nombre: res.club.nombre });
         setModalCrear(false);
       }

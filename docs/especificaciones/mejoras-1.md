@@ -386,3 +386,43 @@ Para la futura sesión de desarrollo, se recomienda seguir este orden secuencial
   - Se añadió la opción `binomio_prueba` tanto al crear como al editar categorías, permitiendo vincular movimientos a un binomio y una prueba específica simultáneamente.
   - La categoría del sistema `Inscripciones` se inicializa por defecto con `sujetoAsociado = "binomio_prueba"` y `exigeSujeto = true`.
   - En `/movimientos/nuevo`, si se selecciona una categoría con `binomio_prueba` fuera del flujo masivo de inscripciones, el formulario despliega automáticamente ambos selectores (Binomio y Prueba) y valida que ambos sean provistos antes de confirmar el registro.
+
+### 7.5. Corrección de Selección In-Situ de Participantes y Hard Reset de Base de Datos
+
+#### 1. Causa Raíz del Problema de Auto-Selección In-Situ
+Al crear un Jinete, Caballo o Club a través del pop-up modal en `/inscripciones/nueva`, el registro se creaba exitosamente en la base de datos (y era visible en el Directorio), pero el formulario principal de inscripción no se auto-completaba con la entidad recién creada y los comboboxes indicaban "No se encontraron resultados":
+* **Causa 1 (Desconexión de Estado entre Padre e Hijo):** Los componentes `SelectorJinete`, `SelectorCaballo` y `SelectorClub` gestionaban su propia lista interna local. El formulario padre (`FormularioNuevaInscripcion`) mantenía las listas maestras actualizadas en su propio estado (`listaJinetes`, `listaCaballos`, `listaClubes`), pero no las pasaba como props a los selectores hijos, por lo que el selector hijo intentaba resolver el nuevo ID contra su propia lista interna desactualizada o vacía.
+* **Causa 2 (Acciones Cliente sin `"use server"`):** El archivo `consultas.ts` ejecutaba funciones de lectura del cliente sin directiva de Server Action, fallando silenciosamente al ser consumido desde componentes clientes.
+* **Causa 3 (Falta de reactividad sincronizada):** Al cambiar la entidad seleccionada externamente (mediante prop de ID), los selectores no actualizaban de inmediato su estado visual interno si la lista aún no había terminado de hidratarse.
+
+#### 2. Solución Implementada
+* **Exportación de Server Actions:** Se exportaron `obtenerClubesActivos`, `obtenerJinetesActivos` y `obtenerCaballosActivos` directamente desde `src/dominio/inscripciones/participantes/acciones.ts` con directiva `"use server"` y retorno tipado.
+* **Paso Directo de Opciones Disponibles (`*Disponibles`):**
+  - `SelectorJinete` ahora acepta `jinetesDisponibles={listaJinetes}`.
+  - `SelectorCaballo` ahora acepta `caballosDisponibles={listaCaballos}`.
+  - `SelectorClub` ahora acepta `clubesDisponibles={listaClubes}`.
+  - Tanto en `formulario-nueva-inscripcion.tsx` como en `formulario-movimiento.tsx`, los selectores reciben la colección precargada por el servidor y actualizada en memoria cliente.
+* **Sincronización Reactiva Inmediata:** Se incorporaron `useEffect` en cada selector para resolver de forma instantánea el objeto seleccionado ante cualquier variación en el ID o en la lista de opciones disponibles, garantizando que tras cerrar el pop-up de creación el campo aparezca preseleccionado y visible.
+* **Creación Encadenada de Clubes:** Se habilitaron accesos directos `+ Crear Club` dentro de las ventanas emergentes de Jinete y Caballo, permitiendo registrar un club al vuelo sin abandonar la creación del participante.
+* **Zero-State Amigable en Pruebas:** Si un evento no tiene pruebas configuradas, el formulario de inscripción presenta una tarjeta informativa amigable con un enlace directo a `/configuracion/pruebas` para desbloquear la configuración técnica.
+
+#### 3. Procedimiento de Hard Reset en Ambiente de Pruebas
+Se implementó y ejecutó el script `scripts/hard-reset-pruebas.ts` sobre la base de datos de Railway en el entorno `pruebas`:
+* **Eliminación Ordenada por Integridad Referencial:**
+  1. `Pago` y `Devolucion`
+  2. `Respaldo`
+  3. `Traspaso`
+  4. `Movimiento`
+  5. `Inscripcion`
+  6. `Binomio`
+  7. `Prueba`
+  8. `JineteApoderado` y `Apoderado`
+  9. `Jinete`, `Caballo` y `Club`
+  10. `Contraparte`
+  11. `RegistroAuditoria`
+* **Limpieza Estricta de Categorías:** Se eliminaron todas las categorías custom o históricas (274 registros generados durante tests). Se conservaron y configuraron únicamente las dos categorías del sistema:
+  - `Inscripciones` (tipo: `ingreso`, claveSistema: `"inscripciones"`, sujetoAsociado: `"binomio_prueba"`, exigeSujeto: `true`, activa: `true`, orden: `0`).
+  - `Devoluciones` (tipo: `gasto`, claveSistema: `"devoluciones"`, activa: `true`, orden: `999`).
+* **Limpieza de Entidades Sintéticas:** Se purgaron los eventos de prueba y las 43 cuentas/membresías ficticias generadas en corridas de tests.
+* **Entidades Preservadas:** Se conservaron intactos la Organización oficial (*Club Ecuestre Parronal Las Marias*), el Evento principal (*Concurso Ecuestre Parronal* en estado `abierto`) y la cuenta de administrador oficial (`rodrigodiaztapia@gmail.com`).
+

@@ -7,12 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet } from "@/components/ui/sheet";
-import { crearCaballo } from "@/dominio/inscripciones/participantes/acciones";
-import { listarCaballosActivos } from "@/dominio/inscripciones/participantes/consultas";
+import { crearCaballo, obtenerCaballosActivos } from "@/dominio/inscripciones/participantes/acciones";
 import { SelectorClub } from "./selector-club";
 import { ParecidoCoincidencia } from "@/dominio/inscripciones/participantes/reglas";
 
+export interface OpcionCaballo {
+  id: string;
+  nombre: string;
+  clubId: string;
+  clubNombre?: string;
+}
+
 interface SelectorCaballoProps {
+  caballosDisponibles?: OpcionCaballo[];
   caballoSeleccionadoId?: string;
   clubIdFiltro?: string;
   alSeleccionar: (caballo: { id: string; nombre: string; clubId: string; clubNombre?: string }) => void;
@@ -30,6 +37,7 @@ interface SelectorCaballoProps {
  * (docs/inscripciones/participantes.md §3.2, §3.5 y §5.5)
  */
 export function SelectorCaballo({
+  caballosDisponibles,
   caballoSeleccionadoId,
   clubIdFiltro,
   alSeleccionar,
@@ -59,17 +67,35 @@ export function SelectorCaballo({
   const [guardando, setGuardando] = useState(false);
   const [parecidos, setParecidos] = useState<ParecidoCoincidencia[]>([]);
 
+  // Carga y sincronización de caballos disponibles
   useEffect(() => {
-    listarCaballosActivos()
+    if (caballosDisponibles) {
+      setTodosCaballos(caballosDisponibles);
+      return;
+    }
+
+    obtenerCaballosActivos()
       .then((datos) => {
-        setTodosCaballos(datos);
-        if (caballoSeleccionadoId) {
-          const found = datos.find((c) => c.id === caballoSeleccionadoId);
-          if (found) setSeleccionado(found);
-        }
+        setTodosCaballos(datos as any);
       })
-      .catch(() => {});
-  }, [caballoSeleccionadoId]);
+      .catch((err) => {
+        console.error("Error al cargar caballos:", err);
+      });
+  }, [caballosDisponibles]);
+
+  // Sincronización inmediata de seleccionado al cambiar caballoSeleccionadoId o la lista
+  useEffect(() => {
+    if (!caballoSeleccionadoId) {
+      setSeleccionado(null);
+      return;
+    }
+
+    const fuente = caballosDisponibles && caballosDisponibles.length > 0 ? caballosDisponibles : todosCaballos;
+    const found = fuente.find((c) => c.id === caballoSeleccionadoId);
+    if (found) {
+      setSeleccionado(found);
+    }
+  }, [caballoSeleccionadoId, caballosDisponibles, todosCaballos]);
 
   const contenedorRef = useRef<HTMLDivElement>(null);
 
@@ -159,8 +185,8 @@ export function SelectorCaballo({
 
       if (res.caballo) {
         toast.success(`Caballo "${res.caballo.nombre}" registrado exitosamente.`);
-        const actualizados = await listarCaballosActivos();
-        setTodosCaballos(actualizados);
+        const actualizados = await obtenerCaballosActivos();
+        setTodosCaballos(actualizados as any);
         handleSeleccionar({
           id: res.caballo.id,
           nombre: res.caballo.nombre,

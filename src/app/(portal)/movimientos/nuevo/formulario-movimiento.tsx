@@ -843,6 +843,7 @@ export function FormularioMovimiento({
       {categoria?.sujetoAsociado === "caballo" && (
         <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
           <SelectorCaballo
+            caballosDisponibles={caballos}
             caballoSeleccionadoId={caballoId}
             alSeleccionar={(c) => {
               setCaballoId(c.id);
@@ -858,6 +859,7 @@ export function FormularioMovimiento({
       {categoria?.sujetoAsociado === "jinete" && (
         <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
           <SelectorJinete
+            jinetesDisponibles={jinetes}
             jineteSeleccionadoId={jineteId}
             alSeleccionar={(j) => {
               setJineteId(j.id);
@@ -876,6 +878,7 @@ export function FormularioMovimiento({
       {categoria?.sujetoAsociado === "club" && (
         <div className="space-y-1.5 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
           <SelectorClub
+            clubesDisponibles={clubes}
             clubSeleccionadoId={clubId}
             alSeleccionar={(c) => {
               setClubId(c.id);
@@ -1250,6 +1253,7 @@ export function FormularioMovimiento({
             <div className="pt-2 space-y-3 border-t border-stone-200">
               <div>
                 <SelectorCaballo
+                  caballosDisponibles={caballos}
                   caballoSeleccionadoId={caballoId}
                   alSeleccionar={(c) => {
                     setCaballoId(c.id);
@@ -1262,6 +1266,7 @@ export function FormularioMovimiento({
 
               <div>
                 <SelectorJinete
+                  jinetesDisponibles={jinetes}
                   jineteSeleccionadoId={jineteId}
                   alSeleccionar={(j) => {
                     setJineteId(j.id);
@@ -1274,6 +1279,7 @@ export function FormularioMovimiento({
 
               <div>
                 <SelectorClub
+                  clubesDisponibles={clubes}
                   clubSeleccionadoId={clubId}
                   alSeleccionar={(c) => setClubId(c.id)}
                   alLimpiar={() => setClubId("")}
