@@ -1,6 +1,6 @@
 # Estado del Proyecto — Tesorería Parronal
 
-Última actualización: 2026-09-28
+Última actualización: 2026-09-29
 
 ## Resumen
 
@@ -145,5 +145,6 @@ Están aprobados el marco general y todos los componentes del núcleo v1.0 (Orga
 | 2026-09-28 | 1.17 | Diagnóstico y revisión exhaustiva de Fase 6: se documenta el estado de implementación detallando las bases previas consolidadas (modelos Prisma, permisos en matriz, rutas de menú y cascadas parciales) versus los componentes de dominio, pantallas de portal, ganchos de integración y suite de tests pendientes para su ejecución | Revisión y diagnóstico de Fase 6 |
 | 2026-09-28 | 1.18 | Ejecución de Fase 7 completada: módulo de Dashboard multirrol (`/`), motor de KPIs dinámicos sin saldos estáticos (`indicadores`, `saldoPorMedio`, `avisosAdministrador`, `loMio`, `textoResumen`), módulo de Traspasos (`/traspasos`, `/traspasos/nuevo`), endpoint seguro `/api/traspasos/[id]/archivo`, Server Actions desacopladas, y suite de 13 tests con aislamiento en `dashboard.test.ts`. Total: 126 tests en 11 suites pasando al 100% y build de Next.js limpio | Implementación de Fase 7 |
 | 2026-09-28 | 1.19 | Ejecución de Fase 8 completada: configuración de despliegue en Railway (`railway.json`), endpoint de monitoreo `/api/health`, ajuste de middleware público y suite de integración integral (`fase8.test.ts`) con 7 pruebas que validan aislamiento multi-tenant, cuadratura matemática de caja, traspasos y pagos parciales. Total: 133 tests en 12 suites pasando al 100% y build de Next.js limpio | Implementación de Fase 8 |
+| 2026-09-29 | 1.20 | Auditoría exhaustiva de Administrador y Hard Reset en ambiente de pruebas: resolución de BUG-01 (preselección cruzada de club en inscripciones), BUG-02 (eliminación resiliente de pruebas con inscripciones anuladas sin pagos), BUG-03 (insignias contables de sujeto imputado en /movimientos), BUG-04 (búsqueda insensible a tildes con normalizarBusqueda), MEJORA-01 (onboarding guiado en 3 pasos en dashboard limpio), MEJORA-02 (deselección rápida en combobox de categorías) y cumplimiento de restricción check_movimiento_pagado_fecha. Hard reset ejecutado con éxito en Railway pruebas preservando Organización oficial, Evento, Administrador y Categorías del sistema | Auditoría integral y saneamiento operativo |
 
 

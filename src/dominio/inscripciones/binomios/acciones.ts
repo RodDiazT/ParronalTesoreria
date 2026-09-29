@@ -258,13 +258,37 @@ export async function ejecutarEliminarPrueba(
   }
 
   const inscripcionesActivas = prueba.inscripciones.filter((i) => !i.anulado);
-  const inscripcionesRetiradas = prueba.inscripciones.filter((i) => i.anulado);
   const cantTotal = prueba.inscripciones.length;
 
-  // Caso A: 0 inscripciones asociadas (ni activas ni retiradas)
-  if (cantTotal === 0) {
+  // Verificar si existen pagos contables asociados a inscripciones de esta prueba
+  let tienePagosContables = false;
+  if (cantTotal > 0) {
+    const pagosCount = await db(ctx).pago.count({
+      where: {
+        inscripcion: { pruebaId: id },
+        anulado: false,
+      },
+    });
+    tienePagosContables = pagosCount > 0;
+  }
+
+  // Caso A: Sin inscripciones activas y sin pagos contables -> Eliminación directa
+  if (inscripcionesActivas.length === 0 && !tienePagosContables && !reasignarAId) {
     try {
       await db(ctx).$transaction(async (tx) => {
+        // Desvincular movimientos opcionales que apunten a esta prueba
+        await tx.movimiento.updateMany({
+          where: { pruebaId: id },
+          data: { pruebaId: null },
+        });
+
+        // Si existían inscripciones anuladas/retiradas sin pagos, removerlas limpiamente
+        if (cantTotal > 0) {
+          await tx.inscripcion.deleteMany({
+            where: { pruebaId: id },
+          });
+        }
+
         await tx.prueba.delete({ where: { id } });
         await tx.registroAuditoria.create({
           data: {
@@ -288,14 +312,12 @@ export async function ejecutarEliminarPrueba(
     }
   }
 
-  // Caso B: >0 inscripciones asociadas (activas o retiradas)
+  // Caso B: Requiere reasignación obligatoria (tiene inscripciones activas o pagos contables)
   if (!reasignarAId) {
     const detalle =
       inscripcionesActivas.length > 0
-        ? `${inscripcionesActivas.length} inscripción(es) activa(s)${
-            inscripcionesRetiradas.length > 0 ? ` y ${inscripcionesRetiradas.length} retirada(s)` : ""
-          }`
-        : `${cantTotal} inscripción(es) histórica(s) retirada(s)`;
+        ? `${inscripcionesActivas.length} inscripción(es) activa(s)`
+        : `pagos contables registrados`;
     return {
       exito: false,
       error: `La prueba tiene ${detalle}. Debes seleccionar una prueba de destino para reasignar su historial contable.`,
@@ -343,9 +365,13 @@ export async function ejecutarEliminarPrueba(
     }
   }
 
-  // Transacción atómica
+  // Transacción atómica de reasignación y eliminación
   try {
     await db(ctx).$transaction([
+      db(ctx).movimiento.updateMany({
+        where: { pruebaId: id },
+        data: { pruebaId: reasignarAId },
+      }),
       db(ctx).inscripcion.updateMany({
         where: { pruebaId: id },
         data: { pruebaId: reasignarAId },
@@ -363,7 +389,6 @@ export async function ejecutarEliminarPrueba(
             reasignadoAId: reasignarAId,
             totalInscripciones: cantTotal,
             activas: inscripcionesActivas.length,
-            retiradas: inscripcionesRetiradas.length,
           } as unknown as Prisma.InputJsonValue,
         },
       }),

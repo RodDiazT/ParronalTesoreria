@@ -1,6 +1,6 @@
 # Participantes
 
-Estado: Aprobado · Versión 1.0 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.1 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -489,3 +489,4 @@ Los pasos 1 a 7 son imprescindibles para Inscripción de binomios e Importación
 | 2026-09-27 | 0.1 | Primer borrador para revisión | Sesión de trabajo con Rod: administrador y ayudante crean, el administrador edita y fusiona; jinete con fecha de nacimiento, contacto y club obligatorios; club heredado por el binomio y editable por evento; caballo solo con nombre y club; club "Particular" como dato; menor sin apoderado y menor de 14 sin autorización como alertas que no bloquean; autorización con fecha y quién la registró; escala de 50 binomios o menos |
 | 2026-09-27 | 0.2 | Fecha de nacimiento y contacto del jinete pasan a opcionales; nueva alerta "Sin fecha de nacimiento"; edad desconocida (`null`) sin alertas de menor | Revisión de Rod |
 | 2026-09-27 | 1.0 | Aprobado por Rod. El marco general pasa a v1.2 con las desviaciones de la sección 6 | Aprobación |
+| 2026-09-29 | 1.1 | Reactividad y carga mediante Server Actions en selectores in-situ (<SelectorJinete>, <SelectorCaballo>, <SelectorClub>), auto-selección inmediata tras creación en hoja emergente, alta encadenada de clubes y normalización diacrítica de búsqueda (normalizarBusqueda) en selectores y directorio | Corrección de auto-selección in-situ y búsqueda insensible a tildes |

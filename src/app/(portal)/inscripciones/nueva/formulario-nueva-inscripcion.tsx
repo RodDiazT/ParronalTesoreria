@@ -265,6 +265,7 @@ export function FormularioNuevaInscripcion({
       if (!clubId) {
         setClubId(nuevo.clubId);
       }
+      setClubIdCaballo(nuevo.clubId);
       setModalJinete(false);
       setNombreJinete("");
       setRutJinete("");
@@ -317,6 +318,7 @@ export function FormularioNuevaInscripcion({
       if (!clubId) {
         setClubId(nuevo.clubId);
       }
+      setClubIdJinete(nuevo.clubId);
       setModalCaballo(false);
       setNombreCaballo("");
       setChipCaballo("");
@@ -469,6 +471,9 @@ export function FormularioNuevaInscripcion({
               if (j.clubId && !clubId) {
                 setClubId(j.clubId);
               }
+              if (j.clubId && !clubIdCaballo) {
+                setClubIdCaballo(j.clubId);
+              }
             }}
             alLimpiar={() => setJineteId("")}
             label=""
@@ -504,6 +509,9 @@ export function FormularioNuevaInscripcion({
               setCaballoId(c.id);
               if (c.clubId && !clubId) {
                 setClubId(c.clubId);
+              }
+              if (c.clubId && !clubIdJinete) {
+                setClubIdJinete(c.clubId);
               }
             }}
             alLimpiar={() => setCaballoId("")}

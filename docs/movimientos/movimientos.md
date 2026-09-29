@@ -1,6 +1,6 @@
 # Movimientos
 
-Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.5 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -568,3 +568,4 @@ Imprescindibles para el 2026-10-04: pasos 1 a 9 y 13. Si el plazo aprieta, la pa
 | 2026-09-27 | 1.2 | §3.8: pestaña y filtros del listado en la URL (Dashboard §5.5). §5.3: `resumenPendientesDe` permitido para el propio usuario | Aprobación de Dashboard v1.0 |
 | 2026-09-27 | 1.3 | §5.3: `registrarMovimientoSistema` acepta un archivo ya copiado al volumen como respaldo | Aprobación de Formulario de inscripción v1.0 |
 | 2026-09-27 | 1.4 | §3.1 y §5.4: el botón "+ Registrar" de dos opciones pasa a ser el "+" de UX/UI §3.2 con cuatro acciones. §3.8: tarjeta de dos líneas con un solo estado y totales en una línea desplegable. §5.4: contador del menú según UX/UI §3.3 | Aprobación de UX/UI v1.0 |
+| 2026-09-29 | 1.5 | Unificación de /movimientos/nuevo con selector [Ingreso | Gasto], combobox de búsqueda en vivo con botón de deselección rápida en categorías, insignias de sujeto imputado (Binomio, Jinete, Caballo, Club, Prueba) en /movimientos, simplificación de medios de pago y texto a Observación única, y aseguramiento de fechaPago para restricción CHECK | Simplificación de UX contable y resolución de auditoría admin |

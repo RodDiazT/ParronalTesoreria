@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet } from "@/components/ui/sheet";
 import { crearClub, obtenerClubesActivos } from "@/dominio/inscripciones/participantes/acciones";
 import { ParecidoCoincidencia } from "@/dominio/inscripciones/participantes/reglas";
+import { normalizarBusqueda } from "@/lib/utilidades";
 
 export interface OpcionClub {
   id: string;
@@ -86,9 +87,11 @@ export function SelectorClub({
     }
   }, [clubSeleccionadoId, clubesDisponibles, todosClubes]);
 
-  const filtrados = todosClubes.filter((c) =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase().trim())
-  );
+  const filtrados = todosClubes.filter((c) => {
+    const q = normalizarBusqueda(busqueda);
+    if (!q) return true;
+    return normalizarBusqueda(c.nombre).includes(q);
+  });
 
   const hayOpciones = filtrados.length > 0;
   const buscando = busqueda.trim().length > 0;

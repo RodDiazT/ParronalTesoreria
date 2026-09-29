@@ -20,6 +20,19 @@ export function normalizarNombre(texto: string): string {
 }
 
 /**
+ * Normaliza un texto para búsquedas en tiempo real:
+ * minúsculas, sin diacríticos (tildes) y recortado.
+ */
+export function normalizarBusqueda(texto: string): string {
+  if (!texto) return "";
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+/**
  * Normaliza un número de teléfono a solo dígitos y extrae los últimos 9 dígitos
  * (docs/inscripciones/participantes.md §5.2)
  */

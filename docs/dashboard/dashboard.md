@@ -1,6 +1,6 @@
 # Dashboard
 
-Estado: Aprobado · Versión 1.2 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.3 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -524,3 +524,4 @@ Con `registrarAuditoria` (marco §6.8). Entidad `Traspaso`, acciones `crear` y `
 | 2026-09-27 | 1.0 | Documento aprobado sin borrador previo, por pedido de Rod | Sesión con Rod: el documento cubre v1.0 y v1.1; el Dashboard es el inicio para todos, con botones de registro para administrador y ayudante; el saldo por medio de pago pasa a v1.0, con traspasos entre banco y efectivo solo por el administrador; cada indicador abre su lista filtrada; línea "de lo cual, aporte inicial"; bloque "Lo mío" del ayudante; avisos de por asignar, ajustes por ver y alertas de menores para el administrador; "Copiar resumen" para administrador y observador; % pagadas por monto y por cantidad; ingresos y gastos por categoría; evolución de ingresos y gastos con horizonte configurable (por defecto, desde la creación del evento hasta su cierre) y agrupación automática; estado de conciliación para el administrador |
 | 2026-09-27 | 1.1 | §3.5 y §3.6: aviso "inscripciones por formulario por revisar" para administrador y ayudante (v1.1); §5: contador en `avisosAdministrador` y `loMio` | Aprobación de Formulario de inscripción v1.0 |
 | 2026-09-27 | 1.2 | §3.1: el orden y lo plegado del inicio pasan a UX/UI §3.4 y se eliminan los botones Gasto, Ingreso y Pago de inscripción (los reemplaza el "+" de UX/UI §3.2). §3.2: Por cobrar y Por pagar abren su desglose en una hoja. §3.5: los avisos son filas de "Por revisar" | Aprobación de UX/UI v1.0 |
+| 2026-09-29 | 1.3 | Tarjeta pedagógica de onboarding guiado en 3 pasos (Configurar pruebas, Inscribir binomios, Registrar movimientos) cuando el evento no tiene movimientos registrados (sinMovimientos) | Experiencia inicial y onboarding tras hard reset |

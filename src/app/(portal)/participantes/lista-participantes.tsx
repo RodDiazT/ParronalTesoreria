@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertasJinete } from "@/components/app/alertas-jinete";
 import { SelectorClub } from "@/components/app/selector-club";
+import { normalizarBusqueda } from "@/lib/utilidades";
 import {
   JineteResumenDTO,
   CaballoResumenDTO,
@@ -170,7 +171,7 @@ export function ListaParticipantes({
   };
 
   // Filtros aplicados en memoria
-  const q = busqueda.toLowerCase().trim();
+  const q = normalizarBusqueda(busqueda);
 
   const jinetesFiltrados = jinetesIniciales.filter((j) => {
     if (soloActivos && !j.activo) return false;
@@ -178,8 +179,8 @@ export function ListaParticipantes({
     if (filtroConAlertas && j.alertas.length === 0) return false;
     if (q) {
       return (
-        j.nombre.toLowerCase().includes(q) ||
-        (j.clubNombre && j.clubNombre.toLowerCase().includes(q))
+        normalizarBusqueda(j.nombre).includes(q) ||
+        (j.clubNombre && normalizarBusqueda(j.clubNombre).includes(q))
       );
     }
     return true;
@@ -190,8 +191,8 @@ export function ListaParticipantes({
     if (clubFiltroId && c.clubId !== clubFiltroId) return false;
     if (q) {
       return (
-        c.nombre.toLowerCase().includes(q) ||
-        (c.clubNombre && c.clubNombre.toLowerCase().includes(q))
+        normalizarBusqueda(c.nombre).includes(q) ||
+        (c.clubNombre && normalizarBusqueda(c.clubNombre).includes(q))
       );
     }
     return true;
@@ -199,7 +200,7 @@ export function ListaParticipantes({
 
   const clubesFiltrados = clubesIniciales.filter((cl) => {
     if (soloActivos && !cl.activo) return false;
-    if (q) return cl.nombre.toLowerCase().includes(q);
+    if (q) return normalizarBusqueda(cl.nombre).includes(q);
     return true;
   });
 
@@ -207,7 +208,7 @@ export function ListaParticipantes({
     if (soloActivos && !a.activo) return false;
     if (q) {
       return (
-        a.nombre.toLowerCase().includes(q) ||
+        normalizarBusqueda(a.nombre).includes(q) ||
         (a.telefono && a.telefono.toLowerCase().includes(q))
       );
     }

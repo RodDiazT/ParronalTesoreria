@@ -477,14 +477,34 @@ export function ListaMovimientos({
                     <Fecha valor={mov.fecha} />
                     <span>·</span>
                     <span className="truncate">{subtitulo}</span>
-                    {mov.caballo && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                        {mov.caballo.nombre}
+                    {mov.binomio ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        {mov.binomio.jinete && mov.binomio.caballo
+                          ? `${mov.binomio.jinete.nombre} / ${mov.binomio.caballo.nombre}`
+                          : "Binomio"}
                       </span>
+                    ) : (
+                      <>
+                        {mov.caballo && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                            {mov.caballo.nombre}
+                          </span>
+                        )}
+                        {mov.jinete && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                            {mov.jinete.nombre}
+                          </span>
+                        )}
+                        {mov.club && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                            {mov.club.nombre}
+                          </span>
+                        )}
+                      </>
                     )}
-                    {mov.jinete && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                        {mov.jinete.nombre}
+                    {mov.prueba && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-800 border border-indigo-200">
+                        {mov.prueba.nombre}
                       </span>
                     )}
                     {mov.sinRespaldo && (

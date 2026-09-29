@@ -67,8 +67,30 @@ async function main() {
   });
   console.log(`✓ Categorías eliminadas (custom y no-sistema): ${categoriasBorradas.count}`);
 
-  // 3. Limpieza de eventos sintéticos generados por tests automáticos
-  console.log("\n--- Limpieza de eventos sintéticos ---");
+  // 3. Limpieza de eventos y organizaciones sintéticas
+  console.log("\n--- Limpieza de eventos y organizaciones secundarias ---");
+  const orgOficial = await prisma.organizacion.findFirst({
+    where: { nombreNormalizado: { contains: "parronal" } },
+  });
+
+  if (orgOficial) {
+    await prisma.evento.deleteMany({
+      where: {
+        organizacionId: { not: orgOficial.id },
+      },
+    });
+    await prisma.categoria.deleteMany({
+      where: {
+        organizacionId: { not: orgOficial.id },
+      },
+    });
+    await prisma.organizacion.deleteMany({
+      where: {
+        id: { not: orgOficial.id },
+      },
+    });
+  }
+
   const eventosTest = await prisma.evento.deleteMany({
     where: {
       OR: [
@@ -105,9 +127,7 @@ async function main() {
 
   // 5. Asegurar Organización, Evento y Categorías del Sistema
   console.log("\n--- Configuración de Organización y Categorías por Defecto ---");
-  const org = await prisma.organizacion.findFirst({
-    where: { nombreNormalizado: "club-ecuestre-parronal-las-marias" },
-  }) || await prisma.organizacion.findFirst();
+  const org = orgOficial || await prisma.organizacion.findFirst();
 
   if (!org) {
     console.error("ERROR: No se encontró la organización principal.");

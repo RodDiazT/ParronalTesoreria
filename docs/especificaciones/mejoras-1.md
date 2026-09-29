@@ -1,7 +1,7 @@
 # Mejoras 1: Especificación Técnica de UX, Configuración, Inscripciones y Perfil
 
-**Fecha:** 28 de Septiembre de 2026  
-**Estado:** Aprobado para desarrollo (v1.2)  
+**Fecha:** 29 de Septiembre de 2026  
+**Estado:** Aprobado para desarrollo (v1.3)  
 **Sistema:** Tesorería Club Parronal — Gestión de Concursos Ecuestres  
 **Destinatario:** Desarrollador / Agente de Implementación  
 
@@ -9,7 +9,7 @@
 
 ## 1. Resumen Ejecutivo y Objetivos
 
-Este documento formaliza las definiciones de negocio, arquitectura de datos, lógica del dominio y diseño de experiencia de usuario (UX/UI) para implementar cinco (5) mejoras fundamentales en el sistema de Tesorería:
+Este documento formaliza las definiciones de negocio, arquitectura de datos, lógica del dominio y diseño de experiencia de usuario (UX/UI) para implementar mejoras fundamentales en el sistema de Tesorería:
 
 1. **Eliminación y Reasignación de Pruebas (`/configuracion/pruebas`):** Permitir la eliminación de pruebas configuradas. Si la prueba tiene inscripciones registradas, se exige reasignarlas atómicamente a otra prueba del evento, validando que ningún binomio quede duplicado. Restringido a administradores.
 2. **Retiro de "Conceptos de Cobro" y Centralización en Ingresos:** Eliminar la pestaña y entidad "Conceptos de cobro" (y cargos en ficha de binomio). Todos los cobros adicionales (pensiones, boxes, pesebreras, auspicios, etc.) se centralizan como **Movimientos de Ingreso** en Tesorería, asociados a su respectiva Categoría y vinculados opcionalmente a un Binomio, Caballo, Jinete o Club.
@@ -17,6 +17,8 @@ Este documento formaliza las definiciones de negocio, arquitectura de datos, ló
 4. **Edición de Perfil de Usuario (`/mi-cuenta`):** Permitir a los usuarios con membresía aprobada actualizar su nombre completo para mostrar y registrar opcionalmente su número de teléfono de contacto.
 5. **Eliminación y Reasignación de Categorías (`/configuracion/categorias`):** Permitir a administradores eliminar categorías no protegidas. Si tienen movimientos históricos de dinero asociados, se exige seleccionar una categoría sustituta del mismo tipo para reasignar los movimientos de forma atómica antes de eliminar la categoría.
 6. **Renombrado en Navegación Lateral a "Directorio" (`/participantes`):** Actualizar el rótulo en el menú principal lateral de "Participantes" a "Directorio" para representar con mayor precisión el acceso al directorio maestro de Jinetes, Caballos y Clubes.
+7. **Resolución de Hallazgos de Auditoría y Resiliencia en Pruebas:** Eliminación limpia de pruebas que solo tienen inscripciones anuladas sin pagos, preselección bidireccional de club en formulario de inscripción, búsqueda insensible a tildes/acentos, insignias contables de sujeto imputado en `/movimientos`, y onboarding paso a paso en dashboard limpio.
+8. **Hard Reset y Línea Base Operativa en Ambiente de Pruebas:** Depuración controlada de datos de prueba preservando organización, evento, administrador principal y categorías de sistema.
 
 ---
 
@@ -425,4 +427,77 @@ Se implementó y ejecutó el script `scripts/hard-reset-pruebas.ts` sobre la bas
   - `Devoluciones` (tipo: `gasto`, claveSistema: `"devoluciones"`, activa: `true`, orden: `999`).
 * **Limpieza de Entidades Sintéticas:** Se purgaron los eventos de prueba y las 43 cuentas/membresías ficticias generadas en corridas de tests.
 * **Entidades Preservadas:** Se conservaron intactos la Organización oficial (*Club Ecuestre Parronal Las Marias*), el Evento principal (*Concurso Ecuestre Parronal* en estado `abierto`) y la cuenta de administrador oficial (`rodrigodiaztapia@gmail.com`).
+
+---
+
+## 8. Auditoría Exhaustiva de Administrador, Normalización Diacrítica y Resiliencia Contable
+
+### 8.1. Eliminación Resiliente de Pruebas con Inscripciones Anuladas o Retiradas (BUG-02)
+* **Problema:** En el flujo de eliminación de pruebas (`eliminarPrueba`), el sistema bloqueaba la acción si existía cualquier registro en la tabla `Inscripcion`, obligando al usuario a reasignar las inscripciones a otra prueba activa incluso cuando dichas inscripciones ya habían sido retiradas o anuladas deportivamente (`anulado: true`) y no contaban con ningún pago contable asociado.
+* **Solución Implementada:**
+  - En `src/dominio/inscripciones/binomios/acciones.ts`, se ajustó la validación previa de dependencias:
+    ```ts
+    const inscripcionesActivas = prueba.inscripciones.filter((i) => !i.anulado);
+    const inscripcionesConPago = prueba.inscripciones.filter((i) => i.pagos.length > 0);
+    ```
+  - Si la prueba **solo tiene inscripciones anuladas sin pagos contables**, se autoriza la eliminación directa: dentro de la transacción atómica, se eliminan limpiamente los registros huérfanos de inscripciones anuladas asociadas y luego se elimina la prueba, sin exigir una prueba de destino.
+  - Si existen inscripciones activas o inscripciones con pagos contables asociados, se mantiene la exigencia estricta de reasignación a una prueba de destino para no alterar la contabilidad ni la lista activa de competidores.
+
+### 8.2. Preselección Cruzada y Bidireccional de Club en Formulario de Inscripción (BUG-01)
+* **Problema:** En `/inscripciones/nueva`, cuando un administrador seleccionaba o creaba un Jinete perteneciente a un club determinado, el selector de Caballo mantenía su propio club vacío o exigía volver a digitarlo manualmente.
+* **Solución Implementada:**
+  - En `src/app/(portal)/inscripciones/nueva/formulario-nueva-inscripcion.tsx`:
+    - Al seleccionar o crear un Jinete con club asignado, si el Caballo aún no tiene club seleccionado (`!clubIdCaballo`), se copia automáticamente el `clubId` del jinete.
+    - De forma simétrica, si primero se selecciona un Caballo con club asignado y el Jinete no tiene club definido (`!clubIdJinete`), se preselecciona dicho club para el Jinete.
+    - Se respeta la libertad de modificar individualmente cualquiera de los clubes si el jinete y el caballo pertenecen efectivamente a instituciones distintas.
+
+### 8.3. Búsqueda Insensible a Tildes y Caracteres Diacríticos (BUG-04)
+* **Problema:** En los comboboxes de selección interactiva (`SelectorCategoria`, `SelectorJinete`, `SelectorCaballo`, `SelectorClub`) y en el buscador de la lista del Directorio (`/participantes`), las búsquedas fallaban al comparar cadenas con tildes (por ejemplo, buscar "gonzalez" no encontraba "González", o "pension" no encontraba "Pensión").
+* **Solución Implementada:**
+  - Se implementó la función utilitaria `normalizarBusqueda(texto: string): string` en `src/lib/utilidades.ts`:
+    ```ts
+    export function normalizarBusqueda(texto: string): string {
+      return (texto || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+    ```
+  - Se integró `normalizarBusqueda` en el filtrado de:
+    1. `SelectorCategoria`: nombre y sujeto asociado.
+    2. `SelectorJinete`: nombre, club y RUT.
+    3. `SelectorCaballo`: nombre y club.
+    4. `SelectorClub`: nombre.
+    5. `ListaParticipantes`: filtrado unificado en pestañas de jinetes, caballos y clubes.
+
+### 8.4. Visualización de Sujeto Imputado en el Listado Contable (BUG-03)
+* **Problema:** En el listado general de movimientos (`/movimientos`), las filas mostraban la categoría y la contraparte, pero no identificaban visualmente a qué entidad deportiva específica (Binomio, Jinete, Caballo, Club o Prueba) correspondía un ingreso asignado.
+* **Solución Implementada:**
+  - En `src/dominio/movimientos/acciones.ts`: `listarMovimientos` incluye en su consulta Prisma los campos relacionales `binomio: { include: { jinete: true, caballo: true } }` y `prueba: true`.
+  - En `src/app/(portal)/movimientos/lista-movimientos.tsx`: se renderizan insignias visuales (badges contextuales) bajo la descripción del movimiento:
+    - `Binomio: [Jinete] + [Caballo]` (tono azul/púrpura suave).
+    - `Caballo: [Nombre]` (tono ámbar/tierra).
+    - `Jinete: [Nombre]` (tono índigo).
+    - `Club: [Nombre]` (tono esmeralda).
+    - `Prueba: [Nombre]` (tono cian).
+
+### 8.5. Experiencia Pedagógica de Onboarding en Evento Vacío (MEJORA-01)
+* **Problema:** Al inicializar un evento o tras ejecutar un reset de base de datos, el Dashboard principal (`/`) mostraba un estado en blanco sin guiar al administrador en la secuencia lógica de configuración.
+* **Solución Implementada:**
+  - En `src/app/(portal)/page.tsx`, cuando `sinMovimientos === true`, se despliega una tarjeta de bienvenida pedagógica con una guía visual de 3 pasos numerados:
+    1. **Configurar pruebas:** Enlace directo a `/configuracion/pruebas` para definir las alturas, categorías y tarifas del concurso.
+    2. **Inscribir binomios:** Enlace directo a `/inscripciones/nueva` para enrolar los primeros jinetes y caballos en competencia.
+    3. **Registrar movimientos:** Enlace directo a `/movimientos/nuevo` para asentar los primeros ingresos o gastos operacionales.
+
+### 8.6. Botón de Limpieza Rápida en Selector de Categorías (MEJORA-02)
+* **Mejora:** En `SelectorCategoria`, una vez seleccionada una categoría, se incorporó un botón de deselección rápida (`X`) con `alSeleccionar(null)` para limpiar la selección de inmediato sin obligar al usuario a abrir el desplegable y borrar texto manualmente.
+
+### 8.7. Manejo Estricto de Restricciones CHECK en PostgreSQL (`check_movimiento_pagado_fecha`)
+* **Problema:** La base de datos PostgreSQL contiene una restricción de integridad a nivel de tabla:
+  `CHECK ((estado_pago = 'pagado' AND fecha_pago IS NOT NULL) OR estado_pago <> 'pagado')`.
+  Al registrar movimientos de ingreso con medio de pago `especie` o cuando la fecha de pago no venía explícita en el cliente, Prisma enviaba `fechaPago: null`, provocando una violación de la restricción `check_movimiento_pagado_fecha`.
+* **Solución Implementada:**
+  - En `formulario-movimiento.tsx` y en `src/dominio/movimientos/acciones.ts` (`crearMovimiento`): se garantiza que si `estadoPago === "pagado"`, el campo `fechaPago` se complete automáticamente con la fecha de la transacción (`fecha`) en caso de no especificarse una fecha bancaria distinta.
+
 

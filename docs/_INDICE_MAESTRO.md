@@ -1,6 +1,6 @@
 # Índice Maestro — Tesorería Parronal
 
-Última actualización: 2026-09-28
+Última actualización: 2026-09-29
 
 ## Árbol de carpetas
 
@@ -38,18 +38,18 @@ Las carpetas de dominio (`acceso/`, `organizacion/`, `movimientos/`, `inscripcio
 | Marco general | `docs/marco-general/marco-general-proyecto.md` | Raíz técnica: actores, permisos, modelo de dominio, reglas de negocio, stack, cumplimiento y plan | Aprobado (v1.7) | v1.0 | — |
 | Organización y evento | `docs/organizacion/organizacion-evento.md` | Aislamiento, carga inicial, configuración del evento, categorías y contrapartes | Aprobado (v1.3) | v1.0 | Marco general |
 | Acceso y roles | `docs/acceso/acceso-roles.md` | Login con Google, solicitudes, aprobación, roles, permisos y aviso de privacidad | Aprobado (v1.4) | v1.0 | Marco general |
-| Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.4) | v1.0 | Marco general |
-| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.0) | v1.0 | Marco general |
-| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.4) | v1.0 | Marco general |
+| Movimientos | `docs/movimientos/movimientos.md` | Ingresos y gastos con respaldo u observación, validación, anulación, por cobrar y por pagar, reembolsos, especie y auditoría | Aprobado (v1.5) | v1.0 | Marco general |
+| Participantes | `docs/inscripciones/participantes.md` | Jinetes, apoderados, caballos y clubes: datos, reglas de edad y apoderado, duplicados | Aprobado (v1.1) | v1.0 | Marco general |
+| Inscripción de binomios | `docs/inscripciones/inscripcion-binomios.md` | Binomios, pruebas, cargos, tarifas, descuentos, pagos, asignación y devoluciones | Aprobado (v1.7) | v1.0 | Marco general |
 | Importación desde Excel | `docs/inscripciones/inscripcion-binomios/importacion-excel.md` | Plantilla para terceros, cualquier planilla con mapeo asistido por IA, vista previa, duplicados y carga de binomios | Aprobado (v1.1) | v1.1 | Inscripción de binomios |
-| Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores del marco §6.7, saldo por medio de pago y traspasos, avisos, "Lo mío" y resumen copiable en v1.0; % pagadas, por categoría, evolución y conciliación en v1.1 | Aprobado (v1.2) | v1.0 | Marco general |
+| Dashboard | `docs/dashboard/dashboard.md` | Inicio por rol, indicadores del marco §6.7, saldo por medio de pago y traspasos, avisos, "Lo mío" y resumen copiable en v1.0; % pagadas, por categoría, evolución y conciliación en v1.1 | Aprobado (v1.3) | v1.0 | Marco general |
 | Formulario de inscripción | `docs/inscripciones/inscripcion-binomios/formulario-inscripcion.md` | Enlace de solo envío, un binomio por solicitud con comprobante opcional, clubes autocompletados, revisión con vínculo a lo existente, aceptación con pago y autorización del apoderado | Aprobado (v1.0) | v1.1 | Inscripción de binomios |
 | UX/UI | `docs/interfaz/ux-ui.md` | Navegación (menú y botón "+"), sistema visual con modo claro y oscuro, estados, montos, listas, fichas, formularios, inicio plegado e instalable | Aprobado (v1.0) | v1.0 | Marco general |
 | Registro sin señal | `docs/movimientos/movimientos/registro-sin-senal.md` | Borrador local en el teléfono y cola de envío al volver la conexión | Pendiente | v1.1 | Movimientos |
 | Conciliación con cartola | `docs/movimientos/conciliacion-cartola.md` | Carga de cartola, cruce por monto, fecha y nombre, sugerencias con IA y confirmación | Pendiente | v1.1 | Marco general |
 | Pendientes | `docs/movimientos/pendientes.md` | Vista consolidada de por cobrar y por pagar, y tareas de la comisión | Pendiente | v1.1 | Marco general |
 | Cierre y rendición | `docs/rendicion/exportacion-rendicion.md` | Cierre del evento, informe de rendición y exportación a planilla y PDF | Pendiente | v1.1 | Marco general |
-| Mejoras 1 | `docs/especificaciones/mejoras-1.md` | Eliminación y reasignación de pruebas y categorías, centralización de ingresos, alta rápida en inscripción y edición de perfil | Aprobado (v1.2) | v1.2 | Marco general |
+| Mejoras 1 | `docs/especificaciones/mejoras-1.md` | Eliminación y reasignación de pruebas y categorías, centralización de ingresos, alta rápida en inscripción y edición de perfil | Aprobado (v1.3) | v1.2 | Marco general |
 
 Orden de trabajo de v1.0 (marco general, sección 12): Organización y evento + Acceso y roles → Movimientos → Participantes → Inscripción de binomios → Dashboard. Importación desde Excel pasó a v1.1 (marco v1.4). Con Dashboard y UX/UI aprobados, todos los documentos del núcleo v1.0 están aprobados.
 

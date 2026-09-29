@@ -1592,7 +1592,14 @@ export async function listarMovimientos(
           caballo: true,
           jinete: true,
           club: true,
-          binomio: true,
+          binomio: {
+            include: {
+              jinete: true,
+              caballo: true,
+              club: true,
+            },
+          },
+          prueba: true,
         },
         orderBy: [{ fecha: "desc" }, { creadoEn: "desc" }],
       }),

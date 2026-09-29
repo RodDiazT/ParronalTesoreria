@@ -10,6 +10,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { crearCaballo, obtenerCaballosActivos } from "@/dominio/inscripciones/participantes/acciones";
 import { SelectorClub } from "./selector-club";
 import { ParecidoCoincidencia } from "@/dominio/inscripciones/participantes/reglas";
+import { normalizarBusqueda } from "@/lib/utilidades";
 
 export interface OpcionCaballo {
   id: string;
@@ -117,10 +118,11 @@ export function SelectorCaballo({
 
   const filtrados = todosCaballos.filter((c) => {
     if (clubIdFiltro && c.clubId !== clubIdFiltro) return false;
-    const q = busqueda.toLowerCase().trim();
+    const q = normalizarBusqueda(busqueda);
+    if (!q) return true;
     return (
-      c.nombre.toLowerCase().includes(q) ||
-      (c.clubNombre && c.clubNombre.toLowerCase().includes(q))
+      normalizarBusqueda(c.nombre).includes(q) ||
+      (c.clubNombre && normalizarBusqueda(c.clubNombre).includes(q))
     );
   });
 

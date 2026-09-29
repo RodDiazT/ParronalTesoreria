@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Tag, Search, ChevronDown, Check, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { obtenerCategoriasSelector } from "@/dominio/organizacion/categorias";
+import { normalizarBusqueda } from "@/lib/utilidades";
 
 export interface OpcionCategoria {
   id: string;
@@ -21,7 +22,7 @@ interface SelectorCategoriaProps {
   categoriasDisponibles?: OpcionCategoria[];
   valorSeleccionado?: string;
   claveSistemaSeleccionada?: string;
-  alSeleccionar: (categoria: OpcionCategoria) => void;
+  alSeleccionar: (categoria: OpcionCategoria | null) => void;
   id?: string;
   label?: string;
   error?: string;
@@ -147,10 +148,10 @@ export function SelectorCategoria({
 
   const categoriasFiltradas = categorias.filter((c) => {
     if (!busqueda.trim()) return true;
-    const q = busqueda.toLowerCase().trim();
-    const coincideNombre = c.nombre.toLowerCase().includes(q);
-    const coincideSujeto = c.sujetoAsociado ? formatearSujeto(c.sujetoAsociado).toLowerCase().includes(q) : false;
-    const coincideClave = c.claveSistema ? c.claveSistema.toLowerCase().includes(q) : false;
+    const q = normalizarBusqueda(busqueda);
+    const coincideNombre = normalizarBusqueda(c.nombre).includes(q);
+    const coincideSujeto = c.sujetoAsociado ? normalizarBusqueda(formatearSujeto(c.sujetoAsociado)).includes(q) : false;
+    const coincideClave = c.claveSistema ? normalizarBusqueda(c.claveSistema).includes(q) : false;
     return coincideNombre || coincideSujeto || coincideClave;
   });
 
@@ -198,7 +199,22 @@ export function SelectorCategoria({
             )}
           </div>
 
-          <div className="flex items-center gap-1 shrink-0 ml-2">
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            {seleccionada && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  alSeleccionar(null);
+                  setAbierto(false);
+                }}
+                className="p-1 rounded-md text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors cursor-pointer"
+                title="Quitar categoría"
+              >
+                <X className="h-3.5 w-3.5" />
+              </span>
+            )}
             <ChevronDown
               className={`h-4 w-4 text-stone-400 transition-transform duration-200 ${
                 abierto ? "rotate-180 text-emerald-700" : ""

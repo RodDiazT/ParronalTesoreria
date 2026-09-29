@@ -1,6 +1,6 @@
 # Inscripción de binomios
 
-Estado: Aprobado · Versión 1.4 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
+Estado: Aprobado · Versión 1.7 · Responsable: Rod (Administrador) · Ejecutor: Claude Code
 
 ## 1. Índice
 
@@ -769,3 +769,4 @@ Código: ninguno, revisado: el repositorio solo tiene documentación.
 | 2026-09-27 | 1.4 | §3.12: la pestaña Binomios se muestra como tarjeta de dos líneas (UX/UI §3.7) | Aprobación de UX/UI v1.0 |
 | 2026-09-28 | 1.5 | Se documenta el estado de avance técnico: modelos Prisma y permisos configurados previamente, detalle de módulos de dominio, pantallas y tests pendientes de ejecución | Diagnóstico de implementación Fase 6 |
 | 2026-09-28 | 1.6 | Fase 6 de implementación completada: dominio de binomios (`reglas`, `acciones`, `consultas`, `pagos`, `retiros`), 7 pantallas y componentes del portal, suite de 19 tests automatizados pasando al 100% (152 totales) y build de producción Next.js verificado | Finalización e integración Fase 6 |
+| 2026-09-29 | 1.7 | Preselección cruzada y bidireccional de club en formulario de inscripción, normalización diacrítica en búsqueda de jinetes/caballos, eliminación resiliente de pruebas con inscripciones anuladas sin pagos, y tarjeta de estado inicial cero sin pruebas | Auditoría del rol administrador y mejoras operativas |

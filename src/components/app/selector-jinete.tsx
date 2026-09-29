@@ -5,6 +5,7 @@ import { Search, Check, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { obtenerJinetesActivos } from "@/dominio/inscripciones/participantes/acciones";
+import { normalizarBusqueda } from "@/lib/utilidades";
 
 export interface OpcionJinete {
   id: string;
@@ -117,11 +118,11 @@ export function SelectorJinete({
 
   const filtrados = todosJinetes.filter((j) => {
     if (clubIdFiltro && j.clubId !== clubIdFiltro) return false;
-    const q = busqueda.toLowerCase().trim();
+    const q = normalizarBusqueda(busqueda);
     if (!q) return true;
     return (
-      j.nombre.toLowerCase().includes(q) ||
-      (j.clubNombre && j.clubNombre.toLowerCase().includes(q))
+      normalizarBusqueda(j.nombre).includes(q) ||
+      (j.clubNombre && normalizarBusqueda(j.clubNombre).includes(q))
     );
   });
 
