@@ -36,7 +36,7 @@ function revalidarRutasSeguras() {
 // Esquemas Zod
 // -------------------------------------------------------------
 
-export const clubSchema = z.object({
+const clubSchema = z.object({
   nombre: z
     .string()
     .trim()
@@ -49,7 +49,7 @@ export const clubSchema = z.object({
 
 export type ClubInput = z.input<typeof clubSchema>;
 
-export const apoderadoSchema = z.object({
+const apoderadoSchema = z.object({
   nombre: z
     .string()
     .trim()
@@ -65,7 +65,7 @@ export const apoderadoSchema = z.object({
 
 export type ApoderadoInput = z.input<typeof apoderadoSchema>;
 
-export const caballoSchema = z.object({
+const caballoSchema = z.object({
   nombre: z
     .string()
     .trim()
@@ -77,7 +77,7 @@ export const caballoSchema = z.object({
 
 export type CaballoInput = z.input<typeof caballoSchema>;
 
-export const jineteSchema = z.object({
+const jineteSchema = z.object({
   nombre: z
     .string()
     .trim()

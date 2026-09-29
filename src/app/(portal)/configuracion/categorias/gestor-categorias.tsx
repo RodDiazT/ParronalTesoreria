@@ -352,8 +352,8 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                         <span>Exige contraparte</span>
                       </label>
                       {cat.sujetoAsociado && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold capitalize">
-                          Asocia {cat.sujetoAsociado} {cat.exigeSujeto ? "(obligatorio)" : "(opcional)"}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold">
+                          Asocia {cat.sujetoAsociado === "binomio_prueba" ? "binomio y prueba" : cat.sujetoAsociado} {cat.exigeSujeto ? "(obligatorio)" : "(opcional)"}
                         </span>
                       )}
                     </div>
@@ -519,6 +519,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
               <option value="binomio">Binomio (ej. binomio, inscripción)</option>
               <option value="club">Club (ej. cuota club, garantía)</option>
               <option value="prueba">Prueba (ej. auspicio prueba, premios)</option>
+              <option value="binomio_prueba">Binomio y Prueba (ej. inscripciones por prueba)</option>
             </select>
           </div>
 
@@ -596,8 +597,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
               id="catSujetoEditar"
               value={sujetoAsociadoEditado}
               onChange={(e) => setSujetoAsociadoEditado(e.target.value)}
-              disabled={Boolean(modalEditar?.claveSistema === "inscripciones")}
-              className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800 disabled:opacity-60"
+              className="w-full h-10 px-3 rounded-lg border border-stone-300 bg-white text-xs text-stone-800"
             >
               <option value="">Ninguna (general)</option>
               <option value="caballo">Caballo (ej. pensión, pesebrera, herraje)</option>
@@ -605,6 +605,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
               <option value="binomio">Binomio (ej. binomio, inscripción)</option>
               <option value="club">Club (ej. cuota club, garantía)</option>
               <option value="prueba">Prueba (ej. auspicio prueba, premios)</option>
+              <option value="binomio_prueba">Binomio y Prueba (ej. inscripciones por prueba)</option>
             </select>
           </div>
 
@@ -614,10 +615,9 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                 id="catExigeSujetoEditar"
                 checked={exigeSujetoEditado}
                 onCheckedChange={(c) => setExigeSujetoEditado(Boolean(c))}
-                disabled={Boolean(modalEditar?.claveSistema === "inscripciones")}
               />
               <Label htmlFor="catExigeSujetoEditar" className="text-xs cursor-pointer font-normal">
-                Es obligatorio seleccionar {sujetoAsociadoEditado} al registrar el movimiento
+                Es obligatorio seleccionar {sujetoAsociadoEditado === "binomio_prueba" ? "binomio y prueba" : sujetoAsociadoEditado} al registrar el movimiento
               </Label>
             </div>
           )}

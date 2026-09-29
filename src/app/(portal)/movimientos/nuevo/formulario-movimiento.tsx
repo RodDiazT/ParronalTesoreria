@@ -52,6 +52,7 @@ interface FormularioMovimientoProps {
   caballos?: any[];
   clubes?: any[];
   pruebas?: any[];
+  categorias?: OpcionCategoria[];
   usuarioActual: {
     id: string;
     nombre: string;
@@ -73,6 +74,7 @@ export function FormularioMovimiento({
   caballos = [],
   clubes = [],
   pruebas = [],
+  categorias = [],
   usuarioActual,
   miembrosComision,
 }: FormularioMovimientoProps) {
@@ -237,6 +239,22 @@ export function FormularioMovimiento({
       return;
     }
 
+    let repartoArray: { id: string; montoClp: number }[] = [];
+    if (esCategoriaInscripciones) {
+      repartoArray = Object.entries(repartoValores)
+        .filter(([_, m]) => m > 0)
+        .map(([id, m]) => ({
+          id,
+          montoClp: m,
+        }));
+
+      const sumaReparto = Object.values(repartoValores).reduce((a, b) => a + b, 0);
+      if (sumaReparto > montoNumero) {
+        setErrorEnvio("La suma asignada a las inscripciones supera el monto del pago.");
+        return;
+      }
+    }
+
     // Validación de sujeto obligatorio según configuración de categoría
     if (categoria?.exigeSujeto && categoria?.sujetoAsociado) {
       if (categoria.sujetoAsociado === "caballo" && !caballoId) {
@@ -262,6 +280,20 @@ export function FormularioMovimiento({
           return;
         }
       }
+      if (categoria.sujetoAsociado === "binomio_prueba") {
+        const tieneReparto = Array.isArray(repartoArray) && repartoArray.length > 0;
+        if (!tieneReparto) {
+          const idBin = binomioId || (esCategoriaInscripciones && tipoFiltroInscripcion === "binomio" ? filtroInscripcionId : "");
+          if (!idBin) {
+            setErrorEnvio("Debes seleccionar un binomio para esta categoría.");
+            return;
+          }
+          if (!pruebaId) {
+            setErrorEnvio("Debes seleccionar una prueba para esta categoría.");
+            return;
+          }
+        }
+      }
     }
 
     if (
@@ -281,22 +313,6 @@ export function FormularioMovimiento({
     if (!sinRespaldo && archivos.length === 0) {
       setErrorEnvio("Adjunta al menos una foto o comprobante, o marca 'Sin respaldo'.");
       return;
-    }
-
-    let repartoArray: { id: string; montoClp: number }[] = [];
-    if (esCategoriaInscripciones) {
-      repartoArray = Object.entries(repartoValores)
-        .filter(([_, m]) => m > 0)
-        .map(([id, m]) => ({
-          id,
-          montoClp: m,
-        }));
-
-      const sumaReparto = Object.values(repartoValores).reduce((a, b) => a + b, 0);
-      if (sumaReparto > montoNumero) {
-        setErrorEnvio("La suma asignada a las inscripciones supera el monto del pago.");
-        return;
-      }
     }
 
     // Resolver estados de pago y naturaleza unificados
@@ -659,6 +675,7 @@ export function FormularioMovimiento({
         ) : (
           <SelectorCategoria
             tipo={tipo}
+            categoriasDisponibles={categorias}
             valorSeleccionado={categoria?.id}
             claveSistemaSeleccionada={categoriaInicialClave}
             alSeleccionar={(cat) => setCategoria(cat)}
@@ -924,6 +941,60 @@ export function FormularioMovimiento({
               </option>
             ))}
           </select>
+        </div>
+      )}
+
+      {categoria?.sujetoAsociado === "binomio_prueba" && !esCategoriaInscripciones && (
+        <div className="space-y-3 p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-stone-700">
+              Binomio relacionado {categoria.exigeSujeto ? "(Obligatorio) *" : "(Opcional)"}
+            </Label>
+            <select
+              value={binomioId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setBinomioId(id);
+                const b = binomios.find((item) => item.id === id);
+                if (b) {
+                  if (b.jineteId) setJineteId(b.jineteId);
+                  if (b.caballoId) setCaballoId(b.caballoId);
+                  if (b.clubId) setClubId(b.clubId);
+                  if (tipo === "ingreso" && !nombreOrigen.trim() && b.jinete?.nombre) {
+                    setNombreOrigen(b.jinete.nombre);
+                  }
+                }
+              }}
+              className="w-full h-11 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-900 font-medium"
+              required={categoria.exigeSujeto}
+            >
+              <option value="">Selecciona un binomio...</option>
+              {binomios.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.jinete?.nombre} / {b.caballo?.nombre} ({b.club?.nombre})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-stone-700">
+              Prueba relacionada {categoria.exigeSujeto ? "(Obligatoria) *" : "(Opcional)"}
+            </Label>
+            <select
+              value={pruebaId}
+              onChange={(e) => setPruebaId(e.target.value)}
+              className="w-full h-11 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-900 font-medium"
+              required={categoria.exigeSujeto}
+            >
+              <option value="">Selecciona una prueba...</option>
+              {pruebas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre} {p.tarifaClp ? `(${formatearMonto(p.tarifaClp)})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 

@@ -361,3 +361,28 @@ Para la futura sesión de desarrollo, se recomienda seguir este orden secuencial
    * Si la categoría no asocia ninguna entidad, el formulario se mantiene ultra corto y sin elementos distractores.
 
 
+
+
+### 7.4. Corrección de Causa Raíz, Selector Combobox y Configuración de Categorías del Sistema
+
+#### 1. Causa Raíz del Problema de Categorías
+* **Error de Arquitectura Next.js Server Actions:**
+  En Next.js 15, los archivos marcados con `"use server"` tienen la restricción estricta de que **únicamente pueden exportar funciones asíncronas**. Si se exporta cualquier objeto, constante o esquema Zod (por ejemplo `export const clubSchema = z.object(...)`), Next.js genera en runtime el error `⨯ Error: A "use server" file can only export async functions, found object.`
+  Este fallo impedía que las Server Actions de dominios vinculados respondieran, provocando que la llamada cliente `obtenerCategoriasSelector(tipo)` fallara silenciosamente y dejara la lista de categorías vacía.
+* **Solución Implementada:**
+  - Se eliminó el `export` innecesario de las constantes de esquemas (`clubSchema`, `apoderadoSchema`, `caballoSchema`, `jineteSchema`) en `src/dominio/inscripciones/participantes/acciones.ts`.
+  - Se modificó la página `NuevoMovimientoPage` (Server Component) para consultar directamente las categorías activas en base de datos e inyectarlas como prop `categorias` al formulario cliente. De este modo, las categorías se renderizan de forma inmediata desde el HTML inicial sin depender de peticiones asíncronas cliente.
+
+#### 2. Rediseño del Selector a Combobox con Búsqueda en Tiempo Real
+* En `src/components/app/selector-categoria.tsx`, el antiguo `<select>` estático fue reemplazado por un **Combobox interactivo con buscador**:
+  - **Buscador en tiempo real:** Permite escribir cualquier texto para filtrar instantáneamente por nombre de categoría, entidad deportiva asociada (`Caballo`, `Binomio`, `Prueba`, etc.) o clave de sistema.
+  - **Insignias de contexto:** Muestra insignias visuales claras indicando si la categoría exige contraparte o si vincula a una entidad deportiva específica.
+  - **Experiencia Móvil y Accesibilidad:** Botones táctiles de al menos 44px de alto, cierre automático al hacer clic fuera o pulsar la tecla `Escape`, y selección rápida con un solo toque.
+
+#### 3. Configuración de Entidades en Categorías del Sistema y «Binomio y Prueba»
+* **Edición en Categorías del Sistema:**
+  En el gestor `/configuracion/categorias`, las categorías del sistema (como `Inscripciones`) ahora permiten que el administrador configure libremente su entidad deportiva asociada (`sujetoAsociado`) y si es obligatoria (`exigeSujeto`), bloqueando únicamente la modificación del nombre para preservar la integridad lógica del sistema.
+* **Nueva Opción «Binomio y Prueba» (`binomio_prueba`):**
+  - Se añadió la opción `binomio_prueba` tanto al crear como al editar categorías, permitiendo vincular movimientos a un binomio y una prueba específica simultáneamente.
+  - La categoría del sistema `Inscripciones` se inicializa por defecto con `sujetoAsociado = "binomio_prueba"` y `exigeSujeto = true`.
+  - En `/movimientos/nuevo`, si se selecciona una categoría con `binomio_prueba` fuera del flujo masivo de inscripciones, el formulario despliega automáticamente ambos selectores (Binomio y Prueba) y valida que ambos sean provistos antes de confirmar el registro.

@@ -116,6 +116,17 @@ export function validarReglasMovimiento(
     if (categoria.sujetoAsociado === "binomio" && !datos.binomioId) {
       return { valido: false, error: "Debes seleccionar un binomio para esta categoría." };
     }
+    if (categoria.sujetoAsociado === "binomio_prueba") {
+      const tieneReparto = Array.isArray(datos.repartoInscripciones) && datos.repartoInscripciones.length > 0;
+      if (!tieneReparto) {
+        if (!datos.binomioId) {
+          return { valido: false, error: "Debes seleccionar un binomio para esta categoría." };
+        }
+        if (!datos.pruebaId) {
+          return { valido: false, error: "Debes seleccionar una prueba para esta categoría." };
+        }
+      }
+    }
   }
 
   // 1. Reglas de naturaleza y tipo

@@ -67,7 +67,7 @@ describe("Dominio de Movimientos de Tesorería (Fase 4)", () => {
     }
 
     let catAuspicio = org.categorias.find(
-      (c) => c.tipo === "ingreso" && c.exigeContraparte && c.activa
+      (c) => c.tipo === "ingreso" && !c.claveSistema && c.exigeContraparte && c.activa
     );
     if (!catAuspicio) {
       catAuspicio = await prisma.categoria.create({
@@ -511,15 +511,16 @@ describe("Dominio de Movimientos de Tesorería (Fase 4)", () => {
       const id = resCrear.movimiento!.id;
 
       // Primero clasificarlo
-      await ejecutarClasificarMovimiento(ctxAdmin1, id, categoriaIngresoAuspicioId, contraparteId);
+      const resClasificar = await ejecutarClasificarMovimiento(ctxAdmin1, id, categoriaIngresoAuspicioId, contraparteId);
+      expect(resClasificar.exito).toBe(true);
 
       // Admin 1 intenta validarlo -> Debe ser rechazado por exigirNoPropio
-      const resValidarPropio = await ejecutarValidarMovimiento(ctxAdmin1, id, resCrear.movimiento!.version + 1);
+      const resValidarPropio = await ejecutarValidarMovimiento(ctxAdmin1, id, resClasificar.movimiento!.version);
       expect(resValidarPropio.exito).toBe(false);
       expect(resValidarPropio.error).toContain("No puedes validar ni aprobar un registro que tú mismo enviaste");
 
       // Admin 2 sí puede validarlo
-      const resValidarAdmin2 = await ejecutarValidarMovimiento(ctxAdmin2, id, resCrear.movimiento!.version + 1);
+      const resValidarAdmin2 = await ejecutarValidarMovimiento(ctxAdmin2, id, resClasificar.movimiento!.version);
       expect(resValidarAdmin2.exito).toBe(true);
       expect(resValidarAdmin2.movimiento?.estadoValidacion).toBe("validado");
     });

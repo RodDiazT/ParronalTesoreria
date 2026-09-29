@@ -36,6 +36,36 @@ export default async function NuevoMovimientoPage({
         })
       : [];
 
+  const categoriasRaw = await db(ctx).categoria.findMany({
+    where: {
+      organizacionId: ctx.organizacionId,
+      activa: true,
+      claveSistema: { not: "devoluciones" },
+    },
+    select: {
+      id: true,
+      nombre: true,
+      tipo: true,
+      exigeContraparte: true,
+      sujetoAsociado: true,
+      exigeSujeto: true,
+      claveSistema: true,
+      orden: true,
+    },
+    orderBy: { orden: "asc" },
+  });
+
+  const categorias = categoriasRaw.map((c) => {
+    if (c.claveSistema === "inscripciones") {
+      return {
+        ...c,
+        sujetoAsociado: c.sujetoAsociado || "binomio_prueba",
+        exigeSujeto: c.exigeSujeto ?? true,
+      };
+    }
+    return c;
+  });
+
   let itemsCobrables: any[] = [];
   let binomios: any[] = [];
   let jinetes: any[] = [];
@@ -153,6 +183,7 @@ export default async function NuevoMovimientoPage({
         clubes={clubes}
         caballos={caballos}
         pruebas={pruebas}
+        categorias={categorias}
         usuarioActual={{
           id: ctx.usuario.id,
           nombre: ctx.usuario.nombre || "Yo",

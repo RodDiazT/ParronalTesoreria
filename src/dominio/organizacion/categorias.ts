@@ -11,7 +11,7 @@ const crearCategoriaSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100, "Máximo 100 caracteres."),
   tipo: z.enum(["ingreso", "gasto"]),
   exigeContraparte: z.boolean().optional(),
-  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba"]).nullable().optional(),
+  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba", "binomio_prueba"]).nullable().optional(),
   exigeSujeto: z.boolean().optional(),
 });
 
@@ -289,7 +289,7 @@ const actualizarCategoriaSchema = z.object({
   version: z.number(),
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres.").max(100, "Máximo 100 caracteres."),
   exigeContraparte: z.boolean().optional(),
-  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba"]).nullable().optional(),
+  sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba", "binomio_prueba"]).nullable().optional(),
   exigeSujeto: z.boolean().optional(),
 });
 
@@ -551,8 +551,8 @@ export async function ejecutarObtenerCategoriasSelector(
     if (c.claveSistema === "inscripciones") {
       return {
         ...c,
-        sujetoAsociado: c.sujetoAsociado || "binomio",
-        exigeSujeto: true,
+        sujetoAsociado: c.sujetoAsociado || "binomio_prueba",
+        exigeSujeto: c.exigeSujeto ?? true,
       };
     }
     return c;
