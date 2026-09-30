@@ -13,6 +13,7 @@ const crearCategoriaSchema = z.object({
   exigeContraparte: z.boolean().optional(),
   sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba", "binomio_prueba"]).nullable().optional(),
   exigeSujeto: z.boolean().optional(),
+  tarifaBaseClp: z.number().int().min(0).nullable().optional(),
 });
 
 export type CrearCategoriaInput = z.infer<typeof crearCategoriaSchema>;
@@ -25,7 +26,14 @@ export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategori
     return { exito: false, error: validado.error.errors[0]?.message || "Datos inválidos." };
   }
 
-  const { nombre, tipo, exigeContraparte = false, sujetoAsociado = null, exigeSujeto = false } = validado.data;
+  const {
+    nombre,
+    tipo,
+    exigeContraparte = false,
+    sujetoAsociado = null,
+    exigeSujeto = false,
+    tarifaBaseClp = null,
+  } = validado.data;
   const nombreNorm = normalizarNombre(nombre);
 
   const existente = await db(ctx).categoria.findFirst({
@@ -66,6 +74,7 @@ export async function ejecutarCrearCategoria(ctx: Contexto, datos: CrearCategori
       exigeContraparte,
       sujetoAsociado: sujetoAsociado || null,
       exigeSujeto: Boolean(exigeSujeto),
+      tarifaBaseClp: tarifaBaseClp !== null && tarifaBaseClp !== undefined ? Math.max(0, Math.floor(tarifaBaseClp)) : null,
       activa: true,
       orden: nuevoOrden,
     },
@@ -291,6 +300,7 @@ const actualizarCategoriaSchema = z.object({
   exigeContraparte: z.boolean().optional(),
   sujetoAsociado: z.enum(["caballo", "jinete", "binomio", "club", "prueba", "binomio_prueba"]).nullable().optional(),
   exigeSujeto: z.boolean().optional(),
+  tarifaBaseClp: z.number().int().min(0).nullable().optional(),
 });
 
 export type ActualizarCategoriaInput = z.infer<typeof actualizarCategoriaSchema>;
@@ -303,7 +313,15 @@ export async function ejecutarActualizarCategoria(ctx: Contexto, datos: Actualiz
     return { exito: false, error: validado.error.errors[0]?.message || "Datos inválidos." };
   }
 
-  const { id, version, nombre, exigeContraparte = false, sujetoAsociado = null, exigeSujeto = false } = validado.data;
+  const {
+    id,
+    version,
+    nombre,
+    exigeContraparte = false,
+    sujetoAsociado = null,
+    exigeSujeto = false,
+    tarifaBaseClp,
+  } = validado.data;
   const nombreNorm = normalizarNombre(nombre);
 
   const catActual = await db(ctx).categoria.findUnique({
@@ -341,6 +359,12 @@ export async function ejecutarActualizarCategoria(ctx: Contexto, datos: Actualiz
       exigeContraparte,
       sujetoAsociado: sujetoAsociado || null,
       exigeSujeto: Boolean(exigeSujeto),
+      tarifaBaseClp:
+        tarifaBaseClp !== undefined
+          ? tarifaBaseClp !== null
+            ? Math.max(0, Math.floor(tarifaBaseClp))
+            : null
+          : catActual.tarifaBaseClp,
       version: { increment: 1 },
     },
   });

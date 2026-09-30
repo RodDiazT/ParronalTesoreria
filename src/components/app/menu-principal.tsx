@@ -124,29 +124,61 @@ export function MenuPrincipal({
               )}
               <div className="space-y-0.5">
                 {grupo.items.map((item) => {
+                  const tieneSubActivo = item.subItems?.some((sub) => pathname.startsWith(sub.href));
                   const activo =
                     item.href === "/"
                       ? pathname === "/"
-                      : pathname.startsWith(item.href);
+                      : pathname.startsWith(item.href) && !tieneSubActivo;
 
                   return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      onClick={alCerrar}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                        activo
-                          ? "bg-acento/10 text-acento font-semibold"
-                          : "text-texto hover:bg-fondo"
-                      }`}
-                    >
-                      <span>{item.etiqueta}</span>
-                      {item.contador !== undefined && item.contador > 0 && (
-                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-falta-fondo px-1.5 text-xs font-bold text-falta-texto">
-                          {item.contador}
-                        </span>
+                    <div key={item.id} className="space-y-0.5">
+                      <Link
+                        href={item.href}
+                        onClick={alCerrar}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                          activo
+                            ? "bg-acento/10 text-acento font-semibold"
+                            : "text-texto hover:bg-fondo"
+                        }`}
+                      >
+                        <span>{item.etiqueta}</span>
+                        {item.contador !== undefined && item.contador > 0 && (
+                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-falta-fondo px-1.5 text-xs font-bold text-falta-texto">
+                            {item.contador}
+                          </span>
+                        )}
+                      </Link>
+
+                      {item.subItems && item.subItems.length > 0 && (
+                        <div className="pl-3.5 ml-2 border-l border-borde/70 space-y-0.5 my-1">
+                          {item.subItems.map((sub) => {
+                            const subActivo = pathname.startsWith(sub.href);
+                            return (
+                              <Link
+                                key={sub.id}
+                                href={sub.href}
+                                onClick={alCerrar}
+                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                  subActivo
+                                    ? "bg-acento/15 text-acento font-semibold"
+                                    : "text-texto-suave hover:text-texto hover:bg-fondo"
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 truncate">
+                                  {sub.icono && <span className="text-xs shrink-0">{sub.icono}</span>}
+                                  <span className="truncate">{sub.etiqueta}</span>
+                                </div>
+                                {sub.contador !== undefined && sub.contador > 0 && (
+                                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-falta-fondo text-falta-texto text-[10px] font-bold px-1 ml-1 shrink-0">
+                                    {sub.contador}
+                                  </span>
+                                )}
+                              </Link>
+                            );
+                          })}
+                        </div>
                       )}
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

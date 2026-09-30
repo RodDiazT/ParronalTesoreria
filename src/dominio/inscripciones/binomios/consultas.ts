@@ -515,6 +515,10 @@ export async function estadoCuenta(
     whereIns.binomio = { clubId: sujeto.clubId };
     const c = await db(ctx).club.findUnique({ where: { id: sujeto.clubId } });
     if (c) nombreSujeto = c.nombre;
+  } else if ((sujeto as any).caballoId) {
+    whereIns.binomio = { caballoId: (sujeto as any).caballoId };
+    const cab = await db(ctx).caballo.findUnique({ where: { id: (sujeto as any).caballoId } });
+    if (cab) nombreSujeto = cab.nombre;
   }
 
   const inscripciones = await db(ctx).inscripcion.findMany({
@@ -556,7 +560,7 @@ export async function estadoCuenta(
 
     items.push({
       id: ins.id,
-      tipo: "inscripcion",
+      tipo: "inscripcion" as const,
       descripcion: `${ins.binomio.jinete.nombre} / ${ins.binomio.caballo.nombre} — ${ins.prueba.nombre}`,
       monto: calc.monto,
       pagado: calc.pagado,
@@ -566,6 +570,76 @@ export async function estadoCuenta(
       porValidar: calc.porValidar,
       creadoEn: ins.creadoEn,
     });
+  }
+
+  // Integrar Cargos y Servicios Operativos del Sujeto
+  const whereCargo: any = {
+    organizacionId: ctx.organizacionId,
+    eventoId: ctx.evento.id,
+    anulado: false,
+  };
+  if ((sujeto as any).caballoId) whereCargo.caballoId = (sujeto as any).caballoId;
+  else if (sujeto.jineteId) whereCargo.jineteId = sujeto.jineteId;
+  else if (sujeto.clubId) whereCargo.clubId = sujeto.clubId;
+  else if (sujeto.binomioId) whereCargo.binomioId = sujeto.binomioId;
+
+  if ((sujeto as any).caballoId || sujeto.jineteId || sujeto.clubId || sujeto.binomioId) {
+    const cargos = await db(ctx).cargo.findMany({
+      where: whereCargo,
+      include: {
+        categoria: true,
+        pagos: {
+          where: { anulado: false },
+          include: { movimiento: true },
+        },
+      },
+      orderBy: { creadoEn: "asc" },
+    });
+
+    for (const c of cargos) {
+      const pagado = c.pagos.reduce((a, p) => a + p.montoClp, 0);
+      const saldo = Math.max(0, c.montoClp - pagado);
+      totalMonto += c.montoClp;
+      totalPagado += pagado;
+
+      let estado = "pendiente";
+      if (saldo === 0 && c.montoClp > 0) estado = "pagado";
+      else if (pagado > 0) estado = "parcial";
+
+      const porValidar = c.pagos.some(
+        (p) =>
+          !p.anulado &&
+          p.movimiento &&
+          (p.movimiento.estadoValidacion === "por_validar" ||
+            p.movimiento.estadoValidacion === "observado")
+      );
+
+      if (porValidar) {
+        const montosPorValidar = c.pagos
+          .filter(
+            (p) =>
+              !p.anulado &&
+              p.movimiento &&
+              (p.movimiento.estadoValidacion === "por_validar" ||
+                p.movimiento.estadoValidacion === "observado")
+          )
+          .reduce((a, p) => a + p.montoClp, 0);
+        pagosEnRevision += montosPorValidar;
+      }
+
+      items.push({
+        id: c.id,
+        tipo: "cargo" as const,
+        descripcion: `${c.categoria.nombre}${c.cantidad > 1 ? ` (x${c.cantidad})` : ""}${c.descripcion ? ` - ${c.descripcion}` : ""}`,
+        monto: c.montoClp,
+        pagado,
+        saldo,
+        estado,
+        becado: false,
+        porValidar,
+        creadoEn: c.creadoEn,
+      });
+    }
   }
 
   return {

@@ -60,7 +60,7 @@ export default async function AsignarMovimientoPage({
     movimiento.devolucionesSobrante
   );
 
-  const [inscripcionesRaw, binomios, jinetes, clubes] = await Promise.all([
+  const [inscripcionesRaw, binomios, jinetes, clubes, cargosRaw] = await Promise.all([
     db(ctx).inscripcion.findMany({
       where: {
         organizacionId: ctx.organizacionId,
@@ -97,6 +97,22 @@ export default async function AsignarMovimientoPage({
       where: { organizacionId: ctx.organizacionId, activo: true },
       orderBy: { nombre: "asc" },
     }),
+    db(ctx).cargo.findMany({
+      where: {
+        organizacionId: ctx.organizacionId,
+        eventoId: ctx.evento.id,
+        anulado: false,
+      },
+      include: {
+        categoria: true,
+        caballo: true,
+        jinete: true,
+        club: true,
+        binomio: { include: { jinete: true, caballo: true } },
+        pagos: { where: { anulado: false } },
+      },
+      orderBy: { creadoEn: "asc" },
+    }),
   ]);
 
   const itemsCobrables: any[] = [];
@@ -116,6 +132,36 @@ export default async function AsignarMovimientoPage({
         pagado: calc.pagado,
         saldo: calc.saldo,
         creadoEn: ins.creadoEn.toISOString(),
+      });
+    }
+  }
+
+  for (const cargo of (cargosRaw as any[])) {
+    const pagado = cargo.pagos.reduce((acc: number, p: any) => acc + p.montoClp, 0);
+    const saldo = Math.max(0, cargo.montoClp - pagado);
+    if (saldo > 0) {
+      const sujeto = cargo.caballo
+        ? `Caballo: ${cargo.caballo.nombre}`
+        : cargo.jinete
+        ? `Jinete: ${cargo.jinete.nombre}`
+        : cargo.club
+        ? `Club: ${cargo.club.nombre}`
+        : cargo.binomio
+        ? `${cargo.binomio.jinete.nombre} / ${cargo.binomio.caballo.nombre}`
+        : "Servicio";
+
+      itemsCobrables.push({
+        id: cargo.id,
+        tipo: "cargo",
+        nombre: `Servicio: ${cargo.categoria.nombre}${cargo.descripcion ? ` (${cargo.descripcion})` : ""}`,
+        sujeto,
+        binomioId: cargo.binomioId || undefined,
+        jineteId: cargo.jineteId || cargo.binomio?.jineteId || undefined,
+        clubId: cargo.clubId || cargo.caballo?.clubId || cargo.jinete?.clubId || undefined,
+        monto: cargo.montoClp,
+        pagado,
+        saldo,
+        creadoEn: cargo.creadoEn.toISOString(),
       });
     }
   }

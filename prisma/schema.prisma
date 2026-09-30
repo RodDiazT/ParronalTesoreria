@@ -98,6 +98,7 @@ model Organizacion {
   pruebas           Prueba[]
   binomios          Binomio[]
   inscripciones     Inscripcion[]
+  cargos            Cargo[]
   pagos             Pago[]
   devoluciones      Devolucion[]
   traspasos         Traspaso[]
@@ -126,6 +127,7 @@ model Evento {
   pruebas             Prueba[]
   binomios            Binomio[]
   inscripciones       Inscripcion[]
+  cargos              Cargo[]
   traspasos           Traspaso[]
 
   @@index([organizacionId])
@@ -142,6 +144,7 @@ model Categoria {
   exigeContraparte     Boolean       @default(false) @map("exige_contraparte")
   sujetoAsociado       String?       @map("sujeto_asociado")
   exigeSujeto          Boolean       @default(false) @map("exige_sujeto")
+  tarifaBaseClp        Int?          @map("tarifa_base_clp")
   activa               Boolean       @default(true)
   orden                Int
   version              Int           @default(1)
@@ -150,6 +153,7 @@ model Categoria {
 
   organizacion         Organizacion  @relation(fields: [organizacionId], references: [id])
   movimientos          Movimiento[]
+  cargos               Cargo[]
 
   @@unique([organizacionId, tipo, nombreNormalizado])
   @@unique([organizacionId, claveSistema])
@@ -238,6 +242,8 @@ model Usuario {
   inscripcionesRegistradas    Inscripcion[]      @relation("InscripcionRegistradoPor")
   inscripcionesAnuladas       Inscripcion[]      @relation("InscripcionAnuladoPor")
   inscripcionesAvisosVistos   Inscripcion[]      @relation("InscripcionAvisoVistoPor")
+  cargosRegistrados           Cargo[]            @relation("CargoRegistradoPor")
+  cargosAnulados              Cargo[]            @relation("CargoAnuladoPor")
   pagosAnulados               Pago[]             @relation("PagoAnuladoPor")
   devolucionesAnuladas        Devolucion[]       @relation("DevolucionAnuladoPor")
 
@@ -439,6 +445,7 @@ model Club {
   jinetes           Jinete[]
   caballos          Caballo[]
   binomios          Binomio[]
+  cargos            Cargo[]
   movimientos       Movimiento[]
 
   @@index([organizacionId, nombreNormalizado])
@@ -474,6 +481,7 @@ model Jinete {
 
   apoderados                  JineteApoderado[]
   binomios                    Binomio[]
+  cargos                      Cargo[]
   movimientos                 Movimiento[]
 
   @@index([organizacionId, nombreNormalizado])
@@ -548,6 +556,7 @@ model Caballo {
   caballosFusionados Caballo[]   @relation("CaballoFusion")
 
   binomios          Binomio[]
+  cargos            Cargo[]
   movimientos       Movimiento[]
 
   @@index([organizacionId, nombreNormalizado])
@@ -613,6 +622,7 @@ model Binomio {
   anuladoPor      Usuario?      @relation("BinomioAnuladoPor", fields: [anuladoPorId], references: [id])
 
   inscripciones   Inscripcion[]
+  cargos          Cargo[]
   movimientos     Movimiento[]
 
   @@index([organizacionId, eventoId])
@@ -663,11 +673,59 @@ model Inscripcion {
   @@map("inscripcion")
 }
 
+model Cargo {
+  id              String       @id @default(cuid())
+  organizacionId  String       @map("organizacion_id")
+  eventoId        String       @map("evento_id")
+  categoriaId     String       @map("categoria_id")
+  caballoId       String?      @map("caballo_id")
+  jineteId        String?      @map("jinete_id")
+  clubId          String?      @map("club_id")
+  binomioId       String?      @map("binomio_id")
+  descripcion     String?
+  cantidad        Int          @default(1)
+  tarifaClp       Int          @map("tarifa_clp")
+  montoClp        Int          @map("monto_clp")
+  motivoAjuste    String?      @map("motivo_ajuste")
+  anulado         Boolean      @default(false)
+  motivoAnulacion String?      @map("motivo_anulacion")
+  anuladoPorId    String?      @map("anulado_por_id")
+  anuladoEn       DateTime?    @map("anulado_en")
+  claveCliente    String       @map("clave_cliente")
+  registradoPorId String       @map("registrado_por_id")
+  version         Int          @default(1)
+  creadoEn        DateTime     @default(now()) @map("creado_en")
+  actualizadoEn   DateTime     @updatedAt @map("actualizado_en")
+
+  organizacion    Organizacion @relation(fields: [organizacionId], references: [id])
+  evento          Evento       @relation(fields: [eventoId], references: [id])
+  categoria       Categoria    @relation(fields: [categoriaId], references: [id])
+  caballo         Caballo?     @relation(fields: [caballoId], references: [id])
+  jinete          Jinete?      @relation(fields: [jineteId], references: [id])
+  club            Club?        @relation(fields: [clubId], references: [id])
+  binomio         Binomio?     @relation(fields: [binomioId], references: [id])
+  registradoPor   Usuario      @relation("CargoRegistradoPor", fields: [registradoPorId], references: [id])
+  anuladoPor      Usuario?     @relation("CargoAnuladoPor", fields: [anuladoPorId], references: [id])
+
+  pagos           Pago[]
+  devoluciones    Devolucion[]
+
+  @@unique([organizacionId, claveCliente])
+  @@index([organizacionId, eventoId])
+  @@index([organizacionId, categoriaId])
+  @@index([organizacionId, caballoId])
+  @@index([organizacionId, jineteId])
+  @@index([organizacionId, clubId])
+  @@index([organizacionId, binomioId])
+  @@map("cargo")
+}
+
 model Pago {
   id              String       @id @default(cuid())
   organizacionId  String       @map("organizacion_id")
   movimientoId    String       @map("movimiento_id")
   inscripcionId   String?      @map("inscripcion_id")
+  cargoId         String?      @map("cargo_id")
   montoClp        Int          @map("monto_clp")
   anulado         Boolean      @default(false)
   motivoAnulacion String?      @map("motivo_anulacion")
@@ -679,11 +737,13 @@ model Pago {
   organizacion    Organizacion @relation(fields: [organizacionId], references: [id])
   movimiento      Movimiento   @relation(fields: [movimientoId], references: [id])
   inscripcion     Inscripcion? @relation(fields: [inscripcionId], references: [id])
+  cargo           Cargo?       @relation(fields: [cargoId], references: [id])
   creadoPor       Usuario      @relation("PagoCreadoPor", fields: [creadoPorId], references: [id])
   anuladoPor      Usuario?     @relation("PagoAnuladoPor", fields: [anuladoPorId], references: [id])
 
   @@index([organizacionId, movimientoId])
   @@index([inscripcionId])
+  @@index([cargoId])
   @@map("pago")
 }
 
@@ -692,6 +752,7 @@ model Devolucion {
   organizacionId  String       @map("organizacion_id")
   movimientoId    String       @map("movimiento_id")
   inscripcionId   String?      @map("inscripcion_id")
+  cargoId         String?      @map("cargo_id")
   ingresoId       String?      @map("ingreso_id")
   montoClp        Int          @map("monto_clp")
   anulado         Boolean      @default(false)
@@ -705,11 +766,13 @@ model Devolucion {
   movimiento      Movimiento   @relation("MovimientoGastoDevolucion", fields: [movimientoId], references: [id])
   ingreso         Movimiento?  @relation("MovimientoIngresoSobrante", fields: [ingresoId], references: [id])
   inscripcion     Inscripcion? @relation(fields: [inscripcionId], references: [id])
+  cargo           Cargo?       @relation(fields: [cargoId], references: [id])
   creadoPor       Usuario      @relation("DevolucionCreadoPor", fields: [creadoPorId], references: [id])
   anuladoPor      Usuario?     @relation("DevolucionAnuladoPor", fields: [anuladoPorId], references: [id])
 
   @@index([organizacionId, movimientoId])
   @@index([inscripcionId])
+  @@index([cargoId])
   @@index([ingresoId])
   @@map("devolucion")
 }

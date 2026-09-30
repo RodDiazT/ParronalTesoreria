@@ -43,12 +43,74 @@ export default async function PortalLayout({
 
   const totalPendientes = solicitudesPendientes + porValidar + misObservados;
 
-  const gruposMenu = itemsMenu(ctx, {
-    porValidar,
-    usuariosSolicitudes: solicitudesPendientes,
-    misObservados,
-    total: totalPendientes,
+  // Categorías de servicio activas con sujeto asociado (submenú bajo Directorio)
+  const categoriasServicioRaw = await db(ctx).categoria.findMany({
+    where: {
+      organizacionId: ctx.organizacionId,
+      activa: true,
+      tipo: "ingreso",
+      sujetoAsociado: { not: null },
+    },
+    select: {
+      id: true,
+      nombre: true,
+      sujetoAsociado: true,
+    },
+    orderBy: { orden: "asc" },
   });
+
+  let categoriasServicio = categoriasServicioRaw.map((cat) => ({
+    id: cat.id,
+    nombre: cat.nombre,
+    sujetoAsociado: cat.sujetoAsociado,
+    cargosPendientes: 0,
+  }));
+
+  if (categoriasServicioRaw.length > 0 && ctx.evento) {
+    const cargosPendientes = await db(ctx).cargo.findMany({
+      where: {
+        organizacionId: ctx.organizacionId,
+        eventoId: ctx.evento.id,
+        anulado: false,
+        categoriaId: { in: categoriasServicioRaw.map((c) => c.id) },
+      },
+      select: {
+        id: true,
+        categoriaId: true,
+        montoClp: true,
+        pagos: {
+          where: { anulado: false },
+          select: { montoClp: true },
+        },
+      },
+    });
+
+    const pendientesPorCat = new Map<string, number>();
+    for (const c of cargosPendientes) {
+      const pagado = c.pagos.reduce((acc, p) => acc + p.montoClp, 0);
+      if (c.montoClp > pagado) {
+        pendientesPorCat.set(c.categoriaId, (pendientesPorCat.get(c.categoriaId) || 0) + 1);
+      }
+    }
+
+    categoriasServicio = categoriasServicioRaw.map((cat) => ({
+      id: cat.id,
+      nombre: cat.nombre,
+      sujetoAsociado: cat.sujetoAsociado,
+      cargosPendientes: pendientesPorCat.get(cat.id) || 0,
+    }));
+  }
+
+  const gruposMenu = itemsMenu(
+    ctx,
+    {
+      porValidar,
+      usuariosSolicitudes: solicitudesPendientes,
+      misObservados,
+      total: totalPendientes,
+    },
+    categoriasServicio
+  );
 
   return (
     <Estructura

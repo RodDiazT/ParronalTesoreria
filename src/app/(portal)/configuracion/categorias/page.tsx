@@ -35,6 +35,7 @@ export default async function CategoriasPage() {
     exigeContraparte: c.exigeContraparte,
     sujetoAsociado: c.sujetoAsociado,
     exigeSujeto: c.exigeSujeto,
+    tarifaBaseClp: c.tarifaBaseClp,
     activa: c.activa,
     orden: c.orden,
     version: c.version,

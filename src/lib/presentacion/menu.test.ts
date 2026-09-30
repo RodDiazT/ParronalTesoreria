@@ -71,4 +71,30 @@ describe("itemsMenu", () => {
     expect(admin?.some((i) => i.id === "auditoria")).toBe(false);
     expect(admin?.some((i) => i.id === "contrapartes")).toBe(true);
   });
+
+  it("agrega subItems de servicios bajo Directorio cuando hay categorías configuradas", () => {
+    const ctxAdmin = { ...ctxBase, rol: "administrador" as const };
+    const categoriasServicio = [
+      { id: "cat-pension", nombre: "Pensión", sujetoAsociado: "caballo", cargosPendientes: 4 },
+      { id: "cat-box", nombre: "Box Club", sujetoAsociado: "club" },
+    ];
+    const grupos = itemsMenu(ctxAdmin, undefined, categoriasServicio);
+    const directorio = grupos[0].items.find((i) => i.id === "participantes");
+    expect(directorio?.subItems).toBeDefined();
+    expect(directorio?.subItems?.length).toBe(2);
+    expect(directorio?.subItems?.[0]).toEqual({
+      id: "servicio-cat-pension",
+      etiqueta: "Pensión",
+      href: "/servicios/cat-pension",
+      icono: "🐎",
+      contador: 4,
+    });
+    expect(directorio?.subItems?.[1]).toEqual({
+      id: "servicio-cat-box",
+      etiqueta: "Box Club",
+      href: "/servicios/cat-box",
+      icono: "🏛️",
+      contador: undefined,
+    });
+  });
 });

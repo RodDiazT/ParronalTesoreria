@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { obtenerContexto } from "@/lib/contexto";
+import { obtenerContexto, db } from "@/lib/contexto";
 import { ConfigurarEstructura } from "@/components/app/estructura";
 import { FichaCaballo } from "./ficha-caballo";
 import { ejecutarObtenerFichaCaballo } from "@/dominio/inscripciones/participantes/consultas";
+import { obtenerCargosPorSujeto } from "@/dominio/servicios/cargos";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +21,25 @@ export default async function FichaCaballoPage({
   const ctx = await obtenerContexto();
   const { id } = await params;
 
-  const caballo = await ejecutarObtenerFichaCaballo(ctx, id);
+  const [caballo, cargos, categoriasServicio] = await Promise.all([
+    ejecutarObtenerFichaCaballo(ctx, id),
+    obtenerCargosPorSujeto(ctx, { caballoId: id }),
+    db(ctx).categoria.findMany({
+      where: {
+        organizacionId: ctx.organizacionId,
+        activa: true,
+        tipo: "ingreso",
+        sujetoAsociado: "caballo",
+      },
+      select: {
+        id: true,
+        nombre: true,
+        tarifaBaseClp: true,
+      },
+      orderBy: { orden: "asc" },
+    }),
+  ]);
+
   if (!caballo) {
     notFound();
   }
@@ -33,7 +52,12 @@ export default async function FichaCaballoPage({
         volverHref="/participantes?pestana=caballos"
       />
 
-      <FichaCaballo caballo={caballo} rol={ctx.rol} />
+      <FichaCaballo
+        caballo={caballo}
+        rol={ctx.rol}
+        cargos={cargos}
+        categoriasServicio={categoriasServicio}
+      />
     </>
   );
 }

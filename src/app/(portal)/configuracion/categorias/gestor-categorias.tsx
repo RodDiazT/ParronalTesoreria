@@ -29,6 +29,7 @@ export interface CategoriaItem {
   exigeContraparte: boolean;
   sujetoAsociado?: string | null;
   exigeSujeto?: boolean;
+  tarifaBaseClp?: number | null;
   activa: boolean;
   orden: number;
   version: number;
@@ -50,6 +51,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
   const [nuevoExigeContraparte, setNuevoExigeContraparte] = useState(false);
   const [nuevoSujetoAsociado, setNuevoSujetoAsociado] = useState<string>("");
   const [nuevoExigeSujeto, setNuevoExigeSujeto] = useState(false);
+  const [nuevaTarifaBase, setNuevaTarifaBase] = useState<string>("");
   const [guardandoCrear, setGuardandoCrear] = useState(false);
   const [sugerenciaReactivar, setSugerenciaReactivar] = useState<{ id: string; nombre: string } | null>(null);
 
@@ -58,6 +60,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
   const [exigeContraparteEditado, setExigeContraparteEditado] = useState(false);
   const [sujetoAsociadoEditado, setSujetoAsociadoEditado] = useState<string>("");
   const [exigeSujetoEditado, setExigeSujetoEditado] = useState(false);
+  const [tarifaBaseEditada, setTarifaBaseEditada] = useState<string>("");
   const [guardandoEditar, setGuardandoEditar] = useState(false);
 
   // Estados modal eliminar
@@ -83,6 +86,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
       exigeContraparte: nuevoExigeContraparte,
       sujetoAsociado: (nuevoSujetoAsociado as any) || null,
       exigeSujeto: nuevoSujetoAsociado ? nuevoExigeSujeto : false,
+      tarifaBaseClp: nuevaTarifaBase ? parseInt(nuevaTarifaBase, 10) : null,
     });
 
     setGuardandoCrear(false);
@@ -101,6 +105,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
     setNuevoExigeContraparte(false);
     setNuevoSujetoAsociado("");
     setNuevoExigeSujeto(false);
+    setNuevaTarifaBase("");
     setModalCrear(false);
     router.refresh();
   };
@@ -127,6 +132,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
     setExigeContraparteEditado(cat.exigeContraparte);
     setSujetoAsociadoEditado(cat.sujetoAsociado || "");
     setExigeSujetoEditado(Boolean(cat.exigeSujeto));
+    setTarifaBaseEditada(cat.tarifaBaseClp ? String(cat.tarifaBaseClp) : "");
   };
 
   const handleEditar = async (e: React.FormEvent) => {
@@ -141,6 +147,7 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
       exigeContraparte: exigeContraparteEditado,
       sujetoAsociado: (sujetoAsociadoEditado as any) || null,
       exigeSujeto: sujetoAsociadoEditado ? exigeSujetoEditado : false,
+      tarifaBaseClp: tarifaBaseEditada ? parseInt(tarifaBaseEditada, 10) : null,
     });
     setGuardandoEditar(false);
 
@@ -356,6 +363,11 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
                           Asocia {cat.sujetoAsociado === "binomio_prueba" ? "binomio y prueba" : cat.sujetoAsociado} {cat.exigeSujeto ? "(obligatorio)" : "(opcional)"}
                         </span>
                       )}
+                      {cat.tarifaBaseClp && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 text-stone-800 dark:text-stone-200 px-2 py-0.5 text-[10px] font-semibold tabular-nums">
+                          Tarifa estándar: ${cat.tarifaBaseClp.toLocaleString("es-CL")}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -524,16 +536,34 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
           </div>
 
           {nuevoSujetoAsociado && (
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox
-                id="catExigeSujeto"
-                checked={nuevoExigeSujeto}
-                onCheckedChange={(c) => setNuevoExigeSujeto(Boolean(c))}
-              />
-              <Label htmlFor="catExigeSujeto" className="text-xs cursor-pointer font-normal">
-                Es obligatorio seleccionar {nuevoSujetoAsociado} al registrar el movimiento
-              </Label>
-            </div>
+            <>
+              <div className="space-y-1.5 pt-1">
+                <Label htmlFor="catTarifaBase">Tarifa estándar predeterminada (opcional)</Label>
+                <Input
+                  id="catTarifaBase"
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={nuevaTarifaBase}
+                  onChange={(e) => setNuevaTarifaBase(e.target.value)}
+                  placeholder="Ej: 100000"
+                />
+                <p className="text-[11px] text-texto-suave">
+                  Monto sugerido automáticamente al asignar este servicio en terreno.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="catExigeSujeto"
+                  checked={nuevoExigeSujeto}
+                  onCheckedChange={(c) => setNuevoExigeSujeto(Boolean(c))}
+                />
+                <Label htmlFor="catExigeSujeto" className="text-xs cursor-pointer font-normal">
+                  Es obligatorio seleccionar {nuevoSujetoAsociado} al registrar el movimiento
+                </Label>
+              </div>
+            </>
           )}
 
           <div className="flex items-center gap-2 pt-1">
@@ -610,16 +640,34 @@ export function GestorCategorias({ categoriasIniciales }: GestorCategoriasProps)
           </div>
 
           {sujetoAsociadoEditado && (
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox
-                id="catExigeSujetoEditar"
-                checked={exigeSujetoEditado}
-                onCheckedChange={(c) => setExigeSujetoEditado(Boolean(c))}
-              />
-              <Label htmlFor="catExigeSujetoEditar" className="text-xs cursor-pointer font-normal">
-                Es obligatorio seleccionar {sujetoAsociadoEditado === "binomio_prueba" ? "binomio y prueba" : sujetoAsociadoEditado} al registrar el movimiento
-              </Label>
-            </div>
+            <>
+              <div className="space-y-1.5 pt-1">
+                <Label htmlFor="catTarifaBaseEditar">Tarifa estándar predeterminada (opcional)</Label>
+                <Input
+                  id="catTarifaBaseEditar"
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={tarifaBaseEditada}
+                  onChange={(e) => setTarifaBaseEditada(e.target.value)}
+                  placeholder="Ej: 100000"
+                />
+                <p className="text-[11px] text-texto-suave">
+                  Monto sugerido automáticamente al asignar este servicio en terreno.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="catExigeSujetoEditar"
+                  checked={exigeSujetoEditado}
+                  onCheckedChange={(c) => setExigeSujetoEditado(Boolean(c))}
+                />
+                <Label htmlFor="catExigeSujetoEditar" className="text-xs cursor-pointer font-normal">
+                  Es obligatorio seleccionar {sujetoAsociadoEditado === "binomio_prueba" ? "binomio y prueba" : sujetoAsociadoEditado} al registrar el movimiento
+                </Label>
+              </div>
+            </>
           )}
 
           <div className="flex items-center gap-2 pt-1">

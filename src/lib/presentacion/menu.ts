@@ -1,10 +1,19 @@
 import { Contexto, puede } from "@/lib/permisos";
 
+export interface SubItemMenu {
+  id: string;
+  etiqueta: string;
+  href: string;
+  icono?: string;
+  contador?: number;
+}
+
 export interface ItemMenu {
   id: string;
   etiqueta: string;
   href: string;
   contador?: number;
+  subItems?: SubItemMenu[];
 }
 
 export interface GrupoMenu {
@@ -19,22 +28,51 @@ export interface ContadoresUsuario {
   total: number;
 }
 
+export interface CategoriaServicioMenu {
+  id: string;
+  nombre: string;
+  sujetoAsociado: string | null;
+  cargosPendientes?: number;
+}
+
 /**
  * Genera los ítems y grupos de menú según el rol del contexto y la matriz de permisos.
  * (docs/interfaz/ux-ui.md §3.3 y §5.5)
  */
 export function itemsMenu(
   ctx: Contexto,
-  contadores: ContadoresUsuario = { porValidar: 0, usuariosSolicitudes: 0, misObservados: 0, total: 0 }
+  contadores: ContadoresUsuario = { porValidar: 0, usuariosSolicitudes: 0, misObservados: 0, total: 0 },
+  categoriasServicio: CategoriaServicioMenu[] = []
 ): GrupoMenu[] {
   const grupos: GrupoMenu[] = [];
+
+  const subItemsDirectorio: SubItemMenu[] = categoriasServicio.map((cat) => {
+    let icono = "🏷️";
+    if (cat.sujetoAsociado === "caballo") icono = "🐎";
+    else if (cat.sujetoAsociado === "jinete") icono = "👤";
+    else if (cat.sujetoAsociado === "club") icono = "🏛️";
+    else if (cat.sujetoAsociado === "binomio") icono = "👥";
+
+    return {
+      id: `servicio-${cat.id}`,
+      etiqueta: cat.nombre,
+      href: `/servicios/${cat.id}`,
+      icono,
+      contador: cat.cargosPendientes && cat.cargosPendientes > 0 ? cat.cargosPendientes : undefined,
+    };
+  });
 
   // 1. Grupo Principal
   const principal: ItemMenu[] = [
     { id: "inicio", etiqueta: "Inicio", href: "/" },
     { id: "movimientos", etiqueta: "Movimientos", href: "/movimientos" },
     { id: "inscripciones", etiqueta: "Inscripciones", href: "/inscripciones" },
-    { id: "participantes", etiqueta: "Directorio", href: "/participantes" },
+    {
+      id: "participantes",
+      etiqueta: "Directorio",
+      href: "/participantes",
+      subItems: subItemsDirectorio.length > 0 ? subItemsDirectorio : undefined,
+    },
   ];
   grupos.push({ items: principal });
 
