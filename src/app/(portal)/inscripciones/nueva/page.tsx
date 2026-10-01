@@ -38,7 +38,7 @@ export default async function NuevaInscripcionPage({
 
   const { jineteId, caballoId } = await searchParams;
 
-  const [jinetesRaw, caballos, clubes, pruebas] = await Promise.all([
+  const [jinetesRaw, caballosRaw, clubes, pruebas] = await Promise.all([
     db(ctx).jinete.findMany({
       where: { organizacionId: ctx.organizacionId, activo: true },
       include: {
@@ -47,11 +47,26 @@ export default async function NuevaInscripcionPage({
           where: { activo: true },
           include: { apoderado: true },
         },
+        binomios: {
+          where: { anulado: false },
+          orderBy: { creadoEn: "desc" },
+          take: 1,
+          select: { caballoId: true },
+        },
       },
       orderBy: { nombre: "asc" },
     }),
     db(ctx).caballo.findMany({
       where: { organizacionId: ctx.organizacionId, activo: true },
+      include: {
+        club: { select: { nombre: true } },
+        binomios: {
+          where: { anulado: false },
+          orderBy: { creadoEn: "desc" },
+          take: 1,
+          select: { jineteId: true },
+        },
+      },
       orderBy: { nombre: "asc" },
     }),
     db(ctx).club.findMany({
@@ -71,12 +86,21 @@ export default async function NuevaInscripcionPage({
       nombre: j.nombre,
       clubId: j.clubId,
       clubNombre: j.club.nombre,
+      caballoHabitualId: j.binomios?.[0]?.caballoId || null,
       fechaNacimiento: j.fechaNacimiento,
       contacto: j.contacto,
       rut: j.rut,
       alertas: alert,
     };
   });
+
+  const caballos = caballosRaw.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    clubId: c.clubId,
+    clubNombre: c.club.nombre,
+    jineteHabitualId: c.binomios?.[0]?.jineteId || null,
+  }));
 
   return (
     <>

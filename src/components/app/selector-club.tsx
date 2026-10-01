@@ -101,17 +101,21 @@ export function SelectorClub({
   const contenedorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickAfuera(e: MouseEvent) {
+    function handleClickAfuera(e: MouseEvent | TouchEvent) {
       if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
         setDesplegado(false);
       }
     }
     document.addEventListener("mousedown", handleClickAfuera);
-    return () => document.removeEventListener("mousedown", handleClickAfuera);
+    document.addEventListener("touchstart", handleClickAfuera);
+    return () => {
+      document.removeEventListener("mousedown", handleClickAfuera);
+      document.removeEventListener("touchstart", handleClickAfuera);
+    };
   }, []);
 
   const handleBlur = (e: React.FocusEvent) => {
-    if (!contenedorRef.current?.contains(e.relatedTarget as Node)) {
+    if (e.relatedTarget && !contenedorRef.current?.contains(e.relatedTarget as Node)) {
       setDesplegado(false);
     }
   };
@@ -228,6 +232,7 @@ export function SelectorClub({
                   <button
                     key={c.id}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSeleccionar(c)}
                     className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-fondo text-left text-sm text-texto transition-colors group cursor-pointer"
                   >
@@ -244,6 +249,7 @@ export function SelectorClub({
               {mostrarCrear && (
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={abrirCreacion}
                   className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-acento/10 hover:bg-acento/20 text-acento text-left text-sm font-medium transition-colors border-t border-borde/50 mt-1 cursor-pointer"
                 >

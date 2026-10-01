@@ -46,32 +46,39 @@ export function itemsMenu(
 ): GrupoMenu[] {
   const grupos: GrupoMenu[] = [];
 
-  const subItemsDirectorio: SubItemMenu[] = categoriasServicio.map((cat) => {
-    let icono = "🏷️";
-    if (cat.sujetoAsociado === "caballo") icono = "🐎";
-    else if (cat.sujetoAsociado === "jinete") icono = "👤";
-    else if (cat.sujetoAsociado === "club") icono = "🏛️";
-    else if (cat.sujetoAsociado === "binomio") icono = "👥";
+  const subItemsDirectorio: SubItemMenu[] = [
+    {
+      id: "servicio-inscripciones",
+      etiqueta: "Inscripciones",
+      href: "/inscripciones",
+      icono: "📋",
+    },
+    ...categoriasServicio.map((cat) => {
+      let icono = "🏷️";
+      if (cat.sujetoAsociado === "caballo") icono = "🐎";
+      else if (cat.sujetoAsociado === "jinete") icono = "👤";
+      else if (cat.sujetoAsociado === "club") icono = "🏛️";
+      else if (cat.sujetoAsociado === "binomio") icono = "👥";
 
-    return {
-      id: `servicio-${cat.id}`,
-      etiqueta: cat.nombre,
-      href: `/servicios/${cat.id}`,
-      icono,
-      contador: cat.cargosPendientes && cat.cargosPendientes > 0 ? cat.cargosPendientes : undefined,
-    };
-  });
+      return {
+        id: `servicio-${cat.id}`,
+        etiqueta: cat.nombre,
+        href: `/servicios/${cat.id}`,
+        icono,
+        contador: cat.cargosPendientes && cat.cargosPendientes > 0 ? cat.cargosPendientes : undefined,
+      };
+    }),
+  ];
 
   // 1. Grupo Principal
   const principal: ItemMenu[] = [
     { id: "inicio", etiqueta: "Inicio", href: "/" },
     { id: "movimientos", etiqueta: "Movimientos", href: "/movimientos" },
-    { id: "inscripciones", etiqueta: "Inscripciones", href: "/inscripciones" },
     {
       id: "participantes",
       etiqueta: "Directorio",
       href: "/participantes",
-      subItems: subItemsDirectorio.length > 0 ? subItemsDirectorio : undefined,
+      subItems: subItemsDirectorio,
     },
   ];
   grupos.push({ items: principal });

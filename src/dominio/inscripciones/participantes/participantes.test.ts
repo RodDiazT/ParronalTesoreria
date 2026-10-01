@@ -54,29 +54,47 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
   let ctxAyudante: Contexto;
   let ctxObservador: Contexto;
   let orgId: string;
+  let orgBId: string;
   let eventoId: string;
+  let testUserId: string;
 
   beforeAll(async () => {
-    const org = await prisma.organizacion.findFirst();
-    if (!org) throw new Error("No hay organización en la base de datos.");
+    const timestamp = Date.now();
+    const org = await prisma.organizacion.create({
+      data: {
+        nombre: `Org Participantes Test ${timestamp}`,
+        nombreNormalizado: `org participantes test ${timestamp}`,
+      },
+    });
     orgId = org.id;
 
-    const user = await prisma.usuario.findFirst();
-    const userId = user?.id || "u-test-fase5";
+    const user = await prisma.usuario.create({
+      data: {
+        correo: `admin-part-${timestamp}@test.cl`,
+        nombre: "Admin Participantes",
+      },
+    });
+    testUserId = user.id;
 
-    let ev = await prisma.evento.findFirst({ where: { organizacionId: orgId } });
-    if (!ev) {
-      ev = await prisma.evento.create({
-        data: {
-          organizacionId: orgId,
-          nombre: "Concurso Primavera 2026",
-          fechaInicio: new Date("2026-11-20T00:00:00Z"),
-          fechaTermino: new Date("2026-11-22T00:00:00Z"),
-          fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
-          estado: "abierto",
-        },
-      });
-    }
+    await prisma.membresia.create({
+      data: {
+        organizacionId: orgId,
+        usuarioId: user.id,
+        rol: "administrador",
+        estado: "activa",
+      },
+    });
+
+    const ev = await prisma.evento.create({
+      data: {
+        organizacionId: orgId,
+        nombre: `Concurso Primavera ${timestamp}`,
+        fechaInicio: new Date("2026-11-20T00:00:00Z"),
+        fechaTermino: new Date("2026-11-22T00:00:00Z"),
+        fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
+        estado: "abierto",
+      },
+    });
     eventoId = ev.id;
 
     const contextoEvento = {
@@ -90,25 +108,46 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
     };
 
     ctxAdmin = {
-      usuario: { id: userId, correo: "admin@test.cl", nombre: "Admin", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "administrador",
       evento: contextoEvento,
     };
 
     ctxAyudante = {
-      usuario: { id: userId, correo: "ayudante@test.cl", nombre: "Ayudante", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "ayudante",
       evento: contextoEvento,
     };
 
     ctxObservador = {
-      usuario: { id: userId, correo: "obs@test.cl", nombre: "Observador", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "observador",
       evento: contextoEvento,
     };
+  });
+
+  afterAll(async () => {
+    const orgs = [orgId, orgBId].filter(Boolean);
+    await prisma.registroAuditoria.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.binomio.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.jineteApoderado.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.jinete.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.jinete.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.caballo.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.caballo.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.apoderado.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.apoderado.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.club.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.club.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.evento.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.membresia.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    if (testUserId) {
+      await prisma.usuario.deleteMany({ where: { id: testUserId } }).catch(() => {});
+    }
+    await prisma.organizacion.deleteMany({ where: { id: { in: orgs } } }).catch(() => {});
   });
 
   // -------------------------------------------------------------
@@ -678,7 +717,6 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
   // Suite 7: Aislamiento Multi-Tenant (db(ctx))
   // -------------------------------------------------------------
   describe("Aislamiento Multi-Tenant", () => {
-    let orgBId: string;
     let ctxB: Contexto;
 
     beforeAll(async () => {
@@ -696,16 +734,6 @@ describe("Fase 5: Participantes (Jinetes, Caballos, Apoderados y Clubes)", () =>
         rol: "administrador",
         evento: null,
       };
-    });
-
-    afterAll(async () => {
-      if (orgBId) {
-        await prisma.$executeRawUnsafe(`DELETE FROM registro_auditoria WHERE organizacion_id = '${orgBId}';`);
-        await prisma.$executeRawUnsafe(`DELETE FROM jinete WHERE organizacion_id = '${orgBId}';`);
-        await prisma.$executeRawUnsafe(`DELETE FROM caballo WHERE organizacion_id = '${orgBId}';`);
-        await prisma.$executeRawUnsafe(`DELETE FROM club WHERE organizacion_id = '${orgBId}';`);
-        await prisma.$executeRawUnsafe(`DELETE FROM organizacion WHERE id = '${orgBId}';`);
-      }
     });
 
     it("rechaza crear jinete referenciando un club de otra organización", async () => {

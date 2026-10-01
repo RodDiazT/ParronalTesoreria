@@ -39,6 +39,7 @@ interface JineteOpcion {
   nombre: string;
   clubId: string;
   clubNombre: string;
+  caballoHabitualId?: string | null;
   fechaNacimiento: string | Date | null;
   contacto: string | null;
   rut: string | null;
@@ -49,6 +50,8 @@ interface CaballoOpcion {
   id: string;
   nombre: string;
   clubId: string;
+  clubNombre?: string;
+  jineteHabitualId?: string | null;
 }
 
 interface ClubOpcion {
@@ -473,11 +476,13 @@ export function FormularioNuevaInscripcion({
             jineteSeleccionadoId={jineteId}
             alSeleccionar={(j) => {
               setJineteId(j.id);
-              if (j.clubId && !clubId) {
+              if (j.clubId) {
                 setClubId(j.clubId);
-              }
-              if (j.clubId && !clubIdCaballo) {
                 setClubIdCaballo(j.clubId);
+              }
+              const jineteCompleto = listaJinetes.find((item) => item.id === j.id);
+              if (jineteCompleto?.caballoHabitualId && !caballoId) {
+                setCaballoId(jineteCompleto.caballoHabitualId);
               }
             }}
             alLimpiar={() => setJineteId("")}
@@ -517,6 +522,10 @@ export function FormularioNuevaInscripcion({
               }
               if (c.clubId && !clubIdJinete) {
                 setClubIdJinete(c.clubId);
+              }
+              const caballoCompleto = listaCaballos.find((item) => item.id === c.id);
+              if (caballoCompleto?.jineteHabitualId && !jineteId) {
+                setJineteId(caballoCompleto.jineteHabitualId);
               }
             }}
             alLimpiar={() => setCaballoId("")}

@@ -81,15 +81,21 @@ describe("itemsMenu", () => {
     const grupos = itemsMenu(ctxAdmin, undefined, categoriasServicio);
     const directorio = grupos[0].items.find((i) => i.id === "participantes");
     expect(directorio?.subItems).toBeDefined();
-    expect(directorio?.subItems?.length).toBe(2);
+    expect(directorio?.subItems?.length).toBe(3);
     expect(directorio?.subItems?.[0]).toEqual({
+      id: "servicio-inscripciones",
+      etiqueta: "Inscripciones",
+      href: "/inscripciones",
+      icono: "📋",
+    });
+    expect(directorio?.subItems?.[1]).toEqual({
       id: "servicio-cat-pension",
       etiqueta: "Pensión",
       href: "/servicios/cat-pension",
       icono: "🐎",
       contador: 4,
     });
-    expect(directorio?.subItems?.[1]).toEqual({
+    expect(directorio?.subItems?.[2]).toEqual({
       id: "servicio-cat-box",
       etiqueta: "Box Club",
       href: "/servicios/cat-box",

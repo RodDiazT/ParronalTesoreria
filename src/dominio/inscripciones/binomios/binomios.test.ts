@@ -63,66 +63,79 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
   let eventoId: string;
   let eventoBId: string;
 
+  let testUserId: string;
+
   beforeAll(async () => {
-    // 1. Obtener o crear organización principal
-    let org = await prisma.organizacion.findFirst();
-    if (!org) {
-      org = await prisma.organizacion.create({
-        data: {
-          nombre: "Club Hipico Central",
-          nombreNormalizado: "club hipico central",
+    const timestamp = Date.now();
+    // 1. Crear organización principal aislada
+    const org = await prisma.organizacion.create({
+      data: {
+        nombre: `Org Binomios Test ${timestamp}`,
+        nombreNormalizado: `org binomios test ${timestamp}`,
+        categorias: {
+          create: [
+            { nombre: "Inscripciones", nombreNormalizado: "inscripciones", tipo: "ingreso", claveSistema: "inscripciones", orden: 0, activa: true },
+            { nombre: "Devoluciones", nombreNormalizado: "devoluciones", tipo: "gasto", claveSistema: "devoluciones", orden: 999, activa: true },
+          ],
         },
-      });
-    }
+      },
+    });
     orgId = org.id;
 
     // 2. Crear segunda organización para pruebas multi-tenant
-    const timestamp = Date.now();
     const orgB = await prisma.organizacion.create({
       data: {
         nombre: `Org B ${timestamp}`,
         nombreNormalizado: `org b ${timestamp}`,
+        categorias: {
+          create: [
+            { nombre: "Inscripciones", nombreNormalizado: "inscripciones", tipo: "ingreso", claveSistema: "inscripciones", orden: 0, activa: true },
+            { nombre: "Devoluciones", nombreNormalizado: "devoluciones", tipo: "gasto", claveSistema: "devoluciones", orden: 999, activa: true },
+          ],
+        },
       },
     });
     orgBId = orgB.id;
 
-    const user = await prisma.usuario.findFirst();
-    const userId = user?.id || "u-test-fase6";
+    const user = await prisma.usuario.create({
+      data: {
+        correo: `admin-binomios-${timestamp}@test.cl`,
+        nombre: "Admin Binomios",
+      },
+    });
+    testUserId = user.id;
+
+    await prisma.membresia.createMany({
+      data: [
+        { organizacionId: orgId, usuarioId: user.id, rol: "administrador", estado: "activa" },
+        { organizacionId: orgBId, usuarioId: user.id, rol: "administrador", estado: "activa" },
+      ],
+    });
 
     // 3. Evento principal
-    let ev = await prisma.evento.findFirst({
-      where: { organizacionId: orgId, estado: "abierto" },
+    const ev = await prisma.evento.create({
+      data: {
+        organizacionId: orgId,
+        nombre: `Concurso Oficial ${timestamp}`,
+        fechaInicio: new Date("2026-11-20T00:00:00Z"),
+        fechaTermino: new Date("2026-11-22T00:00:00Z"),
+        fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
+        estado: "abierto",
+      },
     });
-    if (!ev) {
-      ev = await prisma.evento.create({
-        data: {
-          organizacionId: orgId,
-          nombre: "Concurso Oficial 2026",
-          fechaInicio: new Date("2026-11-20T00:00:00Z"),
-          fechaTermino: new Date("2026-11-22T00:00:00Z"),
-          fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
-          estado: "abierto",
-        },
-      });
-    }
     eventoId = ev.id;
 
     // 4. Evento org B
-    let evB = await prisma.evento.findFirst({
-      where: { organizacionId: orgBId, estado: "abierto" },
+    const evB = await prisma.evento.create({
+      data: {
+        organizacionId: orgBId,
+        nombre: `Concurso Org B ${timestamp}`,
+        fechaInicio: new Date("2026-11-20T00:00:00Z"),
+        fechaTermino: new Date("2026-11-22T00:00:00Z"),
+        fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
+        estado: "abierto",
+      },
     });
-    if (!evB) {
-      evB = await prisma.evento.create({
-        data: {
-          organizacionId: orgBId,
-          nombre: "Concurso Org B 2026",
-          fechaInicio: new Date("2026-11-20T00:00:00Z"),
-          fechaTermino: new Date("2026-11-22T00:00:00Z"),
-          fechaReferenciaEdad: new Date("2026-11-21T00:00:00Z"),
-          estado: "abierto",
-        },
-      });
-    }
     eventoBId = evB.id;
 
     const contextoEvento = {
@@ -136,28 +149,28 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
     };
 
     ctxAdmin = {
-      usuario: { id: userId, correo: "admin@test.cl", nombre: "Admin Test", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "administrador",
       evento: contextoEvento,
     };
 
     ctxAyudante = {
-      usuario: { id: userId, correo: "ayudante@test.cl", nombre: "Ayudante Test", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "ayudante",
       evento: contextoEvento,
     };
 
     ctxObservador = {
-      usuario: { id: userId, correo: "obs@test.cl", nombre: "Observador Test", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "observador",
       evento: contextoEvento,
     };
 
     ctxOrgB = {
-      usuario: { id: userId, correo: "orgb@test.cl", nombre: "Admin Org B", imagen: null },
+      usuario: { id: testUserId, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgBId,
       rol: "administrador",
       evento: {
@@ -173,22 +186,28 @@ describe("Fase 6: Inscripciones de Binomios, Pruebas, Cargos, Pagos y Retiros", 
   });
 
   afterAll(async () => {
-    if (orgBId) {
-      await prisma.devolucion.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.pago.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.movimiento.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.inscripcion.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.binomio.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.jinete.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.caballo.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.club.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.prueba.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.categoria.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.evento.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.membresia.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.registroAuditoria.deleteMany({ where: { organizacionId: orgBId } });
-      await prisma.organizacion.deleteMany({ where: { id: orgBId } });
+    const orgs = [orgId, orgBId].filter(Boolean);
+    await prisma.registroAuditoria.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.devolucion.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.pago.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.movimiento.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.inscripcion.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.binomio.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.jineteApoderado.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.jinete.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.jinete.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.caballo.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.caballo.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.club.updateMany({ where: { organizacionId: { in: orgs } }, data: { fusionadoEnId: null } }).catch(() => {});
+    await prisma.club.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.prueba.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.categoria.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.evento.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    await prisma.membresia.deleteMany({ where: { organizacionId: { in: orgs } } }).catch(() => {});
+    if (testUserId) {
+      await prisma.usuario.deleteMany({ where: { id: testUserId } }).catch(() => {});
     }
+    await prisma.organizacion.deleteMany({ where: { id: { in: orgs } } }).catch(() => {});
   });
 
   // Helpers para creación rápida en tests
