@@ -50,6 +50,7 @@ export default async function PortalLayout({
       activa: true,
       tipo: "ingreso",
       sujetoAsociado: { not: null },
+      claveSistema: null,
     },
     select: {
       id: true,

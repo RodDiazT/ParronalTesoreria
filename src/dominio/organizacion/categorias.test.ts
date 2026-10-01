@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import {
   ejecutarCrearCategoria,
   ejecutarRenombrarCategoria,
@@ -18,30 +18,78 @@ import { ejecutarRegistrarMovimiento } from "@/dominio/movimientos/acciones";
 describe("Gestión de Categorías", () => {
   let ctxAdmin: Contexto;
   let orgId: string;
+  let testUserId: string;
 
   beforeAll(async () => {
-    const org = await prisma.organizacion.findFirst();
-    if (!org) throw new Error("No hay organización en la base de datos.");
+    const timestamp = Date.now();
+    const org = await prisma.organizacion.create({
+      data: {
+        nombre: `Org Categorias Test ${timestamp}`,
+        nombreNormalizado: `org categorias test ${timestamp}`,
+        categorias: {
+          create: [
+            { nombre: "Inscripciones", nombreNormalizado: "inscripciones", tipo: "ingreso", claveSistema: "inscripciones", orden: 0, activa: true },
+            { nombre: "Devoluciones", nombreNormalizado: "devoluciones", tipo: "gasto", claveSistema: "devoluciones", orden: 999, activa: true },
+          ],
+        },
+      },
+    });
     orgId = org.id;
 
-    const user = await prisma.usuario.findFirst();
-    const ev = await prisma.evento.findFirst({ where: { organizacionId: orgId, estado: "abierto" } });
+    const user = await prisma.usuario.create({
+      data: {
+        correo: `admin-cat-${timestamp}@example.com`,
+        nombre: "Admin Categorias",
+      },
+    });
+    testUserId = user.id;
+
+    await prisma.membresia.create({
+      data: {
+        organizacionId: orgId,
+        usuarioId: user.id,
+        rol: "administrador",
+        estado: "activa",
+      },
+    });
+
+    const ev = await prisma.evento.create({
+      data: {
+        organizacionId: orgId,
+        nombre: "Concurso Test Categorias",
+        fechaInicio: new Date("2026-11-20T00:00:00Z"),
+        fechaTermino: new Date("2026-11-22T00:00:00Z"),
+        estado: "abierto",
+      },
+    });
+
     ctxAdmin = {
-      usuario: { id: user?.id || "u-admin", correo: user?.correo || "admin@example.com", nombre: "Admin", imagen: null },
+      usuario: { id: user.id, correo: user.correo, nombre: user.nombre, imagen: null },
       organizacionId: orgId,
       rol: "administrador",
-      evento: ev
-        ? {
-            id: ev.id,
-            nombre: ev.nombre,
-            fechaInicio: ev.fechaInicio,
-            fechaTermino: ev.fechaTermino,
-            fechaReferenciaEdad: ev.fechaReferenciaEdad,
-            lugar: ev.lugar,
-            estado: ev.estado as any,
-          }
-        : null,
+      evento: {
+        id: ev.id,
+        nombre: ev.nombre,
+        fechaInicio: ev.fechaInicio,
+        fechaTermino: ev.fechaTermino,
+        fechaReferenciaEdad: null,
+        lugar: "Cancha Test",
+        estado: "abierto",
+      },
     };
+  });
+
+  afterAll(async () => {
+    await prisma.registroAuditoria.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.pago.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.cargo.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.respaldo.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.movimiento.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.categoria.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.evento.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.membresia.deleteMany({ where: { organizacionId: orgId } }).catch(() => {});
+    await prisma.usuario.deleteMany({ where: { id: testUserId } }).catch(() => {});
+    await prisma.organizacion.deleteMany({ where: { id: orgId } }).catch(() => {});
   });
 
   it("crea una categoría nueva con orden al final y audita la acción", async () => {

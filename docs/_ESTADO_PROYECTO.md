@@ -1,6 +1,6 @@
 # Estado del Proyecto — Tesorería Parronal
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01
 
 ## Resumen
 
@@ -148,5 +148,7 @@ Están aprobados el marco general y todos los componentes del núcleo v1.0 (Orga
 | 2026-09-29 | 1.20 | Auditoría exhaustiva de Administrador y Hard Reset en ambiente de pruebas: resolución de BUG-01 (preselección cruzada de club en inscripciones), BUG-02 (eliminación resiliente de pruebas con inscripciones anuladas sin pagos), BUG-03 (insignias contables de sujeto imputado en /movimientos), BUG-04 (búsqueda insensible a tildes con normalizarBusqueda), MEJORA-01 (onboarding guiado en 3 pasos en dashboard limpio), MEJORA-02 (deselección rápida en combobox de categorías) y cumplimiento de restricción check_movimiento_pagado_fecha. Hard reset ejecutado con éxito en Railway pruebas preservando Organización oficial, Evento, Administrador y Categorías del sistema | Auditoría integral y saneamiento operativo |
 | 2026-09-29 | 1.21 | Auditoría y modernización integral de Usabilidad UX/UI y Ergonomía en Terreno: resolución de BUG-05 (visibilidad de categorías personalizadas de gasto mediante `OR: [{ claveSistema: null }, { claveSistema: { not: 'devoluciones' } }]`), BUG-06 (soporte de elevación dinámica `zIndex` en `<Sheet>` y `data-sheets-abiertas` para resolver ocultamiento de modal anidado "Crear Club"), unificación de doble fecha a fecha única en movimientos con toggle secundario opcional, selector compacto horizontal para "Quién pagó", colapso de tarifas/becas en pruebas, colapso de campos opcionales en altas rápidas de entidades y contrapartes, y pestañas de movimientos adaptadas responsivamente para móvil. Suite completa de 138 tests pasando al 100% y build limpio de Next.js. | Implementación completa de mejoras de Usabilidad UX/UI |
 | 2026-09-30 | 1.22 | Implementación completa de Servicios y Cargos Operativos, Tarifas Estándar y Reparto Multiconcepto: nuevo modelo `Cargo` desacoplado del movimiento bancario, tarifas estándar sugeridas en categorías con entidad asociada (`tarifaBaseClp`), motor de pagos con reparto multiconcepto ACID unificando inscripción + cargo en 1 movimiento, submenú dinámico indentado bajo Directorio con semáforo y contadores, pantalla nómina del servicio `/servicios/[categoriaId]` con métricas, cobro en 1 clic y WhatsApp, e integración en fichas de caballos y estado de cuenta global. Suite de 7 tests pasando al 100% (total 145 tests). | Implementación de Servicios y Cargos Operativos |
+| 2026-10-01 | 1.23 | Saneamiento de submenú de servicios en Directorio y aislamiento multi-tenant en suites de test: purga de categorías residuales generadas por pruebas en base de datos, adición de filtro estricto `claveSistema: null` en `layout.tsx` para garantizar que solo categorías configuradas por el usuario aparezcan bajo Directorio, y aislamiento completo con ciclo de vida dedicado de organizaciones de prueba en `cargos.test.ts` y `categorias.test.ts`. | Saneamiento de base de datos y aislamiento de tests |
+
 
 

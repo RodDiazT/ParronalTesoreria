@@ -32,19 +32,22 @@ describe("Dominio de Servicios y Cargos Operativos", () => {
   let categoriaAlimentoId: string;
 
   beforeAll(async () => {
-    // 1. Organizaciones
-    let org = await prisma.organizacion.findFirst();
-    if (!org) {
-      org = await prisma.organizacion.create({
-        data: {
-          nombre: "Club Hipico Central",
-          nombreNormalizado: "club hipico central",
+    // 1. Organizaciones aisladas para pruebas
+    const timestamp = Date.now();
+    const org = await prisma.organizacion.create({
+      data: {
+        nombre: `Org A Cargos ${timestamp}`,
+        nombreNormalizado: `org a cargos ${timestamp}`,
+        categorias: {
+          create: [
+            { nombre: "Inscripciones", nombreNormalizado: "inscripciones", tipo: "ingreso", claveSistema: "inscripciones", orden: 0, activa: true },
+            { nombre: "Devoluciones", nombreNormalizado: "devoluciones", tipo: "gasto", claveSistema: "devoluciones", orden: 999, activa: true },
+          ],
         },
-      });
-    }
+      },
+    });
     orgId = org.id;
 
-    const timestamp = Date.now();
     const orgB = await prisma.organizacion.create({
       data: {
         nombre: `Org B Servicios ${timestamp}`,
@@ -53,32 +56,31 @@ describe("Dominio de Servicios y Cargos Operativos", () => {
     });
     orgBId = orgB.id;
 
-    // 2. Usuarios
-    let user = await prisma.usuario.findFirst();
-    if (!user) {
-      user = await prisma.usuario.create({
-        data: {
-          correo: `admin-servicios-${timestamp}@test.cl`,
-          nombre: "Admin Servicios",
-        },
-      });
-    }
+    // 2. Usuario y membresías de prueba
+    const user = await prisma.usuario.create({
+      data: {
+        correo: `admin-servicios-${timestamp}@test.cl`,
+        nombre: "Admin Servicios",
+      },
+    });
+
+    await prisma.membresia.createMany({
+      data: [
+        { organizacionId: orgId, usuarioId: user.id, rol: "administrador", estado: "activa" },
+        { organizacionId: orgBId, usuarioId: user.id, rol: "administrador", estado: "activa" },
+      ],
+    });
 
     // 3. Evento principal
-    let ev = await prisma.evento.findFirst({
-      where: { organizacionId: orgId, estado: "abierto" },
+    const ev = await prisma.evento.create({
+      data: {
+        organizacionId: orgId,
+        nombre: `Concurso Servicios ${timestamp}`,
+        fechaInicio: new Date("2026-11-20T00:00:00Z"),
+        fechaTermino: new Date("2026-11-22T00:00:00Z"),
+        estado: "abierto",
+      },
     });
-    if (!ev) {
-      ev = await prisma.evento.create({
-        data: {
-          organizacionId: orgId,
-          nombre: "Concurso Servicios 2026",
-          fechaInicio: new Date("2026-11-20T00:00:00Z"),
-          fechaTermino: new Date("2026-11-22T00:00:00Z"),
-          estado: "abierto",
-        },
-      });
-    }
     eventoId = ev.id;
 
     // 4. Evento org B
@@ -161,27 +163,23 @@ describe("Dominio de Servicios y Cargos Operativos", () => {
 
   afterAll(async () => {
     // Limpieza de datos creados en el test
-    await prisma.pago.deleteMany({
-      where: {
-        OR: [
-          { cargo: { organizacionId: { in: [orgId, orgBId] } } },
-          { movimiento: { claveCliente: { startsWith: "pago-test-" } } },
-          { movimiento: { claveCliente: { startsWith: "pago-multi-" } } },
-          { movimiento: { claveCliente: { startsWith: "pago-cargo-" } } },
-        ],
-      },
-    });
-    await prisma.cargo.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } });
-    await prisma.movimiento.deleteMany({
-      where: {
-        OR: [
-          { claveCliente: { startsWith: "pago-test-" } },
-          { claveCliente: { startsWith: "pago-multi-" } },
-          { claveCliente: { startsWith: "pago-cargo-" } },
-        ],
-      },
-    });
-    await prisma.categoria.deleteMany({ where: { id: { in: [categoriaPensionId, categoriaAlimentoId] } } });
+    await prisma.registroAuditoria.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.pago.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.cargo.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.inscripcion.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.prueba.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.binomio.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.caballo.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.jinete.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.club.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.movimiento.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.categoria.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.evento.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    await prisma.membresia.deleteMany({ where: { organizacionId: { in: [orgId, orgBId] } } }).catch(() => {});
+    if (ctxAdmin?.usuario?.id) {
+      await prisma.usuario.deleteMany({ where: { id: ctxAdmin.usuario.id } }).catch(() => {});
+    }
+    await prisma.organizacion.deleteMany({ where: { id: { in: [orgId, orgBId] } } }).catch(() => {});
   });
 
   describe("1. Creación de Cargo Operativo", () => {
